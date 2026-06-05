@@ -10,9 +10,9 @@ const rollupNoticePath = resolve("dist/THIRD_PARTY_NOTICES.rollup.txt");
 const viteNoticePath = resolve("dist/.vite/license.md");
 
 function collectProductionPackagesFromFixture(root) {
-  const packageRoot = join(root, "node_modules");
+  const packageRoot = join(root, "packages");
   return existsSync(packageRoot)
-    ? [{ name: "@swing-sync-test/notice-fixture", path: join(packageRoot, "@swing-sync-test/notice-fixture") }]
+    ? [{ name: "@swing-sync-test/notice-fixture", path: join(packageRoot, "notice-fixture") }]
     : [];
 }
 
