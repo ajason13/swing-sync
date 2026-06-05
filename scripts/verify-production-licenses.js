@@ -55,10 +55,32 @@ function isAllowedExpression(expression) {
 
   const orParts = expression.split(/\s+OR\s+/);
   if (orParts.length > 1) {
-    return orParts.some((part) => allowed.has(part.trim()));
+    const trimmedParts = orParts.map((part) => part.trim());
+    if (trimmedParts.some((part) => blocked.has(part))) {
+      return false;
+    }
+    return trimmedParts.every((part) => allowed.has(part));
   }
 
   return false;
+}
+
+function selfTestLicenseExpressions() {
+  const cases = [
+    ["MIT", true],
+    ["MIT OR Apache-2.0", true],
+    ["GPL-3.0-only", false],
+    ["GPL-3.0-only OR MIT", false],
+    ["MPL-2.0 OR Apache-2.0", false],
+    ["Custom-License", false]
+  ];
+
+  for (const [expression, expected] of cases) {
+    const actual = isAllowedExpression(expression);
+    if (actual !== expected) {
+      fail(`License expression self-test failed for "${expression}". Expected ${expected}, got ${actual}.`);
+    }
+  }
 }
 
 const result = spawnSync("npm", ["ls", "--omit=dev", "--json", "--long"], {
@@ -73,6 +95,8 @@ if (result.status !== 0 && !result.stdout) {
 
 const tree = JSON.parse(result.stdout);
 const packages = flattenDependencies(tree);
+
+selfTestLicenseExpressions();
 
 for (const pkg of packages) {
   const license = normalizeLicense(pkg.license);

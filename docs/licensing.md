@@ -63,11 +63,15 @@ to validate compliance gates.
 
 ## Dual-License Rule
 
-When a dependency is dual-licensed with a permissive option, such as
-`MIT OR GPL-3.0-only`, Swing Sync elects the permissive option only when the
-license expression is machine-readable and the permissive branch is one of the
-allowed licenses above. If automation cannot parse the expression, the
-dependency is blocked until a maintainer records an exception here.
+When a dependency is dual-licensed with only permissive options, such as
+`MIT OR Apache-2.0`, Swing Sync may use the dependency without a special
+exception if every branch is in the allowed set.
+
+When a dual-license expression contains any blocked or exception-required
+identifier, such as `GPL-3.0-only OR MIT` or `MPL-2.0 OR Apache-2.0`, automation
+must fail the dependency until a maintainer records a documented exception here.
+Swing Sync does not silently elect a permissive branch when the same expression
+also contains GPL, AGPL, LGPL, MPL-2.0, unknown, custom, or non-SPDX terms.
 
 ## Dev-Only Tool Boundary
 

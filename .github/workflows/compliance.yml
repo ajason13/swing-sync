@@ -29,11 +29,7 @@ jobs:
         run: npm run license:audit
 
       - name: Validate bundle scanner fixture
-        run: |
-          if npm run build:bundle-license-fixture; then
-            echo "Bundle license scanner did not catch the synthetic GPL fixture."
-            exit 1
-          fi
+        run: npm run verify:bundle-license-fixture
 
       - name: Generate SBOM
         run: npm run sbom:generate
