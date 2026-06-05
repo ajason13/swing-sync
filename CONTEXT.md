@@ -6,12 +6,9 @@ Last updated: 2026-06-05
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/1
-- Latest merge commit: `45e4d54`
-- Current completed task: `SS-001 Select license, dependency policy, and SBOM workflow`
-- Active branch: `ss-002-safety-terms`
-- Active task: `SS-002 Draft sports injury waiver and educational-use terms`
-- Active PR: https://github.com/ajason13/swing-sync/pull/2
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/2
+- Latest merge commit: `568ca28dc84e5c0f04894ad7b272bae57fa4bc69`
+- Current completed task: `SS-002 Draft sports injury waiver and educational-use terms`
 
 ## Completed Foundation
 
@@ -47,10 +44,10 @@ npm run build
 npm run compliance:verify
 ```
 
-## Active Task
+## Completed Task
 
-`SS-002 Draft sports injury waiver and educational-use terms` is in progress on
-branch `ss-002-safety-terms`.
+`SS-002 Draft sports injury waiver and educational-use terms` merged in
+[PR #2](https://github.com/ajason13/swing-sync/pull/2) on 2026-06-05.
 
 Acceptance criteria from Notion:
 
@@ -92,12 +89,29 @@ SS-002 verification on 2026-06-05:
   consent helpers once a real analysis pipeline exists, adversarial prompt tests
   for the first AI coaching pipeline, and private-browsing consent UX.
 
-Pending SS-002 gates:
+Remaining SS-002 pre-release gate:
 
 - Legal/human review of draft assumption-of-risk and release-of-liability copy
   remains pending before public release.
-- PR #2 merge is the next engineering step after CI/repository review policy is
-  satisfied.
+
+## Persistent Learnings
+
+- For safety, legal, medical, or compliance-sensitive stories, keep
+  multi-agent roles explicit: Gemini for research/spec disposition, Codex for
+  implementation and repo hygiene, and Claude for adversarial audit/re-review.
+- Treat external model research as input, not implementation authority. Record
+  adopted, revised, deferred, and rejected recommendations in a disposition file
+  when research is broad or over-scoped.
+- Avoid absolute claims in product safety/privacy copy. Prefer scoped language:
+  draft only, not legal advice, no enforceability guarantee, local-first by
+  default, and separate explicit opt-in before any remote sharing.
+- For consent gates, use both UI gating and a runtime guard on the action path.
+  `localStorage` acknowledgement is acceptable only as a scaffold unless legal
+  review asks for durable consent records.
+- Safety verifiers should check required user-facing copy and prohibited claim
+  patterns. Exact phrase checks alone create false confidence.
+- Future AI-coaching stories should convert deferred adversarial prompts into
+  tests before any model output is exposed.
 
 ## Operating Notes
 
