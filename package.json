@@ -1,0 +1,24 @@
+{
+  "name": "swing-sync",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Local-first open-source AI golf swing analysis coach.",
+  "scripts": {
+    "build": "vite build && node scripts/aggregate-notices.js",
+    "build:bundle-license-fixture": "vite build --config vite.config.test.ts",
+    "license:audit": "npm run license:audit:fixtures && node scripts/verify-production-licenses.js",
+    "license:audit:fixtures": "node scripts/verify-license-fixtures.js",
+    "sbom:generate": "npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file docs/sbom.json --omit dev --validate && node scripts/filter-sbom.js",
+    "compliance:verify": "node scripts/verify-compliance.js"
+  },
+  "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "^4.2.1",
+    "@onebeyond/license-checker": "^2.2.0",
+    "@swing-sync-test/bundled-prohibited-package": "file:test/fixtures/bundled-prohibited-package",
+    "rollup-plugin-license": "^3.7.1",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.21"
+  }
+}

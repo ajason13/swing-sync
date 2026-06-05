@@ -1,0 +1,6 @@
+{
+  "name": "@swing-sync-test/mpl-license",
+  "version": "1.0.0",
+  "description": "Synthetic fixture to verify CI failure on MPL-2.0 without exception.",
+  "license": "MPL-2.0"
+}
