@@ -12,7 +12,8 @@
     "license:audit": "npm run license:audit:fixtures && node scripts/verify-production-licenses.js",
     "license:audit:fixtures": "node scripts/verify-license-fixtures.js",
     "sbom:generate": "npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file docs/sbom.json --omit dev --validate && node scripts/filter-sbom.js",
-    "compliance:verify": "node scripts/verify-compliance.js"
+    "safety:verify": "node scripts/verify-safety-terms.js",
+    "compliance:verify": "node scripts/verify-compliance.js && npm run safety:verify"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^4.2.1",

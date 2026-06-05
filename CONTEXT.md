@@ -1,14 +1,16 @@
 # Swing Sync Context
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/1
-- Latest merge commit: `f604d3481ade2b47797cd2944c8176d14b4c91b1`
+- Latest merge commit: `45e4d54`
 - Current completed task: `SS-001 Select license, dependency policy, and SBOM workflow`
+- Active branch: `ss-002-safety-terms`
+- Active task: `SS-002 Draft sports injury waiver and educational-use terms`
 
 ## Completed Foundation
 
@@ -44,9 +46,10 @@ npm run build
 npm run compliance:verify
 ```
 
-## Next Task
+## Active Task
 
-Start `SS-002 Draft sports injury waiver and educational-use terms`.
+`SS-002 Draft sports injury waiver and educational-use terms` is in progress on
+branch `ss-002-safety-terms`.
 
 Acceptance criteria from Notion:
 
@@ -55,7 +58,39 @@ Acceptance criteria from Notion:
 - Define consent gate before first analysis.
 - Add prompt constraints that avoid diagnosing pain or prescribing unsafe movements.
 
-Suggested branch: `ss-002-safety-terms`
+Planned/active artifacts:
+
+- `docs/safety-terms.md`: product-compliance draft language for human/legal
+  review, including assumption of risk, release of liability, educational-use
+  boundaries, local-first privacy, consent-gate requirements, prompt
+  constraints, and a review checklist.
+- `src/main.ts`: minimal first-analysis consent gate scaffold that stores only
+  local acknowledgement state.
+- `scripts/verify-safety-terms.js`: safety-boundary regression checks wired
+  into `npm run compliance:verify`.
+- `docs/ss-002-research-disposition.md`: Gemini Deep Research disposition,
+  separating adopted guidance from revised, deferred, or rejected
+  recommendations.
+
+SS-002 verification on 2026-06-05:
+
+- `npm run safety:verify` passed.
+- `npm run build` passed.
+- `npm run compliance:verify` passed.
+- `git diff --check` passed.
+- Gemini Deep Research response received and distilled into
+  `docs/ss-002-research-disposition.md`.
+- Initial Claude audit returned conditional pass with two blockers: add a runtime
+  consent check in the analysis click handler, and strengthen
+  `scripts/verify-safety-terms.js` to avoid false confidence.
+- Claude re-review returned PASS and granted sign-off for PR creation after the
+  blocker fixes.
+
+Pending SS-002 gates:
+
+- Legal/human review of draft assumption-of-risk and release-of-liability copy
+  remains pending before public release.
+- PR creation and CI review are the next engineering steps.
 
 ## Operating Notes
 
@@ -63,3 +98,5 @@ Suggested branch: `ss-002-safety-terms`
 - Preserve the local-first privacy posture: no raw swing video upload by default.
 - User-facing safety copy should be clear, plain, and explicit before analysis.
 - Any connected model or coaching prompt must avoid medical diagnosis, pain triage, or aggressive mechanical prescriptions.
+- Observability: SS-002 adds no runtime logging, telemetry, remote calls, or raw
+  video handling. Consent acknowledgement is local-only browser state.

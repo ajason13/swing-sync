@@ -31,3 +31,15 @@ npm run compliance:verify
 
 The project is licensed under Apache-2.0. Raw swing video handling, model terms,
 and sports safety UX are tracked separately from this initial compliance setup.
+
+## Safety Drafts
+
+SS-002 safety and educational-use draft language lives in
+[docs/safety-terms.md](./docs/safety-terms.md). The draft is product-compliance
+language for human/legal review, not legal advice. The current app scaffold
+blocks first analysis behind a local-only educational-use and assumption-of-risk
+acknowledgement.
+
+Gemini Deep Research disposition for SS-002 is tracked in
+[docs/ss-002-research-disposition.md](./docs/ss-002-research-disposition.md)
+so research recommendations stay separate from approved implementation scope.
