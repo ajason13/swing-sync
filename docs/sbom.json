@@ -1,0 +1,139 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "serialNumber": "urn:uuid:e8a035d2-1b15-473b-b3f2-5c90b2f72f21",
+  "metadata": {
+    "timestamp": "2026-06-05T05:03:00.171Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "npm",
+          "version": "10.5.0"
+        },
+        {
+          "type": "application",
+          "name": "cyclonedx-npm",
+          "group": "@cyclonedx",
+          "version": "4.2.1",
+          "author": "Jan Kowalleck",
+          "description": "Create CycloneDX Software Bill of Materials (SBOM) from NPM projects.",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "externalReferences": [
+            {
+              "url": "git+https://github.com/CycloneDX/cyclonedx-node-npm.git",
+              "type": "vcs",
+              "comment": "as detected from PackageJson property \"repository.url\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-node-npm#readme",
+              "type": "website",
+              "comment": "as detected from PackageJson property \"homepage\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-node-npm/issues",
+              "type": "issue-tracker",
+              "comment": "as detected from PackageJson property \"bugs.url\""
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "cyclonedx-library",
+          "group": "@cyclonedx",
+          "version": "10.1.0",
+          "author": "Jan Kowalleck",
+          "description": "Core functionality of CycloneDX for JavaScript (Node.js or WebBrowser).",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "externalReferences": [
+            {
+              "url": "git+https://github.com/CycloneDX/cyclonedx-javascript-library.git",
+              "type": "vcs",
+              "comment": "as detected from PackageJson property \"repository.url\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-javascript-library#readme",
+              "type": "website",
+              "comment": "as detected from PackageJson property \"homepage\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-javascript-library/issues",
+              "type": "issue-tracker",
+              "comment": "as detected from PackageJson property \"bugs.url\""
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "swing-sync",
+      "version": "0.1.0",
+      "bom-ref": "swing-sync@0.1.0",
+      "description": "Local-first open-source AI golf swing analysis coach.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/swing-sync@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
+        },
+        {
+          "name": "cdx:npm:package:path",
+          "value": ""
+        }
+      ]
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "swing-sync@0.1.0",
+      "dependsOn": [
+        "swing-sync@0.1.0|@pkgjs/parseargs@0.11.0",
+        "swing-sync@0.1.0|encoding@0.1.13",
+        "swing-sync@0.1.0|iconv-lite@0.6.3",
+        "swing-sync@0.1.0|safer-buffer@2.1.2"
+      ]
+    },
+    {
+      "ref": "swing-sync@0.1.0|@pkgjs/parseargs@0.11.0"
+    },
+    {
+      "ref": "swing-sync@0.1.0|encoding@0.1.13",
+      "dependsOn": [
+        "swing-sync@0.1.0|iconv-lite@0.6.3"
+      ]
+    },
+    {
+      "ref": "swing-sync@0.1.0|iconv-lite@0.6.3",
+      "dependsOn": [
+        "swing-sync@0.1.0|safer-buffer@2.1.2"
+      ]
+    },
+    {
+      "ref": "swing-sync@0.1.0|safer-buffer@2.1.2"
+    }
+  ]
+}

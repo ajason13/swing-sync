@@ -1,0 +1,7 @@
+{
+  "name": "@swing-sync-test/bundled-prohibited-package",
+  "version": "1.0.0",
+  "license": "GPL-3.0-only",
+  "main": "index.js",
+  "module": "index.js"
+}

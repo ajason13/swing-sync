@@ -1,0 +1,6 @@
+{
+  "name": "@swing-sync-test/prohibited-license",
+  "version": "1.0.0",
+  "description": "Synthetic fixture to verify CI failure on copyleft contamination.",
+  "license": "GPL-3.0-only"
+}
