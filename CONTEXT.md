@@ -11,6 +11,7 @@ Last updated: 2026-06-05
 - Current completed task: `SS-001 Select license, dependency policy, and SBOM workflow`
 - Active branch: `ss-002-safety-terms`
 - Active task: `SS-002 Draft sports injury waiver and educational-use terms`
+- Active PR: https://github.com/ajason13/swing-sync/pull/2
 
 ## Completed Foundation
 
@@ -85,12 +86,13 @@ SS-002 verification on 2026-06-05:
   `scripts/verify-safety-terms.js` to avoid false confidence.
 - Claude re-review returned PASS and granted sign-off for PR creation after the
   blocker fixes.
+- PR #2 created: https://github.com/ajason13/swing-sync/pull/2
 
 Pending SS-002 gates:
 
 - Legal/human review of draft assumption-of-risk and release-of-liability copy
   remains pending before public release.
-- PR creation and CI review are the next engineering steps.
+- PR #2 CI/review and merge are the next engineering steps.
 
 ## Operating Notes
 
