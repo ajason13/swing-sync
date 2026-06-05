@@ -87,12 +87,17 @@ SS-002 verification on 2026-06-05:
 - Claude re-review returned PASS and granted sign-off for PR creation after the
   blocker fixes.
 - PR #2 created: https://github.com/ajason13/swing-sync/pull/2
+- Claude PR review returned APPROVED FOR MERGE with no blockers. Remaining
+  notes are future-story items: verifier regex maintenance, unit tests for
+  consent helpers once a real analysis pipeline exists, adversarial prompt tests
+  for the first AI coaching pipeline, and private-browsing consent UX.
 
 Pending SS-002 gates:
 
 - Legal/human review of draft assumption-of-risk and release-of-liability copy
   remains pending before public release.
-- PR #2 CI/review and merge are the next engineering steps.
+- PR #2 merge is the next engineering step after CI/repository review policy is
+  satisfied.
 
 ## Operating Notes
 
