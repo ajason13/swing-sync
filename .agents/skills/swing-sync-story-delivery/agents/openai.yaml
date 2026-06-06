@@ -1,0 +1,4 @@
+interface:
+  display_name: "Swing Sync Story Delivery"
+  short_description: "Coordinate Swing Sync stories through merge"
+  default_prompt: "Use $swing-sync-story-delivery to execute the next Swing Sync story from task selection through audit, PR, merge, and context sync."
