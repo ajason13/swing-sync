@@ -3,15 +3,15 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:e8a035d2-1b15-473b-b3f2-5c90b2f72f21",
+  "serialNumber": "urn:uuid:be4c67b7-e0d7-4cbf-94c7-b86be57e6ad0",
   "metadata": {
-    "timestamp": "2026-06-05T05:03:00.171Z",
+    "timestamp": "2026-06-06T06:07:42.168Z",
     "tools": {
       "components": [
         {
           "type": "application",
           "name": "npm",
-          "version": "10.5.0"
+          "version": "10.9.8"
         },
         {
           "type": "application",
@@ -109,31 +109,7 @@
   "components": [],
   "dependencies": [
     {
-      "ref": "swing-sync@0.1.0",
-      "dependsOn": [
-        "swing-sync@0.1.0|@pkgjs/parseargs@0.11.0",
-        "swing-sync@0.1.0|encoding@0.1.13",
-        "swing-sync@0.1.0|iconv-lite@0.6.3",
-        "swing-sync@0.1.0|safer-buffer@2.1.2"
-      ]
-    },
-    {
-      "ref": "swing-sync@0.1.0|@pkgjs/parseargs@0.11.0"
-    },
-    {
-      "ref": "swing-sync@0.1.0|encoding@0.1.13",
-      "dependsOn": [
-        "swing-sync@0.1.0|iconv-lite@0.6.3"
-      ]
-    },
-    {
-      "ref": "swing-sync@0.1.0|iconv-lite@0.6.3",
-      "dependsOn": [
-        "swing-sync@0.1.0|safer-buffer@2.1.2"
-      ]
-    },
-    {
-      "ref": "swing-sync@0.1.0|safer-buffer@2.1.2"
+      "ref": "swing-sync@0.1.0"
     }
   ]
 }
