@@ -84,6 +84,16 @@ SS-004 implementation status through 2026-06-06:
   at `docs/ss-004-claude-audit-prompt.md`. It embeds the current runtime, PWA,
   test, configuration, protected-boundary, and verification context because
   Claude Chat has no filesystem or GitHub access.
+- Claude returned `PASS WITH MINOR FIXES` and conditional merge approval. The
+  three required fixes were applied: consent storage failures now fail closed,
+  the runtime guard reports inline and focuses the acknowledgement, and the
+  incomplete service-worker offline cache was removed.
+- Blocker-linked Playwright coverage was added for storage denial and the
+  accessible runtime guard. Final verification after fixes passed with 10 smoke
+  cases, 2 unit cases, build, compliance, license, bundle-fixture, SBOM, and
+  diff checks.
+- The original audit prompt is marked superseded. Use the focused
+  `docs/ss-004-claude-rereview-prompt.md` for Claude's final sign-off.
 - SS-004 is in final audit pending Claude's verdict and PR merge.
 
 ## Completed Task

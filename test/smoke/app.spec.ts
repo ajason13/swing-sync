@@ -20,6 +20,40 @@ test("opens to capture flow and keeps analysis fail closed", async ({ page }) =>
   await expect(page.getByRole("status")).toContainText("No analysis or video handling occurred");
 });
 
+test("fails closed when local consent storage is unavailable", async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = () => {
+      throw new DOMException("Storage is unavailable", "SecurityError");
+    };
+    Storage.prototype.setItem = () => {
+      throw new DOMException("Storage is unavailable", "SecurityError");
+    };
+  });
+  await page.reload();
+
+  const consent = page.getByRole("checkbox");
+  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
+  await expect(beginAnalysis).toBeDisabled();
+
+  await consent.click();
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+});
+
+test("runtime consent guard reports inline and focuses the acknowledgement", async ({ page }) => {
+  const consent = page.getByRole("checkbox");
+  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
+
+  await beginAnalysis.evaluate((button) => button.removeAttribute("disabled"));
+  await beginAnalysis.click();
+
+  await expect(page.getByRole("status")).toContainText(
+    "Please acknowledge the safety terms before starting analysis"
+  );
+  await expect(consent).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
+});
+
 test("shows every required placeholder state", async ({ page }) => {
   for (const [buttonName, headingName] of [
     ["Process", "Processing"],

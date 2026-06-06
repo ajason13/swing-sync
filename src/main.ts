@@ -12,16 +12,24 @@ const consentStorageKey = "swing-sync:safety-consent:v1";
 let activeStep: WorkflowStepId = "capture";
 
 function hasSafetyConsent(): boolean {
-  return window.localStorage.getItem(consentStorageKey) === "accepted";
+  try {
+    return window.localStorage.getItem(consentStorageKey) === "accepted";
+  } catch {
+    return false;
+  }
 }
 
 function setSafetyConsent(accepted: boolean): void {
-  if (accepted) {
-    window.localStorage.setItem(consentStorageKey, "accepted");
-    return;
-  }
+  try {
+    if (accepted) {
+      window.localStorage.setItem(consentStorageKey, "accepted");
+      return;
+    }
 
-  window.localStorage.removeItem(consentStorageKey);
+    window.localStorage.removeItem(consentStorageKey);
+  } catch {
+    // Storage failures intentionally leave the analysis path fail closed.
+  }
 }
 
 function renderWorkflowPanel(consentAccepted: boolean): string {
@@ -192,7 +200,8 @@ function renderApp(statusMessage?: string): void {
 
   document.querySelector<HTMLButtonElement>("#analysis-button")?.addEventListener("click", () => {
     if (!hasSafetyConsent()) {
-      window.alert("Please acknowledge the safety terms before starting analysis.");
+      renderApp("Please acknowledge the safety terms before starting analysis.");
+      document.querySelector<HTMLInputElement>("#safety-consent")?.focus();
       return;
     }
 

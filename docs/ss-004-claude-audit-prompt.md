@@ -1,6 +1,8 @@
 # SS-004 Claude Adversarial Audit Prompt
 
-Paste this prompt into a new Claude Chat conversation.
+**Superseded after `PASS WITH MINOR FIXES`. Do not paste this prompt into
+Claude Chat. Use `docs/ss-004-claude-rereview-prompt.md` for the focused
+follow-up review.**
 
 ## Prompt
 
