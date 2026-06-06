@@ -44,6 +44,56 @@ npm run build
 npm run compliance:verify
 ```
 
+## Active Task
+
+`SS-003 Define privacy architecture and video data lifecycle` is in progress
+on branch `ss-003-privacy-lifecycle`.
+
+Acceptance criteria from Notion:
+
+- Document local-first processing flow.
+- Define what data can be exported or sent to model APIs.
+- Ensure raw video is not uploaded by default.
+- Add user-facing copy for consent and deletion behavior.
+
+Planned/active artifacts:
+
+- `docs/ss-003-gemini-research-prompt.md`: self-contained Gemini Deep Research
+  prompt with embedded repository context because Gemini has no filesystem or
+  GitHub access.
+- `docs/ss-003-research-disposition.md`: Gemini research disposition that
+  records adopted, revised, deferred, and rejected recommendations.
+- `docs/ss-003-claude-rereview-prompt.md`: focused self-contained Claude Chat
+  prompt for re-reviewing the fixes from the initial adversarial audit.
+- `docs/privacy-architecture.md`: draft local-first privacy architecture, data
+  classes, lifecycle, export/model-sharing policy, deletion-copy limits, and
+  future implementation gates.
+- `scripts/verify-privacy-boundaries.js`: privacy-boundary regression checks
+  wired into `npm run compliance:verify`.
+
+SS-003 status on 2026-06-05:
+
+- Gemini Deep Research response received and distilled into
+  `docs/ss-003-research-disposition.md`.
+- Primary-source checks were recorded for browser storage, OPFS, persistent
+  storage, WebKit tracking prevention, CSP, and MediaPipe policy references.
+- Initial Claude adversarial review returned PASS WITH MINOR FIXES: clarify the
+  consent-copy cross-checks in `scripts/verify-privacy-boundaries.js` and widen
+  prohibited-endpoint scanning beyond `src/main.ts`.
+- Claude blocker fixes were applied: the verifier now labels inherited SS-002
+  consent scaffold checks, recursively scans `src/**` and `scripts/**` while
+  excluding its own pattern-list file, records Sentry as blocked pending privacy
+  review, clarifies Class G scaffold scope, and defers fail-closed verifier
+  assertions until a real network/API boundary exists.
+- Claude focused re-review returned PASS. Both blockers are closed, no new
+  blockers were introduced, and Claude approved SS-003 for PR creation.
+- Final pre-PR verification passed: `npm run privacy:verify`,
+  `npm run compliance:verify`, `npm run build`, and
+  `git diff --cached --check`.
+- PR #3 created: https://github.com/ajason13/swing-sync/pull/3
+- Observability remains unchanged because SS-003 adds no runtime video,
+  storage, network, model, telemetry, or remote-sharing behavior.
+
 ## Completed Task
 
 `SS-002 Draft sports injury waiver and educational-use terms` merged in
