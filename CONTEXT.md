@@ -80,7 +80,11 @@ SS-004 implementation status through 2026-06-06:
 - Observability is intentionally unchanged. SS-004 adds no telemetry, remote
   logging, remote calls, video handling, model behavior, or remote sharing.
 - PR #5 created: https://github.com/ajason13/swing-sync/pull/5
-- SS-004 remains in development pending PR review and merge.
+- A self-contained voluntary Claude Chat adversarial audit handoff is available
+  at `docs/ss-004-claude-audit-prompt.md`. It embeds the current runtime, PWA,
+  test, configuration, protected-boundary, and verification context because
+  Claude Chat has no filesystem or GitHub access.
+- SS-004 is in final audit pending Claude's verdict and PR merge.
 
 ## Completed Task
 
