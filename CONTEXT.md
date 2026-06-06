@@ -79,7 +79,8 @@ SS-004 implementation status through 2026-06-06:
   `git diff --check`.
 - Observability is intentionally unchanged. SS-004 adds no telemetry, remote
   logging, remote calls, video handling, model behavior, or remote sharing.
-- PR creation is pending final staging and review.
+- PR #5 created: https://github.com/ajason13/swing-sync/pull/5
+- SS-004 remains in development pending PR review and merge.
 
 ## Completed Task
 
