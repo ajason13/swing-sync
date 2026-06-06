@@ -43,3 +43,14 @@ acknowledgement.
 Gemini Deep Research disposition for SS-002 is tracked in
 [docs/ss-002-research-disposition.md](./docs/ss-002-research-disposition.md)
 so research recommendations stay separate from approved implementation scope.
+
+## Privacy Architecture
+
+SS-003 privacy architecture and video data lifecycle draft guidance lives in
+[docs/privacy-architecture.md](./docs/privacy-architecture.md). It defines
+local-first data classes, default no-upload behavior for raw swing video,
+export and optional remote-sharing boundaries, and deletion-copy limits before
+video analysis features are implemented.
+
+Gemini Deep Research disposition for SS-003 is tracked in
+[docs/ss-003-research-disposition.md](./docs/ss-003-research-disposition.md).
