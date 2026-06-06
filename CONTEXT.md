@@ -1,14 +1,14 @@
 # Swing Sync Context
 
-Last updated: 2026-06-05
+Last updated: 2026-06-06
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/2
-- Latest merge commit: `568ca28dc84e5c0f04894ad7b272bae57fa4bc69`
-- Current completed task: `SS-002 Draft sports injury waiver and educational-use terms`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/3
+- Latest merge commit: `28341d6df34774805fab341f342500d583c0986b`
+- Current completed task: `SS-003 Define privacy architecture and video data lifecycle`
 
 ## Completed Foundation
 
@@ -44,34 +44,24 @@ npm run build
 npm run compliance:verify
 ```
 
-## Active Task
+## Next Task
 
-`SS-003 Define privacy architecture and video data lifecycle` is in progress
-on branch `ss-003-privacy-lifecycle`.
+`SS-004 Scaffold mobile-first PWA and local analysis shell` is next in the
+Notion backlog on branch `ss-004-pwa-shell`.
 
 Acceptance criteria from Notion:
 
-- Document local-first processing flow.
-- Define what data can be exported or sent to model APIs.
-- Ensure raw video is not uploaded by default.
-- Add user-facing copy for consent and deletion behavior.
+- App opens directly to capture/upload analysis flow.
+- Layout works on mobile and desktop.
+- Includes placeholder states for capture, processing, review, and export.
+- Basic unit and smoke test setup exists.
 
-Planned/active artifacts:
+## Completed Task
 
-- `docs/ss-003-gemini-research-prompt.md`: self-contained Gemini Deep Research
-  prompt with embedded repository context because Gemini has no filesystem or
-  GitHub access.
-- `docs/ss-003-research-disposition.md`: Gemini research disposition that
-  records adopted, revised, deferred, and rejected recommendations.
-- `docs/ss-003-claude-rereview-prompt.md`: focused self-contained Claude Chat
-  prompt for re-reviewing the fixes from the initial adversarial audit.
-- `docs/privacy-architecture.md`: draft local-first privacy architecture, data
-  classes, lifecycle, export/model-sharing policy, deletion-copy limits, and
-  future implementation gates.
-- `scripts/verify-privacy-boundaries.js`: privacy-boundary regression checks
-  wired into `npm run compliance:verify`.
+`SS-003 Define privacy architecture and video data lifecycle` merged in
+[PR #3](https://github.com/ajason13/swing-sync/pull/3) on 2026-06-06.
 
-SS-003 status on 2026-06-05:
+SS-003 status through 2026-06-06:
 
 - Gemini Deep Research response received and distilled into
   `docs/ss-003-research-disposition.md`.
@@ -91,10 +81,10 @@ SS-003 status on 2026-06-05:
   `npm run compliance:verify`, `npm run build`, and
   `git diff --cached --check`.
 - PR #3 created: https://github.com/ajason13/swing-sync/pull/3
+- PR #3 merged with merge commit
+  `28341d6df34774805fab341f342500d583c0986b`.
 - Observability remains unchanged because SS-003 adds no runtime video,
   storage, network, model, telemetry, or remote-sharing behavior.
-
-## Completed Task
 
 `SS-002 Draft sports injury waiver and educational-use terms` merged in
 [PR #2](https://github.com/ajason13/swing-sync/pull/2) on 2026-06-05.
@@ -162,6 +152,16 @@ Remaining SS-002 pre-release gate:
   patterns. Exact phrase checks alone create false confidence.
 - Future AI-coaching stories should convert deferred adversarial prompts into
   tests before any model output is exposed.
+- Browser-chat research and audit prompts must embed any required repository
+  context because Gemini and Claude Chat do not have filesystem or GitHub
+  access.
+- Initial audit prompts may include broad context, but re-review prompts should
+  contain only prior findings, applied fixes, relevant current snippets, and a
+  focused diff. Duplicating full contents and a full diff can cause the auditor
+  to treat the handoff as repeated stale input.
+- Keep the original audit prompt and focused re-review prompt in separate,
+  clearly named files. Mark superseded prompt files with a do-not-paste
+  redirect.
 
 ## Operating Notes
 
