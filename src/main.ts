@@ -9,12 +9,18 @@ import {
 const app = document.querySelector<HTMLDivElement>("#app");
 // Minimal SS-002 scaffold state; not a durable or legally audited consent record.
 const consentStorageKey = "swing-sync:safety-consent:v1";
+let consentStorageFailed = false;
 let activeStep: WorkflowStepId = "capture";
 
 function hasSafetyConsent(): boolean {
+  if (consentStorageFailed) {
+    return false;
+  }
+
   try {
     return window.localStorage.getItem(consentStorageKey) === "accepted";
   } catch {
+    consentStorageFailed = true;
     return false;
   }
 }
@@ -28,7 +34,7 @@ function setSafetyConsent(accepted: boolean): void {
 
     window.localStorage.removeItem(consentStorageKey);
   } catch {
-    // Storage failures intentionally leave the analysis path fail closed.
+    consentStorageFailed = true;
   }
 }
 

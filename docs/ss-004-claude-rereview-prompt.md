@@ -26,14 +26,15 @@ evidence embedded below. Do not repeat the initial broad audit.
 ### Applied Fixes
 
 - `hasSafetyConsent()` now catches storage read failures and returns `false`.
-- `setSafetyConsent()` catches storage write/removal failures and intentionally
-  leaves the analysis path fail closed.
+- `setSafetyConsent()` catches storage write/removal failures and latches a
+  session-level failure state so previously stored consent cannot remain active
+  after a failed removal.
 - The runtime consent guard rerenders an inline status message and focuses the
   acknowledgement checkbox.
 - The service worker no longer advertises a broken offline fallback or caches
   an incomplete shell. It only activates the current scaffold worker.
-- Playwright coverage now forces localStorage read/write exceptions and verifies
-  the checkbox resets unchecked and Begin analysis remains disabled.
+- Playwright coverage now forces localStorage read/write/removal exceptions and
+  verifies the checkbox resets unchecked and Begin analysis remains disabled.
 - Playwright coverage now forces the runtime guard path, verifies the inline
   status message, verifies checkbox focus, and verifies the workflow remains on
   Capture or upload.
@@ -52,10 +53,17 @@ evidence embedded below. Do not repeat the initial broad audit.
 ### Current `src/main.ts` Fixes
 
 ```typescript
+let consentStorageFailed = false;
+
 function hasSafetyConsent(): boolean {
+  if (consentStorageFailed) {
+    return false;
+  }
+
   try {
     return window.localStorage.getItem(consentStorageKey) === "accepted";
   } catch {
+    consentStorageFailed = true;
     return false;
   }
 }
@@ -69,7 +77,7 @@ function setSafetyConsent(accepted: boolean): void {
 
     window.localStorage.removeItem(consentStorageKey);
   } catch {
-    // Storage failures intentionally leave the analysis path fail closed.
+    consentStorageFailed = true;
   }
 }
 ```
@@ -116,6 +124,25 @@ test("fails closed when local consent storage is unavailable", async ({ page }) 
   const consent = page.getByRole("checkbox");
   const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
   await expect(beginAnalysis).toBeDisabled();
+
+  await consent.click();
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+});
+
+test("fails closed when stored consent cannot be removed", async ({ page }) => {
+  await page.getByRole("checkbox").check();
+  await page.addInitScript(() => {
+    Storage.prototype.removeItem = () => {
+      throw new DOMException("Storage is unavailable", "SecurityError");
+    };
+  });
+  await page.reload();
+
+  const consent = page.getByRole("checkbox");
+  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
+  await expect(consent).toBeChecked();
+  await expect(beginAnalysis).toBeEnabled();
 
   await consent.click();
   await expect(consent).not.toBeChecked();
@@ -239,11 +266,63 @@ diff --git a/test/smoke/app.spec.ts b/test/smoke/app.spec.ts
 +});
 ```
 
+### Additional Storage-Removal Hardening Diff
+
+The focused fix review found that a failed `removeItem()` could leave a
+previously stored `"accepted"` value readable. This additional fail-closed latch
+and regression test were applied before re-review:
+
+```diff
+diff --git a/src/main.ts b/src/main.ts
+@@
++let consentStorageFailed = false;
+ let activeStep: WorkflowStepId = "capture";
+
+ function hasSafetyConsent(): boolean {
++  if (consentStorageFailed) {
++    return false;
++  }
++
+   try {
+     return window.localStorage.getItem(consentStorageKey) === "accepted";
+   } catch {
++    consentStorageFailed = true;
+     return false;
+   }
+@@
+     window.localStorage.removeItem(consentStorageKey);
+   } catch {
+-    // Storage failures intentionally leave the analysis path fail closed.
++    consentStorageFailed = true;
+   }
+ }
+diff --git a/test/smoke/app.spec.ts b/test/smoke/app.spec.ts
+@@
++test("fails closed when stored consent cannot be removed", async ({ page }) => {
++  await page.getByRole("checkbox").check();
++  await page.addInitScript(() => {
++    Storage.prototype.removeItem = () => {
++      throw new DOMException("Storage is unavailable", "SecurityError");
++    };
++  });
++  await page.reload();
++
++  const consent = page.getByRole("checkbox");
++  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
++  await expect(consent).toBeChecked();
++  await expect(beginAnalysis).toBeEnabled();
++
++  await consent.click();
++  await expect(consent).not.toBeChecked();
++  await expect(beginAnalysis).toBeDisabled();
++});
+```
+
 ### Verification After Fixes
 
 All commands ran under Node `22.22.3`:
 
-- `npm run test:smoke` -> 10 passed across Desktop Chrome and Pixel 5 projects.
+- `npm run test:smoke` -> 12 passed across Desktop Chrome and Pixel 5 projects.
 - `npm run test:unit` -> 2 passed.
 - `npm run build` -> passed.
 - `npm run compliance:verify` -> passed, including safety and privacy verifiers.

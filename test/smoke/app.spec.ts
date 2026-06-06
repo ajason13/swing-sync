@@ -40,6 +40,25 @@ test("fails closed when local consent storage is unavailable", async ({ page }) 
   await expect(beginAnalysis).toBeDisabled();
 });
 
+test("fails closed when stored consent cannot be removed", async ({ page }) => {
+  await page.getByRole("checkbox").check();
+  await page.addInitScript(() => {
+    Storage.prototype.removeItem = () => {
+      throw new DOMException("Storage is unavailable", "SecurityError");
+    };
+  });
+  await page.reload();
+
+  const consent = page.getByRole("checkbox");
+  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
+  await expect(consent).toBeChecked();
+  await expect(beginAnalysis).toBeEnabled();
+
+  await consent.click();
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+});
+
 test("runtime consent guard reports inline and focuses the acknowledgement", async ({ page }) => {
   const consent = page.getByRole("checkbox");
   const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
