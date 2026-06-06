@@ -90,6 +90,7 @@ SS-003 status on 2026-06-05:
 - Final pre-PR verification passed: `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and
   `git diff --cached --check`.
+- PR #3 created: https://github.com/ajason13/swing-sync/pull/3
 - Observability remains unchanged because SS-003 adds no runtime video,
   storage, network, model, telemetry, or remote-sharing behavior.
 
