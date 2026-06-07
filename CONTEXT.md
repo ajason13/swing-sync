@@ -77,19 +77,40 @@ SS-005 coordination status through 2026-06-07:
 - The self-contained Gemini Deep Research handoff is
   `docs/ss-005-gemini-research-prompt.md`.
 - `docs/ss-005-research-disposition.md` records initial primary-source checks
-  and unresolved blocking decisions. It must be completed after the Gemini
+  and Codex Adopt / Revise / Defer / Reject decisions after the Gemini
   response.
 - Research handoff commit: `b0a6dca` (`Prepare SS-005 research handoff`).
 - Pre-handoff verification passed on Node 22: `npm run build`,
   `npm run compliance:verify`, and `git diff --check`.
+- Gemini returned a conditional-GO proposal, but Codex rejected its conclusion
+  that every blocker was resolved. Current MediaPipe terms explicitly describe
+  provider metrics and informed-consent responsibility; the inspected exact
+  0.10.35 npm tarball contains compiled WASM and lacks packaged LICENSE/NOTICE
+  files; explicit model redistribution/local-serving/caching rights were not
+  established; and no generated fixture/provenance exists.
+- Exact `@mediapipe/tasks-vision@0.10.35` and Pose Landmarker Full float16
+  version 1 are blocked candidates, not approved dependencies/assets.
+- `docs/models-licensing.md`, `docs/licensing.md`, and
+  `docs/privacy-architecture.md` record the current provider-metrics,
+  compiled-binary, model-rights, consent, and network-behavior gates.
+- Claude pre-implementation QA-planning handoff:
+  `docs/ss-005-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`. Implementation remains blocked
+  pending Claude's response and closure of every implementation-start blocker.
+- Post-disposition Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
 - No SDK dependency, model/WASM asset, fixture video, runtime implementation,
   or asset fetch/cache behavior has been added.
-- Observability decision is pending specification. Any SS-005 diagnostics must
-  remain local and must not log raw frames, landmarks, or sensitive user data.
+- Observability decision: use only local, sanitized lifecycle/error states
+  needed to debug initialization and inference. Do not log raw frames,
+  landmarks, media characteristics, or sensitive user data.
 
-Next owner: Gemini Deep Research. Paste
-`docs/ss-005-gemini-research-prompt.md`, then return the complete response to
-Codex for verification and disposition before Claude QA planning.
+Next owner: Claude QA Planning. Paste
+`docs/ss-005-claude-qa-planning-prompt.md`, then return Claude's complete
+response to Codex. Do not begin implementation.
 
 ## Completed Task
 

@@ -163,3 +163,26 @@ for:
 - model SDK telemetry and destination origins; and
 - CSP, service worker, and runtime network guard behavior if those controls are
   implemented.
+
+## SS-005 MediaPipe Provider-Metrics Gate
+
+Current MediaPipe API terms reviewed on 2026-06-07 state that Solution APIs
+process input media on-device but contact Google servers from time to time and
+send performance, utilization, app/input metadata, and system-environment
+metrics. The terms assign informed-consent responsibility to the app developer.
+
+This provider behavior is not approved for Swing Sync. Local WASM/model paths,
+CSP, service-worker rules, and network tests may reduce or detect outbound
+activity, but must not be described as proof that provider metrics can never
+occur or that blocking them satisfies provider terms.
+
+Before MediaPipe integration begins, Swing Sync must document:
+
+- whether the provider metrics terms are compatible with the local-first
+  product boundary;
+- whether separate informed consent is required and approved;
+- observed and attempted network requests during initialization and inference;
+- whether the SDK remains functional when all external requests are blocked;
+  and
+- whether an alternative runtime is required if the provider boundary cannot be
+  reconciled.

@@ -151,6 +151,14 @@ Optional model API SDKs require two independent approvals:
 - provider service terms must permit Swing Sync's intended local-first,
   opt-in data sharing behavior.
 
+For SS-005, `@mediapipe/tasks-vision@0.10.35` is a pinned candidate only, not an
+approved production dependency. Its npm metadata reports Apache-2.0, but the
+inspected package contains compiled WASM, does not package LICENSE or NOTICE
+files, and is subject to current MediaPipe API terms that describe provider
+metrics collection and user-consent responsibility. Approval remains blocked
+until compiled-binary obligations, notices, provider terms, runtime network
+behavior, and consent requirements are resolved.
+
 ## Trademark Timing
 
 The name "Swing Sync" requires a preliminary trademark search before the
