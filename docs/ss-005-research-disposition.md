@@ -145,8 +145,8 @@ authority.
 | Fixture provenance/license/consent | Unresolved | Generated non-identifying video is preferred, but no fixture or generation provenance is approved. |
 | Volatile/local raw-frame lifecycle | Resolved for specification | Transfer/close bitmaps, revoke object URLs, close task/worker, and prohibit raw-frame persistence. |
 | Landmark and metadata schema | Resolved for specification | Retain complete 33 normalized/world landmarks and returned `x`, `y`, `z`, and `visibility`; do not invent per-landmark presence. |
-| Correct SS-005 test-case coverage | Resolved for planning | `SS-TC-009` has been revised from Claude QA findings; execution remains blocked on approved assets/fixture. |
-| Non-blocking loading/inference architecture | Resolved for specification | Normative worker contract and behavioral responsiveness gate are in `docs/ss-005-preimplementation-spec.md`. |
+| Correct SS-005 test-case coverage | Closed by focused QA re-review | `SS-TC-009` has been revised; execution remains blocked on approved assets/fixture. |
+| Non-blocking loading/inference architecture | Closed by focused QA re-review | Normative worker contract and behavioral responsiveness gate are in `docs/ss-005-preimplementation-spec.md`. |
 
 ## Implementation Gate
 

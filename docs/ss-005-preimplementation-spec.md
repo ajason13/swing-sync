@@ -146,6 +146,12 @@ Tests must distinguish:
 The evidence proves behavior observed in controlled runs, not that an SDK can
 never issue a request.
 
+Production behavior for an observed provider-metrics request remains deferred
+until the provider-metrics blocker is resolved. When that decision closes, this
+contract must specify whether the approved runtime fails closed, requires an
+approved disclosure/consent path, or is replaced. Do not silently allow,
+silently block, or silently ignore an unexpected provider request.
+
 ## Responsiveness Contract
 
 During initialization:

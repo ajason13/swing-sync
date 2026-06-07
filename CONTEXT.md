@@ -122,6 +122,23 @@ SS-005 coordination status through 2026-06-07:
   `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
   `git diff --check`.
 - Claude QA findings response and focused re-review handoff commit: `4d616ee`.
+- Claude focused QA re-review returned FAIL while confirming the revised
+  technical specification is sound. Worker contract, responsiveness contract,
+  revised `SS-TC-009`, absence of returned per-landmark presence, and wrapper
+  timestamp behavior are closed.
+- Four blockers remain open: provider metrics decision, compiled-binary
+  obligations/notices, model rights/delivery, and an approved empirically
+  validated fixture/provenance record. Fixture validation depends on resolution
+  of the provider/model blockers.
+- `docs/ss-005-claude-qa-rereview-response.md` records the focused result.
+- The pre-implementation spec now tracks the deferred production response to an
+  observed provider-metrics request. No behavior may silently allow, block, or
+  ignore it before the provider decision is approved.
+- Post-focused-re-review Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
 - Post-disposition Node 22 verification passed: `npm run build`,
   `npm run compliance:verify`, `npm run safety:verify`,
   `npm run privacy:verify`, `npm run license:audit`,
@@ -133,10 +150,11 @@ SS-005 coordination status through 2026-06-07:
   needed to debug initialization and inference. Do not log raw frames,
   landmarks, media characteristics, or sensitive user data.
 
-Next owner: Claude focused QA re-review. Paste
-`docs/ss-005-claude-qa-rereview-prompt.md`, then return Claude's complete
-response to Codex. Critical external provider/rights/fixture blockers remain;
-do not begin implementation.
+Next owner: maintainer/human legal and compliance decision makers. Resolve
+provider metrics compatibility, compiled-binary obligations/notices, and model
+rights/delivery. Then approve and empirically validate a generated fixture.
+Return the evidence and decisions to Codex for a third focused Claude QA review.
+Do not begin implementation.
 
 ## Completed Task
 

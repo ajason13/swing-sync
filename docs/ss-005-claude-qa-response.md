@@ -57,3 +57,10 @@ and requires thresholds to be recorded separately.
 - focused Claude PASS after those blockers are resolved.
 
 Implementation remains prohibited.
+
+## Focused Re-Review Result
+
+Claude's focused re-review confirmed B-5, B-6, B-7, the per-landmark presence
+correction, and wrapper timestamp contract are closed. It returned FAIL because
+B-1 through B-4 remain open. See
+`docs/ss-005-claude-qa-rereview-response.md`.
