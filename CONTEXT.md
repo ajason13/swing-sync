@@ -79,6 +79,9 @@ SS-005 coordination status through 2026-06-07:
 - `docs/ss-005-research-disposition.md` records initial primary-source checks
   and unresolved blocking decisions. It must be completed after the Gemini
   response.
+- Research handoff commit: `b0a6dca` (`Prepare SS-005 research handoff`).
+- Pre-handoff verification passed on Node 22: `npm run build`,
+  `npm run compliance:verify`, and `git diff --check`.
 - No SDK dependency, model/WASM asset, fixture video, runtime implementation,
   or asset fetch/cache behavior has been added.
 - Observability decision is pending specification. Any SS-005 diagnostics must
