@@ -6,8 +6,8 @@ Last updated: 2026-06-06
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/3
-- Latest merge commit: `28341d6df34774805fab341f342500d583c0986b`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/4
+- Latest merge commit: `d419e0242f783e626ce6d11951b0204ee7474a9c`
 - Current completed task: `SS-003 Define privacy architecture and video data lifecycle`
 
 ## Completed Foundation
@@ -44,10 +44,10 @@ npm run build
 npm run compliance:verify
 ```
 
-## Next Task
+## Active Task
 
-`SS-004 Scaffold mobile-first PWA and local analysis shell` is next in the
-Notion backlog on branch `ss-004-pwa-shell`.
+`SS-004 Scaffold mobile-first PWA and local analysis shell` is in development
+on branch `ss-004-pwa-shell`.
 
 Acceptance criteria from Notion:
 
@@ -55,6 +55,49 @@ Acceptance criteria from Notion:
 - Layout works on mobile and desktop.
 - Includes placeholder states for capture, processing, review, and export.
 - Basic unit and smoke test setup exists.
+
+SS-004 implementation status through 2026-06-06:
+
+- The app opens directly to a responsive capture/upload workflow rather than a
+  marketing page.
+- Capture/upload, processing, review, and export are clearly labeled
+  placeholders and do not access, store, analyze, export, or remotely share
+  video.
+- The existing local safety acknowledgement and runtime guard continue to block
+  the first analysis action path until consent is checked.
+- PWA scaffold metadata and a same-origin navigation shell service worker are
+  included without adding remote endpoints.
+- Vitest unit coverage validates the workflow model. Playwright smoke coverage
+  validates the fail-closed consent path, all placeholder states, and mobile
+  viewport overflow across desktop and Pixel 5 projects.
+- Desktop and Pixel 5 full-page screenshots were reviewed with no text/control
+  overlap; the mobile workflow navigation was revised to show all four states.
+- Final Node 22 verification passed: `npm run test:unit`,
+  `npm run test:smoke`, `npm run build`, `npm run compliance:verify`,
+  `npm run license:audit`, `npm run verify:bundle-license-fixture`,
+  `npm run sbom:generate`, `npm audit --omit=dev --audit-level=high`, and
+  `git diff --check`.
+- Observability is intentionally unchanged. SS-004 adds no telemetry, remote
+  logging, remote calls, video handling, model behavior, or remote sharing.
+- PR #5 created: https://github.com/ajason13/swing-sync/pull/5
+- A self-contained voluntary Claude Chat adversarial audit handoff is available
+  at `docs/ss-004-claude-audit-prompt.md`. It embeds the current runtime, PWA,
+  test, configuration, protected-boundary, and verification context because
+  Claude Chat has no filesystem or GitHub access.
+- Claude returned `PASS WITH MINOR FIXES` and conditional merge approval. The
+  three required fixes were applied: consent storage failures now fail closed,
+  the runtime guard reports inline and focuses the acknowledgement, and the
+  incomplete service-worker offline cache was removed.
+- Blocker-linked Playwright coverage was added for storage denial and the
+  accessible runtime guard. A storage-failure latch and removal-failure
+  regression case ensure previously stored consent cannot remain active after a
+  failed removal. Final verification after fixes passed with 12 smoke cases, 2
+  unit cases, build, compliance, license, bundle-fixture, SBOM, and diff checks.
+- The original audit prompt is marked superseded. Use the focused
+  `docs/ss-004-claude-rereview-prompt.md` for Claude's final sign-off.
+- Claude focused re-review returned PASS. All three prior blockers are closed,
+  no new merge blockers were introduced, and Claude approved SS-004 for merge.
+- SS-004 is approved and pending PR #5 merge.
 
 ## Completed Task
 

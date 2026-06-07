@@ -54,3 +54,27 @@ video analysis features are implemented.
 
 Gemini Deep Research disposition for SS-003 is tracked in
 [docs/ss-003-research-disposition.md](./docs/ss-003-research-disposition.md).
+
+## Local Application Shell
+
+SS-004 provides a mobile-first PWA shell that opens directly to capture/upload,
+processing, review, and export placeholder states. These states do not access,
+store, analyze, export, or remotely share video. The existing local safety
+acknowledgement still blocks the first analysis action path.
+
+Use Node 22 and start the local app:
+
+```bash
+nvm use
+npm run dev
+```
+
+Run the shell's unit and browser smoke tests:
+
+```bash
+npm run test:unit
+npm run test:smoke
+```
+
+Install the smoke-test browser once per development environment with
+`npx playwright install chromium`.

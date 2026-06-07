@@ -1,0 +1,9 @@
+{
+  "name": "Swing Sync",
+  "short_name": "Swing Sync",
+  "description": "Local-first golf swing analysis workflow scaffold.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f1",
+  "theme_color": "#f3f5f1"
+}
