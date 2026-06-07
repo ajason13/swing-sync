@@ -98,6 +98,29 @@ SS-005 coordination status through 2026-06-07:
 - Notion moved to `2. QA Planning (Claude)`. Implementation remains blocked
   pending Claude's response and closure of every implementation-start blocker.
 - Gemini disposition and Claude QA-planning handoff commit: `48a7376`.
+- Claude QA Planning returned FAIL with six implementation-start blockers.
+  Codex accepted the provider-metrics, compiled-binary, model-rights, fixture,
+  worker-contract, responsiveness-contract, and tracker-coverage concerns while
+  revising technically overbroad recommendations.
+- `docs/ss-005-preimplementation-spec.md` now defines the normative scope,
+  conservative maintainer decisions, exact candidate result schema, worker
+  protocol, fixture provenance, network phases, responsiveness behavior, and
+  implementation-start gate.
+- Exact 0.10.35 API verification corrected the metadata contract: returned
+  normalized/world landmarks expose `x`, `y`, `z`, and `visibility`, but not
+  per-landmark `presence`. Presence remains a configured threshold.
+- `docs/ss-005-claude-qa-response.md` records each finding as accepted, revised,
+  or fixed. SS-005 remains `2. QA Planning (Claude)`.
+- `SS-TC-009` was revised in Notion to match the exact candidate API, worker
+  contract, network phases, fixture prerequisite, responsiveness behavior, and
+  cleanup/privacy coverage.
+- Focused Claude QA re-review handoff:
+  `docs/ss-005-claude-qa-rereview-prompt.md`.
+- Post-Claude-response Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
 - Post-disposition Node 22 verification passed: `npm run build`,
   `npm run compliance:verify`, `npm run safety:verify`,
   `npm run privacy:verify`, `npm run license:audit`,
@@ -109,9 +132,10 @@ SS-005 coordination status through 2026-06-07:
   needed to debug initialization and inference. Do not log raw frames,
   landmarks, media characteristics, or sensitive user data.
 
-Next owner: Claude QA Planning. Paste
-`docs/ss-005-claude-qa-planning-prompt.md`, then return Claude's complete
-response to Codex. Do not begin implementation.
+Next owner: Claude focused QA re-review. Paste
+`docs/ss-005-claude-qa-rereview-prompt.md`, then return Claude's complete
+response to Codex. Critical external provider/rights/fixture blockers remain;
+do not begin implementation.
 
 ## Completed Task
 

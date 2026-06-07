@@ -1,8 +1,8 @@
 # SS-005 Research Disposition
 
-Status: **Gemini response received and independently reviewed on 2026-06-07.
-Implementation remains blocked pending Claude QA planning and unresolved model,
-provider-metrics, asset-rights, and fixture decisions.**
+Status: **Gemini response and Claude QA planning reviewed on 2026-06-07.
+Claude returned FAIL. Implementation remains blocked on provider metrics,
+compiled-binary obligations, model rights, and fixture approval.**
 
 Gemini recommended a conditional GO using `@mediapipe/tasks-vision@0.10.35`,
 the Pose Landmarker Full float16 version 1 bundle, local WASM/model assets, a
@@ -63,8 +63,9 @@ authority.
 - Transfer `ImageBitmap` inputs where supported and close each bitmap in every
   success, failure, cancellation, and worker-termination path.
 - Retain the complete 33-landmark normalized and world result arrays, including
-  each returned `x`, `y`, `z`, `visibility`, and `presence` value. Treat
-  configuration thresholds separately from returned per-landmark metadata.
+  each returned `x`, `y`, `z`, and `visibility` value. Exact candidate
+  declarations do not expose per-landmark `presence`; treat presence,
+  detection, and tracking thresholds separately from returned metadata.
 - Keep raw video references, decoded frames, and image buffers volatile and
   local. Revoke object URLs and close the task/worker resources.
 - Use `SS-TC-001` as complementary local extraction/no-upload coverage and
@@ -143,9 +144,9 @@ authority.
 | No-network proof after local assets | Partially resolved | Playwright must block/record external requests while initialization and inference still succeed; intermittent provider behavior remains a risk. |
 | Fixture provenance/license/consent | Unresolved | Generated non-identifying video is preferred, but no fixture or generation provenance is approved. |
 | Volatile/local raw-frame lifecycle | Resolved for specification | Transfer/close bitmaps, revoke object URLs, close task/worker, and prohibit raw-frame persistence. |
-| Landmark and metadata schema | Resolved for specification | Retain complete 33 normalized/world landmarks and returned presence/visibility metadata; no SS-005 filtering. |
-| Correct SS-005 test-case coverage | Partially resolved | `SS-TC-009` exists; Claude QA refinement is required. |
-| Non-blocking loading/inference architecture | Resolved for specification | Dedicated worker with bounded queue/backpressure and teardown; responsiveness must be tested. |
+| Landmark and metadata schema | Resolved for specification | Retain complete 33 normalized/world landmarks and returned `x`, `y`, `z`, and `visibility`; do not invent per-landmark presence. |
+| Correct SS-005 test-case coverage | Resolved for planning | `SS-TC-009` has been revised from Claude QA findings; execution remains blocked on approved assets/fixture. |
+| Non-blocking loading/inference architecture | Resolved for specification | Normative worker contract and behavioral responsiveness gate are in `docs/ss-005-preimplementation-spec.md`. |
 
 ## Implementation Gate
 
@@ -153,8 +154,7 @@ Do not add the MediaPipe dependency, model/WASM assets, fixture video, fetch or
 cache behavior, CSP changes, service-worker caching, or runtime implementation
 until:
 
-- Claude QA planning reviews this disposition and identifies no unresolved
-  implementation-start blocker;
+- Claude re-reviews resolved blockers and returns PASS;
 - the maintainer explicitly decides whether MediaPipe API metrics terms are
   compatible with Swing Sync, including any required user consent;
 - exact SDK compiled-binary rights/notices and exact model redistribution/local
