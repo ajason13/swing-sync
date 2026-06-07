@@ -47,7 +47,7 @@ npm run compliance:verify
 ## Next Task
 
 `SS-005 Integrate MediaPipe Pose Landmarker in browser video mode` is next in
-the Notion backlog on branch `ss-005-mediapipe-pose`.
+the delivery workflow on branch `ss-005-mediapipe-pose`.
 
 Acceptance criteria from Notion:
 
@@ -62,8 +62,31 @@ implementation. The current `SS-TC-005` Notion test case describes swing-phase
 correction rather than Pose Landmarker integration and must be corrected or
 replaced before claiming acceptance coverage.
 
-Start the next Codex session with
-`docs/agent-guidance/ss-005-new-codex-session-prompt.md`.
+SS-005 coordination status through 2026-06-07:
+
+- Local `main` was confirmed current at `bf650f2`, including PR #5 merge
+  `1d4aaea` and post-merge context commit `57cda37`.
+- Branch `ss-005-mediapipe-pose` was created from updated `main`.
+- Notion acceptance criteria, branch, empty PR field, and initial
+  `0. Backlog` status were reconfirmed. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- `SS-TC-005` was confirmed invalid for this story. `SS-TC-001` provides
+  complementary local extraction/no-upload coverage but does not cover all
+  SS-005 criteria. Dedicated `SS-TC-009` was created for non-blocking loading,
+  metadata retention, timestamps, cleanup, and post-asset network assertions.
+- The self-contained Gemini Deep Research handoff is
+  `docs/ss-005-gemini-research-prompt.md`.
+- `docs/ss-005-research-disposition.md` records initial primary-source checks
+  and unresolved blocking decisions. It must be completed after the Gemini
+  response.
+- No SDK dependency, model/WASM asset, fixture video, runtime implementation,
+  or asset fetch/cache behavior has been added.
+- Observability decision is pending specification. Any SS-005 diagnostics must
+  remain local and must not log raw frames, landmarks, or sensitive user data.
+
+Next owner: Gemini Deep Research. Paste
+`docs/ss-005-gemini-research-prompt.md`, then return the complete response to
+Codex for verification and disposition before Claude QA planning.
 
 ## Completed Task
 
