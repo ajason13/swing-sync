@@ -95,7 +95,9 @@ SS-004 implementation status through 2026-06-06:
   unit cases, build, compliance, license, bundle-fixture, SBOM, and diff checks.
 - The original audit prompt is marked superseded. Use the focused
   `docs/ss-004-claude-rereview-prompt.md` for Claude's final sign-off.
-- SS-004 is in final audit pending Claude's verdict and PR merge.
+- Claude focused re-review returned PASS. All three prior blockers are closed,
+  no new merge blockers were introduced, and Claude approved SS-004 for merge.
+- SS-004 is approved and pending PR #5 merge.
 
 ## Completed Task
 
