@@ -44,6 +44,27 @@ npm run build
 npm run compliance:verify
 ```
 
+## Next Task
+
+`SS-005 Integrate MediaPipe Pose Landmarker in browser video mode` is next in
+the Notion backlog on branch `ss-005-mediapipe-pose`.
+
+Acceptance criteria from Notion:
+
+- Pose Landmarker loads without blocking the UI.
+- Landmarks are extracted for fixture video frames.
+- Confidence/visibility metadata is retained.
+- Network activity is not required after model assets are available.
+
+SS-005 is a sensitive model/SDK, privacy, licensing, and compliance story.
+Gemini research/spec disposition and Claude QA planning are required before
+implementation. The current `SS-TC-005` Notion test case describes swing-phase
+correction rather than Pose Landmarker integration and must be corrected or
+replaced before claiming acceptance coverage.
+
+Start the next Codex session with
+`docs/agent-guidance/ss-005-new-codex-session-prompt.md`.
+
 ## Completed Task
 
 `SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
