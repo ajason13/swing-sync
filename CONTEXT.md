@@ -6,9 +6,9 @@ Last updated: 2026-06-06
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/4
-- Latest merge commit: `d419e0242f783e626ce6d11951b0204ee7474a9c`
-- Current completed task: `SS-003 Define privacy architecture and video data lifecycle`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/5
+- Latest merge commit: `1d4aaea207c57f93bf7aa3c96d56cf58059d603a`
+- Current completed task: `SS-004 Scaffold mobile-first PWA and local analysis shell`
 
 ## Completed Foundation
 
@@ -44,10 +44,10 @@ npm run build
 npm run compliance:verify
 ```
 
-## Active Task
+## Completed Task
 
-`SS-004 Scaffold mobile-first PWA and local analysis shell` is in development
-on branch `ss-004-pwa-shell`.
+`SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
+[PR #5](https://github.com/ajason13/swing-sync/pull/5) on 2026-06-06.
 
 Acceptance criteria from Notion:
 
@@ -97,7 +97,11 @@ SS-004 implementation status through 2026-06-06:
   `docs/ss-004-claude-rereview-prompt.md` for Claude's final sign-off.
 - Claude focused re-review returned PASS. All three prior blockers are closed,
   no new merge blockers were introduced, and Claude approved SS-004 for merge.
-- SS-004 is approved and pending PR #5 merge.
+- The final GitHub Actions compliance run passed after Claude sign-off.
+- PR #5 merged with merge commit
+  `1d4aaea207c57f93bf7aa3c96d56cf58059d603a`.
+- Observability remains unchanged because SS-004 adds no telemetry, remote
+  logging, remote calls, real video handling, model behavior, or remote sharing.
 
 ## Completed Task
 
