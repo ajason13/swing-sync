@@ -89,6 +89,9 @@ export class PoseSession {
   };
 
   private fail(code: string): void {
+    if (this.status === "error" || this.status === "closed") {
+      return;
+    }
     this.worker?.terminate();
     this.worker = undefined;
     this.frameInFlight = false;

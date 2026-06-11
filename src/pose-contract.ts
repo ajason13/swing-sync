@@ -35,7 +35,7 @@ interface ReturnedLandmark {
   x: number;
   y: number;
   z: number;
-  visibility?: number;
+  visibility: number;
 }
 
 export interface ReturnedPoseResult {
@@ -56,7 +56,7 @@ function copyLandmark(landmark: ReturnedLandmark): PoseLandmark {
     x: landmark.x,
     y: landmark.y,
     z: landmark.z,
-    visibility: landmark.visibility ?? 0
+    visibility: landmark.visibility
   };
 }
 

@@ -122,6 +122,30 @@ test("loads locally in a worker and extracts complete fixture landmarks", async 
   expect(storage.caches).toEqual([]);
 });
 
+test("completes local inference when external network is blocked from navigation start", async ({
+  page
+}) => {
+  const blockedExternal: string[] = [];
+  await page.route("**/*", (route) => {
+    const url = route.request().url();
+    if (url.startsWith("http://127.0.0.1:4174/") || url.startsWith("blob:")) {
+      void route.continue();
+      return;
+    }
+    blockedExternal.push(url);
+    void route.abort();
+  });
+
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+
+  await expect(page.locator("[data-pose-summary]")).toContainText("4 video frames processed", {
+    timeout: 30_000
+  });
+  expect(blockedExternal).toEqual([]);
+});
+
 test("reports a useful local error when model initialization fails", async ({ page }) => {
   await page.route("**/models/pose_landmarker_full-float16-v1.task", (route) => route.abort());
   await page.getByRole("checkbox").check();

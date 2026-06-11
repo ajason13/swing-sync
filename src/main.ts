@@ -304,6 +304,7 @@ function startPoseAnalysis(): void {
     "loadedmetadata",
     () => {
       const finalSample = Math.max(0, Math.min(video.duration - 0.001, 1.5));
+      // Keep sampled media timestamps distinct before converting them to milliseconds.
       pendingTimestamps = [...new Set([0, 0.5, 1, finalSample])]
         .filter((timestamp) => timestamp <= video.duration)
         .sort((a, b) => a - b);
@@ -333,6 +334,7 @@ async function processNextFrame(): Promise<void> {
 }
 
 function stopPoseAnalysis(): void {
+  // PoseSession owns its worker through the asynchronous teardown acknowledgement.
   poseSession?.teardown();
   poseSession = undefined;
   poseStatus = "closed";

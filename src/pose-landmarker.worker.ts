@@ -63,12 +63,6 @@ async function initialize(): Promise<void> {
 }
 
 function processFrame(bitmap: ImageBitmap, timestampMs: number): void {
-  if (state === "processing") {
-    bitmap.close();
-    respond({ type: "frame-dropped", reason: "BUSY", timestampMs });
-    return;
-  }
-
   if (state !== "ready" || !landmarker) {
     bitmap.close();
     failInference("INVALID_WORKER_STATE", timestampMs);

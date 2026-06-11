@@ -25,6 +25,12 @@ class FakeWorker {
       listener({ data: message } as MessageEvent<PoseWorkerResponse>);
     }
   }
+
+  emitEvent(type: "error" | "messageerror"): void {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener({} as MessageEvent<PoseWorkerResponse>);
+    }
+  }
 }
 
 function createHarness() {
@@ -96,6 +102,27 @@ describe("pose session controller", () => {
 
     session.initialize();
     session.abort("UNEXPECTED_NETWORK_BLOCKED");
+
+    expect(statuses).toEqual(["loading", "error"]);
+    expect(worker.terminated).toBe(true);
+  });
+
+  it("fails closed on a worker messageerror", () => {
+    const { worker, statuses, session } = createHarness();
+
+    session.initialize();
+    worker.emitEvent("messageerror");
+
+    expect(statuses).toEqual(["loading", "error"]);
+    expect(worker.terminated).toBe(true);
+  });
+
+  it("keeps repeated failure signals idempotent", () => {
+    const { worker, statuses, session } = createHarness();
+
+    session.initialize();
+    session.abort("UNEXPECTED_NETWORK_BLOCKED");
+    worker.emit({ type: "inference-error", code: "UNEXPECTED_NETWORK_BLOCKED" });
 
     expect(statuses).toEqual(["loading", "error"]);
     expect(worker.terminated).toBe(true);

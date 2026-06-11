@@ -1,5 +1,9 @@
 # SS-005 Claude Final Audit Prompt
 
+> **Completed: do not paste this prompt again.** Claude returned PASS. After
+> focused non-blocking fixes, use
+> `docs/ss-005-claude-final-rereview-prompt.md`.
+
 Paste this prompt into Claude Chat for the adversarial final implementation
 audit. Claude Chat has no filesystem or GitHub access; use only this embedded
 context.

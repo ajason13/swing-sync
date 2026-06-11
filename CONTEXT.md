@@ -226,6 +226,28 @@ audit:
 Next owner: Claude final adversarial implementation audit. Story must remain
 `4. Final Audit (Claude)` until explicit PASS.
 
+Claude returned final-audit PASS on 2026-06-11 and permitted PR preparation,
+with eight non-blocking findings. Codex applied focused fixes before PR:
+
+- removed misleading unreachable worker-side backpressure code;
+- removed the invented missing-visibility fallback;
+- made repeated session failure signals idempotent;
+- added worker `messageerror` and repeated-failure unit coverage;
+- pinned Vite ES worker output;
+- documented timestamp-deduplication and asynchronous teardown ownership; and
+- added the missing offline-from-start positive browser test.
+
+Post-fix verification passed: 11 unit tests, 24 desktop/mobile production
+browser tests, build, compliance, safety, privacy, license audit,
+bundle-license fixture, exact asset hashes, one-component production SBOM,
+zero production vulnerabilities, and `git diff --check`.
+
+Final audit response: `docs/ss-005-claude-audit-response.md`.
+Focused re-review prompt: `docs/ss-005-claude-final-rereview-prompt.md`.
+
+Next owner: Claude focused final re-review. Keep SS-005 at
+`4. Final Audit (Claude)` and do not create the PR until focused PASS.
+
 ## Completed Task
 
 `SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
