@@ -1,7 +1,6 @@
 # SS-005 Google Provider Response
 
-Status: **Durable public provider evidence recorded. Awaiting explicit
-maintainer compliance approval.**
+Status: **Approved by the maintainer on 2026-06-11.**
 
 Durable source:
 
@@ -44,7 +43,14 @@ candidate, and SDK licensing:
 
 ## Codex Evidence Disposition
 
-Subject to explicit maintainer compliance approval:
+The maintainer explicitly approved reliance on Google's public response on
+2026-06-11 for exact `@mediapipe/tasks-vision@0.10.35`, its packaged compiled
+artifacts, and the exact Pose Landmarker Full float16 version 1 model. The
+maintainer also approved same-origin model vendoring/serving, Apache-2.0 license
+and attribution handling, fail-closed unexpected-network behavior, and fresh
+review before every SDK upgrade.
+
+Approved evidence disposition:
 
 - **Provider metrics:** Adopt for exact current Web SDK candidate
   `@mediapipe/tasks-vision@0.10.35`. Google states the current Web SDK does not
@@ -80,8 +86,7 @@ Subject to explicit maintainer compliance approval:
 This response does not approve a fixture or prove runtime behavior. Before
 implementation:
 
-1. record explicit maintainer compliance approval of the decisions above;
-2. approve and empirically validate a reproducibly generated, non-identifying
+1. approve and empirically validate a reproducibly generated, non-identifying
    fixture against the exact candidate;
-3. obtain a third focused Claude QA PASS; and
-4. move SS-005 to `3. In Development (ChatGPT)`.
+2. obtain a third focused Claude QA PASS; and
+3. move SS-005 to `3. In Development (ChatGPT)`.

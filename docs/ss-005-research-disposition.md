@@ -1,8 +1,8 @@
 # SS-005 Research Disposition
 
-Status: **Durable Google response evidence recorded from public MediaPipe issue
-#6306. Implementation remains blocked on explicit maintainer compliance
-approval, fixture approval, and focused Claude QA PASS.**
+Status: **Durable Google response evidence, maintainer compliance approval,
+fixture evidence, and focused Claude QA PASS recorded. Implementation is in
+progress.**
 
 Gemini recommended a conditional GO using `@mediapipe/tasks-vision@0.10.35`,
 the Pose Landmarker Full float16 version 1 bundle, local WASM/model assets, a
@@ -142,13 +142,13 @@ authority.
 
 | Question | Status | Decision / Evidence |
 | --- | --- | --- |
-| Exact SDK package and version | Candidate selected, pending approval | Exact `@mediapipe/tasks-vision@0.10.35`; public MediaPipe issue #6306 states current Web SDKs are Apache-2.0 and have no telemetry. Requires maintainer approval covering packaged compiled artifacts. |
-| Exact Pose Landmarker model asset/version | Candidate selected, pending approval | Exact Pose Landmarker Full float16 version 1 URL; Google states it is Apache-2.0. |
-| Commit/vendor/serve/cache/download rights | Pending approval | Google's Apache-2.0 statement in public issue #6306 supports copying, redistribution, same-origin serving, and caching of the exact model, subject to maintainer approval. |
-| Notices, attribution, citations, terms | Partially resolved | Distribute Apache-2.0 license text and third-party attribution. Exact tarball has no NOTICE to preserve. Maintainer must approve reliance on Google's SDK-wide statement despite missing package files. |
-| Asset delivery strategy | Pending approval | Vendor and serve the exact model same-origin with pinned SHA-256 and attribution; no runtime provider fetch. Service-worker caching remains separate. |
+| Exact SDK package and version | Approved | Exact `@mediapipe/tasks-vision@0.10.35`; public MediaPipe issue #6306 states current Web SDKs are Apache-2.0 and have no telemetry. Maintainer approved reliance including packaged compiled artifacts on 2026-06-11. |
+| Exact Pose Landmarker model asset/version | Approved | Exact Pose Landmarker Full float16 version 1 URL; Google states it is Apache-2.0 and the maintainer approved reliance on 2026-06-11. |
+| Commit/vendor/serve/cache/download rights | Approved for exact asset | Vendor and serve same-origin with pinned SHA-256 and attribution. Runtime provider fetch is not approved; service-worker caching remains separate. |
+| Notices, attribution, citations, terms | Resolved for exact candidates | Distribute Apache-2.0 license text and third-party attribution. Exact tarball has no NOTICE to preserve. |
+| Asset delivery strategy | Approved | Vendor and serve the exact model same-origin with pinned SHA-256 and attribution; no runtime provider fetch. Service-worker caching remains separate. |
 | No-network proof after local assets | Partially resolved | Playwright must block/record external requests while initialization and inference still succeed; intermittent provider behavior remains a risk. |
-| Fixture provenance/license/consent | Unresolved | Generated non-identifying video is preferred, but no fixture or generation provenance is approved. |
+| Fixture provenance/license/consent | Approved | `test/fixtures/pose-landmarker/mannequin-golf-address.webm` contains no real-person recording. Its committed source, deterministic derivation, hashes, output license decision, and exact-model VIDEO-mode validation are recorded in the adjacent `PROVENANCE.md`. |
 | Volatile/local raw-frame lifecycle | Resolved for specification | Transfer/close bitmaps, revoke object URLs, close task/worker, and prohibit raw-frame persistence. |
 | Landmark and metadata schema | Resolved for specification | Retain complete 33 normalized/world landmarks and returned `x`, `y`, `z`, and `visibility`; do not invent per-landmark presence. |
 | Correct SS-005 test-case coverage | Closed by focused QA re-review | `SS-TC-009` has been revised; execution remains blocked on approved assets/fixture. |
@@ -156,13 +156,7 @@ authority.
 
 ## Implementation Gate
 
-Do not add the MediaPipe dependency, model/WASM assets, fixture video, fetch or
-cache behavior, CSP changes, service-worker caching, or runtime implementation
-until:
-
-- the maintainer explicitly approves reliance on Google's statements for the
-  exact SDK, packaged compiled artifacts, and exact model, including the
-  missing-package-files handling and same-origin delivery decision;
-- a generated fixture and its provenance/license are approved; and
-- Claude re-reviews the resolved blockers and returns PASS; and
-- SS-005 is moved to `3. In Development (ChatGPT)`.
+Claude returned PASS on 2026-06-11 and SS-005 moved to
+`3. In Development (ChatGPT)`. The exact dependency, approved same-origin
+model/WASM assets, fixture, CSP, worker runtime, and focused tests are now in
+scope. Service-worker model caching remains deferred and unapproved.

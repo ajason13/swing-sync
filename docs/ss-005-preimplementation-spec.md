@@ -31,10 +31,10 @@ These decisions are recorded conservatively until stronger evidence is approved:
 
 | Decision | Current decision |
 | --- | --- |
-| Provider metrics | In public issue #6306, Google states that the current Web SDK does not include telemetry, but future telemetry is planned. Subject to explicit maintainer compliance approval, exact `@mediapipe/tasks-vision@0.10.35` may be used without a separate provider-metrics consent gate. Any upgrade requires fresh review. Unexpected external requests fail closed pending investigation. |
-| SDK | Exact `@mediapipe/tasks-vision@0.10.35` may be approved after the maintainer records reliance on Google's SDK-wide Apache-2.0 statement for the packaged compiled artifacts and approves the missing-package-files handling in `docs/ss-005-google-provider-response.md`. |
-| Model and delivery | In public issue #6306, Google states that the exact Pose Landmarker Full float16 version 1 URL is Apache-2.0. Subject to maintainer approval, vendor and serve the exact asset same-origin with a pinned hash and attribution. Runtime provider fetch is not approved. Service-worker caching remains a separate decision. |
-| Fixture | Use only a reproducibly generated, non-identifying fixture with reviewed provenance and output license. No fixture or generation tool is approved yet. |
+| Provider metrics | Approved for exact `@mediapipe/tasks-vision@0.10.35` based on public issue #6306 stating that the current Web SDK does not include telemetry. Any upgrade requires fresh review. Unexpected external requests fail closed pending investigation. |
+| SDK | Exact `@mediapipe/tasks-vision@0.10.35` is approved. The maintainer approved reliance on Google's SDK-wide Apache-2.0 statement for packaged compiled artifacts and the missing-package-files handling in `docs/ss-005-google-provider-response.md`. |
+| Model and delivery | The exact Pose Landmarker Full float16 version 1 URL is approved based on Google's Apache-2.0 statement in public issue #6306. Vendor and serve the exact asset same-origin with a pinned hash and attribution. Runtime provider fetch is not approved. Service-worker caching remains a separate decision. |
+| Fixture | Approved: `test/fixtures/pose-landmarker/mannequin-golf-address.webm`, deterministically derived from a committed AI-generated faceless wooden-mannequin source. `PROVENANCE.md` records generation, license decision, hashes, and empirical exact-model validation. |
 | Network criterion | Successful initialization and inference must not require or attempt unexpected external network activity after approved same-origin assets are available. Tests report observed/attempted requests and do not claim impossibility. |
 | Responsiveness | Use behavioral UI-heartbeat/input completion as the acceptance gate. Record browser long tasks as diagnostic evidence; do not require zero long tasks or fixed FPS/inference latency across hardware. |
 
@@ -187,11 +187,7 @@ Before implementation can be considered complete:
 
 ## Implementation Start Gate
 
-Implementation remains prohibited until:
-
-- the maintainer explicitly approves reliance on Google's Apache-2.0 and
-  current-Web-no-telemetry statements, including compiled-artifact and missing
-  package-file handling;
-- a fixture and provenance record are approved;
-- Claude re-reviews the resolved blockers and returns PASS; and
-- Notion moves to `3. In Development (ChatGPT)`.
+The implementation-start gate closed on 2026-06-11: the fixture/provenance is
+approved, Claude returned PASS, and Notion moved to
+`3. In Development (ChatGPT)`. This specification remains normative during
+implementation and final audit.

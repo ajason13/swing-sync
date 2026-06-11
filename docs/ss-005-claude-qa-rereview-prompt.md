@@ -1,5 +1,9 @@
 # SS-005 Claude Focused QA Re-Review Prompt
 
+> **Superseded: do not paste this prompt.** This review was completed with a
+> FAIL result. Use `docs/ss-005-claude-qa-third-review-prompt.md` for the next
+> focused pre-implementation review.
+
 Paste this prompt into Claude Chat to re-review the specification response to
 the initial SS-005 QA Planning FAIL. This is not implementation or final audit.
 
