@@ -143,6 +143,7 @@ SS-005 coordination status through 2026-06-07:
   request, distribute Apache-2.0 text and third-party attribution, and vendor
   the exact model same-origin with a pinned hash. Runtime provider fetch is not
   approved; service-worker caching remains separate.
+- Google provider-response evidence/disposition commit: `5b22e5d`.
 - `docs/ss-005-claude-qa-rereview-response.md` records the focused result.
 - The pre-implementation spec now tracks the deferred production response to an
   observed provider-metrics request. No behavior may silently allow, block, or
