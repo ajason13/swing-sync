@@ -1,7 +1,7 @@
 # SS-005 Research Disposition
 
-Status: **Google response evidence received on 2026-06-10. Implementation
-remains blocked on durable response provenance, explicit maintainer compliance
+Status: **Durable Google response evidence recorded from public MediaPipe issue
+#6306. Implementation remains blocked on explicit maintainer compliance
 approval, fixture approval, and focused Claude QA PASS.**
 
 Gemini recommended a conditional GO using `@mediapipe/tasks-vision@0.10.35`,
@@ -46,8 +46,9 @@ authority.
   local paths or CSP fully suppress it.
 - The same Google response states that the exact
   `pose_landmarker_full.task` URL is Apache-2.0 and that current Web SDKs are
-  Apache-2.0. Durable response provenance and explicit maintainer compliance
-  approval remain required before relying on those statements.
+  Apache-2.0. The response is durable public evidence in MediaPipe issue #6306;
+  explicit maintainer compliance approval remains required before relying on
+  those statements.
 
 ## Adopt
 
@@ -79,8 +80,8 @@ authority.
 ## Revise Before Adoption
 
 - Treat `@mediapipe/tasks-vision@0.10.35` as the pinned candidate, not an
-  approved dependency until durable Google-response provenance and explicit
-  maintainer compliance approval are recorded. Approval must explicitly cover
+  approved dependency until explicit maintainer compliance approval is
+  recorded. Approval must explicitly cover
   packaged compiled artifacts, missing package files, and demonstrated network
   behavior.
 - Treat Pose Landmarker Full float16 version 1 as a candidate only. Model
@@ -124,8 +125,8 @@ authority.
 
 - Reject Gemini's assertion that all blockers are resolved.
 - Reject committing, vendoring, serving, caching, or downloading a model asset
-  before explicit model rights, obligations, durable evidence provenance, and
-  maintainer approval are documented.
+  before explicit model rights, obligations, and maintainer approval are
+  documented.
 - Reject the claim that self-hosting alone prevents external SDK requests.
 - Reject absolute "complete privacy", "zero external network activity", and
   "complete offline capability" claims.
@@ -141,9 +142,9 @@ authority.
 
 | Question | Status | Decision / Evidence |
 | --- | --- | --- |
-| Exact SDK package and version | Candidate selected, pending approval | Exact `@mediapipe/tasks-vision@0.10.35`; Google states current Web SDKs are Apache-2.0 and have no telemetry. Requires durable provenance and maintainer approval covering packaged compiled artifacts. |
+| Exact SDK package and version | Candidate selected, pending approval | Exact `@mediapipe/tasks-vision@0.10.35`; public MediaPipe issue #6306 states current Web SDKs are Apache-2.0 and have no telemetry. Requires maintainer approval covering packaged compiled artifacts. |
 | Exact Pose Landmarker model asset/version | Candidate selected, pending approval | Exact Pose Landmarker Full float16 version 1 URL; Google states it is Apache-2.0. |
-| Commit/vendor/serve/cache/download rights | Pending approval | Google's Apache-2.0 statement supports copying, redistribution, same-origin serving, and caching of the exact model, subject to provenance and maintainer approval. |
+| Commit/vendor/serve/cache/download rights | Pending approval | Google's Apache-2.0 statement in public issue #6306 supports copying, redistribution, same-origin serving, and caching of the exact model, subject to maintainer approval. |
 | Notices, attribution, citations, terms | Partially resolved | Distribute Apache-2.0 license text and third-party attribution. Exact tarball has no NOTICE to preserve. Maintainer must approve reliance on Google's SDK-wide statement despite missing package files. |
 | Asset delivery strategy | Pending approval | Vendor and serve the exact model same-origin with pinned SHA-256 and attribution; no runtime provider fetch. Service-worker caching remains separate. |
 | No-network proof after local assets | Partially resolved | Playwright must block/record external requests while initialization and inference still succeed; intermittent provider behavior remains a risk. |
@@ -159,7 +160,6 @@ Do not add the MediaPipe dependency, model/WASM assets, fixture video, fetch or
 cache behavior, CSP changes, service-worker caching, or runtime implementation
 until:
 
-- durable provenance is recorded for Google's response;
 - the maintainer explicitly approves reliance on Google's statements for the
   exact SDK, packaged compiled artifacts, and exact model, including the
   missing-package-files handling and same-origin delivery decision;

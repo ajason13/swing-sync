@@ -172,14 +172,15 @@ and may add aggregated performance and usage telemetry in the future without a
 planned opt-out. Google also stated that future outbound requests may be blocked
 while continuing to use the SDK normally.
 
-Subject to durable response provenance and maintainer approval, exact
+Subject to maintainer approval, exact
 `@mediapipe/tasks-vision@0.10.35` may be treated as having no provider-metrics
 consent requirement. This does not approve future versions. Any SDK upgrade
 requires fresh privacy, terms, and observed-network review.
 
 Before MediaPipe integration begins, Swing Sync must document:
 
-- the exact approved SDK version and provider response provenance;
+- the exact approved SDK version and public provider response in MediaPipe
+  issue #6306;
 - observed and attempted network requests during initialization and inference;
 - whether the SDK remains functional when all external requests are blocked;
 - fail-closed behavior for any unexpected external request; and

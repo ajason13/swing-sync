@@ -1,7 +1,20 @@
 # SS-005 Google Provider Response
 
-Status: **Maintainer-provided evidence awaiting durable source provenance and
-explicit maintainer compliance approval.**
+Status: **Durable public provider evidence recorded. Awaiting explicit
+maintainer compliance approval.**
+
+Durable source:
+
+- Issue: https://github.com/google-ai-edge/mediapipe/issues/6306
+- Provider response:
+  https://github.com/google-ai-edge/mediapipe/issues/6306#issuecomment-4673728357
+- Responder: `schmidt-sebastian`, a collaborator on
+  `google-ai-edge/mediapipe`
+- Response date: 2026-06-10
+
+The issue explicitly identifies exact `@mediapipe/tasks-vision@0.10.35` and the
+exact Pose Landmarker Full float16 version 1 URL before asking the telemetry,
+compiled-artifact, and model-rights questions.
 
 On 2026-06-10, the maintainer supplied the following response attributed to
 Google regarding MediaPipe Tasks Vision Web, the exact Pose Landmarker model
@@ -29,16 +42,9 @@ candidate, and SDK licensing:
 > NPM. We will ensure that future versions of our NPM packages include NOTICE
 > and LICENSE files.
 
-## Required Provenance
-
-Before this response is treated as final rights evidence, record a durable
-public issue URL or preserved private support/email thread identifier and the
-Google responder's role or team. Do not record private email addresses,
-authentication data, or unrelated correspondence in the repository.
-
 ## Codex Evidence Disposition
 
-Subject to provenance and explicit maintainer compliance approval:
+Subject to explicit maintainer compliance approval:
 
 - **Provider metrics:** Adopt for exact current Web SDK candidate
   `@mediapipe/tasks-vision@0.10.35`. Google states the current Web SDK does not
@@ -74,9 +80,8 @@ Subject to provenance and explicit maintainer compliance approval:
 This response does not approve a fixture or prove runtime behavior. Before
 implementation:
 
-1. record durable response provenance;
-2. record explicit maintainer compliance approval of the decisions above;
-3. approve and empirically validate a reproducibly generated, non-identifying
+1. record explicit maintainer compliance approval of the decisions above;
+2. approve and empirically validate a reproducibly generated, non-identifying
    fixture against the exact candidate;
-4. obtain a third focused Claude QA PASS; and
-5. move SS-005 to `3. In Development (ChatGPT)`.
+3. obtain a third focused Claude QA PASS; and
+4. move SS-005 to `3. In Development (ChatGPT)`.
