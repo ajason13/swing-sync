@@ -31,9 +31,9 @@ These decisions are recorded conservatively until stronger evidence is approved:
 
 | Decision | Current decision |
 | --- | --- |
-| Provider metrics | MediaPipe's documented provider metrics are incompatible with Swing Sync's currently approved local-first boundary. Do not integrate unless a human/legal review approves exact disclosure/consent terms or a candidate without that boundary is selected. CSP blocking is not approval. |
-| SDK | Exact `@mediapipe/tasks-vision@0.10.35` remains a blocked candidate. It is not an approved production dependency. |
-| Model and delivery | Pose Landmarker Full float16 version 1 remains a blocked candidate. No commit, vendor, serve, cache, or download path is approved without explicit model rights. |
+| Provider metrics | Google states that the current Web SDK does not include telemetry, but future telemetry is planned. Subject to durable response provenance and explicit maintainer compliance approval, exact `@mediapipe/tasks-vision@0.10.35` may be used without a separate provider-metrics consent gate. Any upgrade requires fresh review. Unexpected external requests fail closed pending investigation. |
+| SDK | Exact `@mediapipe/tasks-vision@0.10.35` may be approved after the maintainer records reliance on Google's SDK-wide Apache-2.0 statement for the packaged compiled artifacts and approves the missing-package-files handling in `docs/ss-005-google-provider-response.md`. |
+| Model and delivery | Google states that the exact Pose Landmarker Full float16 version 1 URL is Apache-2.0. Subject to durable provenance and maintainer approval, vendor and serve the exact asset same-origin with a pinned hash and attribution. Runtime provider fetch is not approved. Service-worker caching remains a separate decision. |
 | Fixture | Use only a reproducibly generated, non-identifying fixture with reviewed provenance and output license. No fixture or generation tool is approved yet. |
 | Network criterion | Successful initialization and inference must not require or attempt unexpected external network activity after approved same-origin assets are available. Tests report observed/attempted requests and do not claim impossibility. |
 | Responsiveness | Use behavioral UI-heartbeat/input completion as the acceptance gate. Record browser long tasks as diagnostic evidence; do not require zero long tasks or fixed FPS/inference latency across hardware. |
@@ -146,11 +146,11 @@ Tests must distinguish:
 The evidence proves behavior observed in controlled runs, not that an SDK can
 never issue a request.
 
-Production behavior for an observed provider-metrics request remains deferred
-until the provider-metrics blocker is resolved. When that decision closes, this
-contract must specify whether the approved runtime fails closed, requires an
-approved disclosure/consent path, or is replaced. Do not silently allow,
-silently block, or silently ignore an unexpected provider request.
+Google states that the current Web SDK does not include telemetry. Therefore,
+for exact `@mediapipe/tasks-vision@0.10.35`, any unexpected external request
+during approved local operation fails closed and blocks release pending
+investigation. Do not silently allow or ignore it. Future SDK versions require
+fresh provider-metrics, consent, privacy, and network review before upgrade.
 
 ## Responsiveness Contract
 
@@ -189,9 +189,10 @@ Before implementation can be considered complete:
 
 Implementation remains prohibited until:
 
-- provider-metrics terms and any consent/legal decision are approved;
-- exact SDK compiled-binary obligations/notices are approved;
-- exact model rights and delivery mechanism are approved;
+- durable provenance is recorded for Google's provider response;
+- the maintainer explicitly approves reliance on Google's Apache-2.0 and
+  current-Web-no-telemetry statements, including compiled-artifact and missing
+  package-file handling;
 - a fixture and provenance record are approved;
 - Claude re-reviews the resolved blockers and returns PASS; and
 - Notion moves to `3. In Development (ChatGPT)`.

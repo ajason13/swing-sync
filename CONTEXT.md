@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-06
+Last updated: 2026-06-10
 
 ## Current State
 
@@ -130,6 +130,19 @@ SS-005 coordination status through 2026-06-07:
   obligations/notices, model rights/delivery, and an approved empirically
   validated fixture/provenance record. Fixture validation depends on resolution
   of the provider/model blockers.
+- On 2026-06-10, the maintainer supplied a response attributed to Google stating
+  that the current Web SDK has no telemetry, future aggregated usage/performance
+  telemetry is planned, current Web SDKs are Apache-2.0, and the exact Pose
+  Landmarker Full float16 version 1 URL is Apache-2.0.
+- `docs/ss-005-google-provider-response.md` records the response and Codex
+  disposition. It materially supports closure of provider-metrics, SDK-license,
+  and model-rights blockers, but durable response provenance and explicit
+  maintainer compliance approval are still required before reliance.
+- Proposed exact-version policy: pin `@mediapipe/tasks-vision@0.10.35`, require
+  fresh review for every upgrade, fail closed on any unexpected external
+  request, distribute Apache-2.0 text and third-party attribution, and vendor
+  the exact model same-origin with a pinned hash. Runtime provider fetch is not
+  approved; service-worker caching remains separate.
 - `docs/ss-005-claude-qa-rereview-response.md` records the focused result.
 - The pre-implementation spec now tracks the deferred production response to an
   observed provider-metrics request. No behavior may silently allow, block, or
@@ -151,11 +164,12 @@ SS-005 coordination status through 2026-06-07:
   needed to debug initialization and inference. Do not log raw frames,
   landmarks, media characteristics, or sensitive user data.
 
-Next owner: maintainer/human legal and compliance decision makers. Resolve
-provider metrics compatibility, compiled-binary obligations/notices, and model
-rights/delivery. Then approve and empirically validate a generated fixture.
-Return the evidence and decisions to Codex for a third focused Claude QA review.
-Do not begin implementation.
+Next owner: maintainer/human compliance decision maker. Record durable
+provenance for Google's response and explicitly approve or reject reliance on
+its current-Web-no-telemetry and Apache-2.0 statements, including packaged
+compiled artifacts and missing package files. Then approve and empirically
+validate a generated fixture and return the result for a third focused Claude
+QA review. Do not begin implementation.
 
 ## Completed Task
 

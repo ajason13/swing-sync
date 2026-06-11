@@ -166,23 +166,22 @@ for:
 
 ## SS-005 MediaPipe Provider-Metrics Gate
 
-Current MediaPipe API terms reviewed on 2026-06-07 state that Solution APIs
-process input media on-device but contact Google servers from time to time and
-send performance, utilization, app/input metadata, and system-environment
-metrics. The terms assign informed-consent responsibility to the app developer.
+On 2026-06-10, the maintainer provided a response attributed to Google stating
+that the current Web SDK does not include telemetry, does not send input data,
+and may add aggregated performance and usage telemetry in the future without a
+planned opt-out. Google also stated that future outbound requests may be blocked
+while continuing to use the SDK normally.
 
-This provider behavior is not approved for Swing Sync. Local WASM/model paths,
-CSP, service-worker rules, and network tests may reduce or detect outbound
-activity, but must not be described as proof that provider metrics can never
-occur or that blocking them satisfies provider terms.
+Subject to durable response provenance and maintainer approval, exact
+`@mediapipe/tasks-vision@0.10.35` may be treated as having no provider-metrics
+consent requirement. This does not approve future versions. Any SDK upgrade
+requires fresh privacy, terms, and observed-network review.
 
 Before MediaPipe integration begins, Swing Sync must document:
 
-- whether the provider metrics terms are compatible with the local-first
-  product boundary;
-- whether separate informed consent is required and approved;
+- the exact approved SDK version and provider response provenance;
 - observed and attempted network requests during initialization and inference;
 - whether the SDK remains functional when all external requests are blocked;
-  and
-- whether an alternative runtime is required if the provider boundary cannot be
-  reconciled.
+- fail-closed behavior for any unexpected external request; and
+- a fresh consent/product decision before adopting any future version that
+  includes provider telemetry.

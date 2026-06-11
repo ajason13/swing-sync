@@ -1,7 +1,7 @@
 # Model Licensing Policy
 
-Swing Sync has not approved any model binaries, model weights, or model-hosting
-terms yet.
+Swing Sync has not yet given final maintainer approval to a model binary, model
+weight, or model-hosting decision.
 
 ## Current Rule
 
@@ -24,34 +24,41 @@ separately before implementation.
 
 ## SS-005 Candidate Review
 
-The following candidates were reviewed on 2026-06-07 but are **not approved for
-implementation or asset use**:
+The following candidates were reviewed beginning 2026-06-07 but are **not yet
+approved for implementation or asset use**:
 
 - SDK candidate: exact `@mediapipe/tasks-vision@0.10.35`.
 - Model candidate: Pose Landmarker Full, float16, version 1,
   `pose_landmarker_full.task`.
 
-The SDK package reports Apache-2.0 metadata and no declared dependencies.
-However, the inspected npm tarball contains compiled WASM, lacks packaged
-LICENSE and NOTICE files, and includes operational-metrics identifiers. Current
-MediaPipe API terms state that Solution APIs contact Google servers and send
-performance, utilization, app/input metadata, and system-environment metrics,
-with informed-consent responsibility assigned to the app developer:
+On 2026-06-10, the maintainer provided a response attributed to Google stating:
 
-https://developers.google.com/edge/mediapipe/legal/tos
+- the current Web SDK does not include telemetry;
+- future aggregated performance/usage telemetry is planned, without a planned
+  opt-out, although outbound requests may be blocked;
+- the exact Pose Landmarker Full float16 version 1 URL is Apache-2.0; and
+- current Web SDKs are Apache-2.0, with future npm packages expected to include
+  NOTICE and LICENSE files.
 
-No primary source reviewed by Swing Sync explicitly grants the required rights
-to commit, vendor, redistribute, locally serve, or cache the candidate model
-bundle. Therefore:
+Subject to durable response provenance and explicit maintainer compliance
+approval, the Apache-2.0 model statement supports commercial use,
+redistribution, same-origin serving, and caching of the exact model. The
+preferred SS-005 delivery is vendoring and same-origin serving of the exact
+asset with a pinned SHA-256, source URL, license text, and attribution. Runtime
+provider fetch is not approved. Service-worker caching remains separately
+reviewed.
+
+Until the remaining approval gate closes:
 
 - do not add the SDK dependency;
 - do not commit, vendor, serve, cache, or download the model;
 - do not copy the SDK WASM assets into the app;
-- do not claim self-hosting prevents provider requests; and
-- do not proceed until provider-metrics compatibility, compiled-binary
-  obligations, model rights, notices, and required consent are resolved.
+- do not claim tests prove all future SDK versions lack telemetry; and
+- do not proceed until response provenance, maintainer approval, fixture
+  approval, and focused Claude QA PASS are recorded.
 
-See `docs/ss-005-research-disposition.md` for the complete decision record.
+See `docs/ss-005-google-provider-response.md` and
+`docs/ss-005-research-disposition.md` for the complete decision record.
 
 ## API SDK Placeholder
 

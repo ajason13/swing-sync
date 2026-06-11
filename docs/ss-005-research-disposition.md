@@ -1,8 +1,8 @@
 # SS-005 Research Disposition
 
-Status: **Gemini response and Claude QA planning reviewed on 2026-06-07.
-Claude returned FAIL. Implementation remains blocked on provider metrics,
-compiled-binary obligations, model rights, and fixture approval.**
+Status: **Google response evidence received on 2026-06-10. Implementation
+remains blocked on durable response provenance, explicit maintainer compliance
+approval, fixture approval, and focused Claude QA PASS.**
 
 Gemini recommended a conditional GO using `@mediapipe/tasks-vision@0.10.35`,
 the Pose Landmarker Full float16 version 1 bundle, local WASM/model assets, a
@@ -22,12 +22,12 @@ authority.
   Full is required for golf, that Lite is insufficient, or that Heavy lacks
   meaningful benefit:
   https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker
-- Current MediaPipe API terms, last modified April 7, 2026, state that input
-  processing happens on-device, but Solution APIs contact Google servers from
-  time to time and send performance, utilization, app/input metadata, and
-  system-environment metrics. The terms assign informed-consent responsibility
-  to the app developer:
-  https://developers.google.com/edge/mediapipe/legal/tos
+- The current MediaPipe terms language reviewed during planning did not
+  establish exact Web Tasks Vision behavior. On 2026-06-10, the maintainer
+  supplied a response attributed to Google stating that the current Web SDK
+  does not include telemetry, future aggregated usage/performance telemetry is
+  planned, and future outbound requests may be blocked:
+  `docs/ss-005-google-provider-response.md`.
 - npm registry metadata for `@mediapipe/tasks-vision@0.10.35` reports
   Apache-2.0, no declared dependencies, tarball integrity
   `sha512-HOvadwVRE6JC+45nyYhmnywnr5h/J8KZvOeUNVOG9q/0875pZgItznFB9bRTvLc264YSJqiZ1NsIpCStJw/egg==`,
@@ -44,9 +44,10 @@ authority.
   metrics identifiers. This supports treating metrics/network behavior as a
   real risk, but does not prove the destination, timing, payload, or whether
   local paths or CSP fully suppress it.
-- No primary source reviewed by Codex grants explicit redistribution,
-  vendoring, repository-commit, or caching rights for
-  `pose_landmarker_full.task`. Model rights remain unresolved.
+- The same Google response states that the exact
+  `pose_landmarker_full.task` URL is Apache-2.0 and that current Web SDKs are
+  Apache-2.0. Durable response provenance and explicit maintainer compliance
+  approval remain required before relying on those statements.
 
 ## Adopt
 
@@ -78,8 +79,10 @@ authority.
 ## Revise Before Adoption
 
 - Treat `@mediapipe/tasks-vision@0.10.35` as the pinned candidate, not an
-  approved dependency. Approval requires resolution of current provider metrics
-  terms, compiled-binary rights/notices, and demonstrated network behavior.
+  approved dependency until durable Google-response provenance and explicit
+  maintainer compliance approval are recorded. Approval must explicitly cover
+  packaged compiled artifacts, missing package files, and demonstrated network
+  behavior.
 - Treat Pose Landmarker Full float16 version 1 as a candidate only. Model
   variant selection requires measured fixture/browser evidence; the Full model
   is not justified solely by Gemini's golf-accuracy assertion.
@@ -121,14 +124,16 @@ authority.
 
 - Reject Gemini's assertion that all blockers are resolved.
 - Reject committing, vendoring, serving, caching, or downloading a model asset
-  before explicit model rights and obligations are documented.
+  before explicit model rights, obligations, durable evidence provenance, and
+  maintainer approval are documented.
 - Reject the claim that self-hosting alone prevents external SDK requests.
 - Reject absolute "complete privacy", "zero external network activity", and
   "complete offline capability" claims.
 - Reject Gemini's unsupported claim that world landmarks are unaffected by
   camera distance, focal length, or perspective distortion.
-- Reject treating CSP-blocked provider metrics as automatically compliant with
-  Google's terms or as a substitute for provider/consent review.
+- Reject treating CSP-blocked future provider metrics as automatically
+  compliant or as a substitute for a fresh provider/consent review when
+  upgrading beyond the exact approved SDK version.
 - Reject the malformed example test code and any claim that proposed tests are
   already "Verified".
 
@@ -136,11 +141,11 @@ authority.
 
 | Question | Status | Decision / Evidence |
 | --- | --- | --- |
-| Exact SDK package and version | Candidate selected, blocked | Candidate is exact `@mediapipe/tasks-vision@0.10.35`; provider metrics terms and compiled-binary obligations remain unresolved. |
-| Exact Pose Landmarker model asset/version | Candidate selected, blocked | Candidate is Pose Landmarker Full float16 version 1; variant evidence and model rights remain unresolved. |
-| Commit/vendor/serve/cache/download rights | Unresolved | No reviewed primary source grants the required model-asset rights. No asset action is approved. |
-| Notices, attribution, citations, terms | Unresolved | npm metadata says Apache-2.0, but the tarball lacks LICENSE/NOTICE and current API terms impose metrics/consent obligations. |
-| Asset delivery strategy | Blocked | Same-origin local delivery is the preferred architecture only after rights and provider behavior are approved. |
+| Exact SDK package and version | Candidate selected, pending approval | Exact `@mediapipe/tasks-vision@0.10.35`; Google states current Web SDKs are Apache-2.0 and have no telemetry. Requires durable provenance and maintainer approval covering packaged compiled artifacts. |
+| Exact Pose Landmarker model asset/version | Candidate selected, pending approval | Exact Pose Landmarker Full float16 version 1 URL; Google states it is Apache-2.0. |
+| Commit/vendor/serve/cache/download rights | Pending approval | Google's Apache-2.0 statement supports copying, redistribution, same-origin serving, and caching of the exact model, subject to provenance and maintainer approval. |
+| Notices, attribution, citations, terms | Partially resolved | Distribute Apache-2.0 license text and third-party attribution. Exact tarball has no NOTICE to preserve. Maintainer must approve reliance on Google's SDK-wide statement despite missing package files. |
+| Asset delivery strategy | Pending approval | Vendor and serve the exact model same-origin with pinned SHA-256 and attribution; no runtime provider fetch. Service-worker caching remains separate. |
 | No-network proof after local assets | Partially resolved | Playwright must block/record external requests while initialization and inference still succeed; intermittent provider behavior remains a risk. |
 | Fixture provenance/license/consent | Unresolved | Generated non-identifying video is preferred, but no fixture or generation provenance is approved. |
 | Volatile/local raw-frame lifecycle | Resolved for specification | Transfer/close bitmaps, revoke object URLs, close task/worker, and prohibit raw-frame persistence. |
@@ -154,10 +159,10 @@ Do not add the MediaPipe dependency, model/WASM assets, fixture video, fetch or
 cache behavior, CSP changes, service-worker caching, or runtime implementation
 until:
 
-- Claude re-reviews resolved blockers and returns PASS;
-- the maintainer explicitly decides whether MediaPipe API metrics terms are
-  compatible with Swing Sync, including any required user consent;
-- exact SDK compiled-binary rights/notices and exact model redistribution/local
-  serving/caching rights are documented;
+- durable provenance is recorded for Google's response;
+- the maintainer explicitly approves reliance on Google's statements for the
+  exact SDK, packaged compiled artifacts, and exact model, including the
+  missing-package-files handling and same-origin delivery decision;
 - a generated fixture and its provenance/license are approved; and
+- Claude re-reviews the resolved blockers and returns PASS; and
 - SS-005 is moved to `3. In Development (ChatGPT)`.
