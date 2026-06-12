@@ -277,6 +277,29 @@ Next owner: GitHub PR checks and merge review. Keep SS-005 at
 `4. Final Audit (Claude)` until PR #6 is merged, then update local `main`,
 Notion, and this file before moving to `5. Done`.
 
+SS-005 completed on 2026-06-11:
+
+- PR #6 merged: https://github.com/ajason13/swing-sync/pull/6
+- Merge commit: `7678add7de6b946cc00328d0bef83772b1a11576`
+- Local `main` fast-forwarded to the merge commit.
+- Claude final implementation audit and focused final re-review both returned
+  PASS.
+- Required local verification and GitHub compliance checks passed.
+- Notion SS-005 moved to `5. Done`.
+- The unrelated untracked
+  `docs/agent-guidance/ss-004-new-codex-session-prompt.md` remains preserved.
+
+Next task: `SS-006 Build frame processing queue and sampling strategy`.
+
+- Expected branch: `ss-006-frame-queue`
+- Notion status at handoff: `0. Backlog`
+- Acceptance criteria: deterministic frame sampling; cancellation/retry;
+  long/short/portrait/landscape handling; and output containing timestamps,
+  frame images, and landmark sets.
+
+Next owner: begin SS-006 from updated `main` using the Swing Sync story
+delivery workflow.
+
 ## Completed Task
 
 `SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
