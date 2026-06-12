@@ -8,13 +8,17 @@ import {
 import type { PoseFrameResult } from "./pose-contract";
 import { PoseSession, type PoseSessionStatus } from "./pose-session";
 
-class VideoFrameSource implements FrameSource {
+export class VideoFrameSource implements FrameSource {
+  private disposed = false;
+  private pendingRejects = new Set<(error: Error) => void>();
+
   constructor(
     private readonly video: HTMLVideoElement,
     private readonly objectUrl: string
   ) {}
 
   load(): Promise<{ durationSeconds: number; width: number; height: number }> {
+    if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
     this.video.src = this.objectUrl;
     return new Promise((resolve, reject) => {
       const onLoaded = () => {
@@ -32,7 +36,13 @@ class VideoFrameSource implements FrameSource {
       const cleanup = () => {
         this.video.removeEventListener("loadedmetadata", onLoaded);
         this.video.removeEventListener("error", onError);
+        this.pendingRejects.delete(onDisposed);
       };
+      const onDisposed = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+      this.pendingRejects.add(onDisposed);
       this.video.addEventListener("loadedmetadata", onLoaded);
       this.video.addEventListener("error", onError);
       this.video.load();
@@ -40,6 +50,7 @@ class VideoFrameSource implements FrameSource {
   }
 
   seek(timestampMs: number): Promise<number> {
+    if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
     const timestampSeconds = timestampMs / 1000;
     if (Math.abs(this.video.currentTime - timestampSeconds) <= 0.0005) {
       return Promise.resolve(this.video.currentTime * 1000);
@@ -56,7 +67,13 @@ class VideoFrameSource implements FrameSource {
       const cleanup = () => {
         this.video.removeEventListener("seeked", onSeeked);
         this.video.removeEventListener("error", onError);
+        this.pendingRejects.delete(onDisposed);
       };
+      const onDisposed = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+      this.pendingRejects.add(onDisposed);
       this.video.addEventListener("seeked", onSeeked);
       this.video.addEventListener("error", onError);
       this.video.currentTime = timestampSeconds;
@@ -72,6 +89,11 @@ class VideoFrameSource implements FrameSource {
   }
 
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    const error = new Error("MEDIA_SOURCE_DISPOSED");
+    for (const reject of [...this.pendingRejects]) reject(error);
+    this.pendingRejects.clear();
     this.video.pause();
     this.video.removeAttribute("src");
     this.video.load();

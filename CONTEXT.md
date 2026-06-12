@@ -143,6 +143,26 @@ Next owner: Claude final adversarial implementation audit. Keep SS-006 at
 `4. Final Audit (Claude)` until explicit PASS and any required focused
 re-review.
 
+Claude final audit returned FAIL with two focused blockers. B1 was an evidence
+gap: `releaseOutputs()` already closes and clears the current uncommitted
+preview during invalidating cleanup. A direct cancellation/post-inference race
+test now proves that ownership path. B2 was valid and is fixed:
+`VideoFrameSource.dispose()` now rejects pending metadata/seek operations and
+removes their listeners before media teardown.
+
+Codex also fixed retry-during-cancel serialization and added direct unit
+evidence for source disposal, current-preview cleanup, and retry sequencing.
+Post-fix verification passed: 29 unit tests, 26 desktop/mobile browser tests,
+full required compliance/privacy/licensing/assets/SBOM checks, zero production
+vulnerabilities, and `git diff --check`.
+
+Final audit response: `docs/ss-006-claude-audit-response.md`.
+Focused final re-review prompt:
+`docs/ss-006-claude-final-rereview-prompt.md`.
+
+Next owner: Claude focused final re-review. Keep SS-006 at
+`4. Final Audit (Claude)` and do not prepare the PR until focused PASS.
+
 ## Completed Foundation
 
 SS-001 established the project compliance baseline:

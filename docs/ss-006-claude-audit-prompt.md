@@ -1,5 +1,8 @@
 # SS-006 Claude Final Adversarial Audit Prompt
 
+> Superseded after the initial final-audit FAIL. Do not paste this prompt.
+> Use `docs/ss-006-claude-final-rereview-prompt.md` for the focused re-review.
+
 Paste this prompt into Claude Chat for final SS-006 implementation audit.
 Claude Chat has no filesystem, Notion, or GitHub access; required context is
 embedded below.

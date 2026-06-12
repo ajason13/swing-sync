@@ -109,6 +109,7 @@ export class FrameProcessingController {
   }
 
   async retry(): Promise<void> {
+    if (this.cleanupPromise) await this.cleanupPromise;
     if (!["cancelled", "failed"].includes(this.state)) return;
     await this.beginRun();
   }

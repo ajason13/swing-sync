@@ -68,6 +68,7 @@ class FakeProcessor implements FrameProcessor {
   readonly processed: number[] = [];
   failAtTimestamp?: number;
   closeGate?: Promise<void>;
+  processGate?: Promise<void>;
 
   async initialize() {
     this.initialized = true;
@@ -76,6 +77,7 @@ class FakeProcessor implements FrameProcessor {
   async process(input: ImageBitmap, timestampMs: number) {
     this.processed.push(timestampMs);
     input.close();
+    await this.processGate;
     if (timestampMs === this.failAtTimestamp) throw new Error("LOCAL_INFERENCE_FAILED");
     return pose(timestampMs);
   }
@@ -224,6 +226,26 @@ describe("frame processing controller", () => {
     expect(controller.getOutputs()).toEqual([]);
   });
 
+  it("closes the current preview when cancellation races a completed inference", async () => {
+    const source = new FakeSource({ durationSeconds: 0.001, width: 10, height: 10 });
+    const processor = new FakeProcessor();
+    let releaseProcess = () => undefined;
+    processor.processGate = new Promise<void>((resolve) => {
+      releaseProcess = resolve;
+    });
+    const { controller, states } = harness(source, processor);
+
+    const start = controller.start();
+    await vi.waitFor(() => expect(source.previews).toHaveLength(1));
+    await controller.cancel();
+    releaseProcess();
+    await start;
+
+    expect(states).toEqual(["loading", "processing", "cancelled"]);
+    expect(source.previews[0].close).toHaveBeenCalledOnce();
+    expect(controller.getOutputs()).toEqual([]);
+  });
+
   it("closes prior outputs and processor before retry constructs the next run", async () => {
     const sources = [new FakeSource({ durationSeconds: 0.001, width: 10, height: 10 }), new FakeSource({
       durationSeconds: 0.001,
@@ -255,5 +277,37 @@ describe("frame processing controller", () => {
     expect(processors[1].initialized).toBe(true);
     expect(firstPreview.close).toHaveBeenCalledOnce();
     expect(states).toEqual(["loading", "processing", "completed", "cancelled", "loading", "processing", "completed"]);
+  });
+
+  it("queues retry behind an in-progress cancellation", async () => {
+    const sources = [new FakeSource({ durationSeconds: 0.001, width: 10, height: 10 }), new FakeSource({
+      durationSeconds: 0.001,
+      width: 10,
+      height: 10
+    })];
+    const processors = [new FakeProcessor(), new FakeProcessor()];
+    let releaseClose = () => undefined;
+    processors[0].closeGate = new Promise<void>((resolve) => {
+      releaseClose = resolve;
+    });
+    let sourceIndex = 0;
+    let processorIndex = 0;
+    const controller = new FrameProcessingController(
+      {
+        createSource: () => sources[sourceIndex++],
+        createProcessor: () => processors[processorIndex++]
+      },
+      { onState: () => undefined, onProgress: () => undefined, onOutput: () => undefined }
+    );
+
+    await controller.start();
+    const cancel = controller.cancel();
+    const retry = controller.retry();
+    expect(processors[1].initialized).toBe(false);
+    releaseClose();
+    await Promise.all([cancel, retry]);
+
+    expect(processors[0].closed).toBe(true);
+    expect(processors[1].initialized).toBe(true);
   });
 });
