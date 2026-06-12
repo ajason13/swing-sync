@@ -1,14 +1,191 @@
 # Swing Sync Context
 
-Last updated: 2026-06-10
+Last updated: 2026-06-12
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/5
-- Latest merge commit: `1d4aaea207c57f93bf7aa3c96d56cf58059d603a`
-- Current completed task: `SS-004 Scaffold mobile-first PWA and local analysis shell`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/6
+- Latest merge commit: `7678add7de6b946cc00328d0bef83772b1a11576`
+- Current post-merge context commit: `2a48417`
+- Current completed task:
+  `SS-005 Integrate MediaPipe Pose Landmarker in browser video mode`
+- Active task: `SS-006 Build frame processing queue and sampling strategy`
+- Active branch: `ss-006-frame-queue`
+- Active handshake: `1. Spec Drafting (Gemini)`
+- Active Pull Request: none
+
+## SS-006 Coordination
+
+SS-006 is privacy-sensitive runtime work controlling decoded frame images and
+derived landmark sets. Gemini researches/specifies, Codex verifies and
+implements, and Claude performs pre-implementation QA planning plus final
+adversarial audit.
+
+Acceptance criteria:
+
+- Video frames are sampled deterministically.
+- Processing can be cancelled or retried.
+- Queue handles long, short, portrait, and landscape videos.
+- Output includes timestamps, frame images, and landmark sets.
+
+Kickoff state on 2026-06-12:
+
+- Local and `origin/main` were confirmed at `2a48417`, including PR #6 merge
+  `7678add`; `git diff --check` passed.
+- The unrelated untracked
+  `docs/agent-guidance/ss-004-new-codex-session-prompt.md` and intentional
+  `docs/agent-guidance/ss-006-new-codex-session-prompt.md` are preserved.
+- Notion reconfirmed branch `ss-006-frame-queue`, initial `0. Backlog` status,
+  empty PR, and the acceptance criteria above. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- `SS-TC-006` was confirmed invalid for SS-006 because it describes Swing Card
+  export leakage. The mismatch was recorded in Notion. Dedicated `SS-TC-010`
+  was created for deterministic bounded ordered processing, cancellation/retry,
+  orientation/duration cases, output association, cleanup, stale-result
+  rejection, and privacy-preserving diagnostics.
+- The protected SS-005 boundary remains exact
+  `@mediapipe/tasks-vision@0.10.35`, approved same-origin model/WASM assets,
+  dedicated worker VIDEO-mode inference, complete returned landmark arrays,
+  finite increasing timestamps, volatile local frames, resource cleanup,
+  fail-closed unexpected requests, and no sensitive persistence or telemetry.
+- The self-contained Gemini Deep Research handoff is
+  `docs/ss-006-gemini-research-prompt.md`.
+- Implementation is blocked pending Gemini response disposition, a normative
+  SS-006 specification, and Claude pre-implementation QA planning PASS.
+- Observability decision at kickoff: retain only local sanitized lifecycle,
+  progress, cancellation, retry, and error states. Do not log frame pixels,
+  landmarks, media characteristics, or user identifiers.
+
+Next owner: Gemini Deep Research. Paste
+`docs/ss-006-gemini-research-prompt.md`, then return the complete response to
+Codex for primary-source verification and Adopt / Revise / Defer / Reject
+disposition. Do not begin implementation.
+
+Gemini response disposition on 2026-06-12:
+
+- Gemini recommended even spacing, a sequential queue, generation identifiers,
+  explicit bitmap ownership, full retry reconstruction, and deterministic
+  adapter-based tests. Codex adopted those concepts with revisions.
+- `docs/ss-006-research-disposition.md` records primary-source verification and
+  explicit Adopt / Revise / Defer / Reject decisions.
+- Gemini's unsupported configurable `K=20`, one-millisecond clamp rationale,
+  two-bitmap bound, random UUID generation, required
+  `requestVideoFrameCallback()`, sensitive console diagnostics, OOM-elimination
+  claim, and permanent-destruction claim were revised or rejected.
+- `docs/ss-006-preimplementation-spec.md` defines the normative candidate:
+  fixed budget `8`; unique integer-millisecond timestamps; one queued/in-flight
+  inference item; separate aspect-preserving previews bounded to 640 px long
+  edge; maximum nine application-owned bitmaps; monotonic run generations;
+  fail-closed cancellation/retry/stale rejection; volatile ordered output; and
+  sanitized local-only observability.
+- Claude pre-implementation QA handoff:
+  `docs/ss-006-claude-qa-planning-prompt.md`.
+
+Next owner: Claude QA planning. SS-006 must remain
+`2. QA Planning (Claude)` until explicit PASS and closure of any blocking
+findings. Do not begin implementation.
+
+Claude QA planning returned FAIL on 2026-06-12 with five specification
+blockers: invalid-duration guard contradiction, queue-layer `NaN`/`Infinity`
+defense, failure-path bitmap cleanup, stale-check placement, and prior-worker
+teardown ordering before retry.
+
+Codex accepted and fixed all five in
+`docs/ss-006-preimplementation-spec.md`. The response is recorded in
+`docs/ss-006-claude-qa-response.md`; `SS-TC-010` is refined with explicit
+closure evidence. Focused re-review handoff:
+`docs/ss-006-claude-qa-rereview-prompt.md`.
+
+Next owner: Claude focused QA re-review. Keep SS-006 at
+`2. QA Planning (Claude)` and do not begin implementation before explicit PASS.
+
+Claude focused QA re-review returned PASS on 2026-06-12. B1-B5 are closed,
+`SS-TC-010` is sufficient, and Claude granted permission to move to
+`3. In Development (ChatGPT)`. Response:
+`docs/ss-006-claude-qa-rereview-response.md`.
+
+SS-006 implementation is in progress:
+
+- `src/frame-processing.ts` implements fixed-budget timestamp sampling,
+  aspect-preserving preview sizing, ordered volatile output, monotonic run
+  generations, cancellation/retry, stale rejection, and exact bitmap cleanup.
+- `src/browser-frame-processing.ts` adapts local video/object URLs and the
+  protected SS-005 PoseSession without changing SDK/model/assets.
+- `src/main.ts` replaces the ad hoc four-frame loop with local progress,
+  cancellation, failure, completion, and retry behavior.
+- Focused unit coverage pins timestamp arrays, invalid-duration no-work
+  behavior, orientation sizing, output ordering, failure cleanup, stale seek
+  cancellation, repeated-cancel idempotence, and non-overlapping retry.
+- Browser coverage validates eight-frame desktop/mobile completion and real
+  initialization failure/retry while preserving SS-005 network/privacy/safety
+  behavior.
+- Observability impact: added only local sanitized lifecycle, progress, retry,
+  completion, and stable error states. No telemetry or sensitive diagnostics.
+
+SS-006 implementation completed on 2026-06-12 and is ready for final Claude
+audit:
+
+- Fixed-budget eight-sample deterministic queue, bounded previews, ordered
+  timestamp/frame/pose output, cancellation, failure cleanup, stale rejection,
+  and clean retry are implemented.
+- Protected SS-005 inference remains dedicated-worker, one-frame-in-flight,
+  same-origin, fail-closed, and volatile. Transfer failure now closes the
+  main-owned bitmap before failing closed.
+- Final verification passed on Node 22: 25 unit tests, 26 desktop/mobile
+  production browser tests, build, compliance, safety, privacy, license audit,
+  bundle-license fixture, approved asset hashes, one-component production SBOM,
+  zero production vulnerabilities, and `git diff --check`.
+- Final audit prompt: `docs/ss-006-claude-audit-prompt.md`.
+
+Next owner: Claude final adversarial implementation audit. Keep SS-006 at
+`4. Final Audit (Claude)` until explicit PASS and any required focused
+re-review.
+
+Claude final audit returned FAIL with two focused blockers. B1 was an evidence
+gap: `releaseOutputs()` already closes and clears the current uncommitted
+preview during invalidating cleanup. A direct cancellation/post-inference race
+test now proves that ownership path. B2 was valid and is fixed:
+`VideoFrameSource.dispose()` now rejects pending metadata/seek operations and
+removes their listeners before media teardown.
+
+Codex also fixed retry-during-cancel serialization and added direct unit
+evidence for source disposal, current-preview cleanup, and retry sequencing.
+Post-fix verification passed: 29 unit tests, 26 desktop/mobile browser tests,
+full required compliance/privacy/licensing/assets/SBOM checks, zero production
+vulnerabilities, and `git diff --check`.
+
+Final audit response: `docs/ss-006-claude-audit-response.md`.
+Focused final re-review prompt:
+`docs/ss-006-claude-final-rereview-prompt.md`.
+
+Next owner: Claude focused final re-review. Keep SS-006 at
+`4. Final Audit (Claude)` and do not prepare the PR until focused PASS.
+
+Claude focused final re-review returned PASS on 2026-06-12:
+
+- B1 and B2 are closed.
+- N1-N3 are closed and N4 is appropriately deferred to a separately reviewed
+  future export story.
+- No new blocker was introduced and the protected SS-005 boundary remains
+  intact.
+- PR preparation is authorized.
+
+Next owner: Codex PR preparation. Keep SS-006 at `4. Final Audit (Claude)`
+until merge; record the PR URL in Notion and this context after creation.
+
+SS-006 pull request created on 2026-06-12:
+
+- PR: https://github.com/ajason13/swing-sync/pull/7
+- Claude focused final re-review: PASS.
+- Final local verification: 29 unit tests, 26 desktop/mobile browser tests,
+  build, full compliance/privacy/safety/licensing/assets/SBOM checks, zero
+  production vulnerabilities, and `git diff --check`.
+
+Next owner: PR review and CI. Keep SS-006 at `4. Final Audit (Claude)` until PR
+#7 is merged; after merge, update local `main`, synchronize Notion and this
+context, mark SS-006 `5. Done`, and identify the next task.
 
 ## Completed Foundation
 

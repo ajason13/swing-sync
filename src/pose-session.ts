@@ -39,8 +39,15 @@ export class PoseSession {
 
     this.frameInFlight = true;
     this.setStatus("processing");
-    this.post({ type: "frame", bitmap, timestampMs }, [bitmap]);
-    return true;
+    try {
+      this.post({ type: "frame", bitmap, timestampMs }, [bitmap]);
+      return true;
+    } catch {
+      bitmap.close();
+      this.frameInFlight = false;
+      this.fail("WORKER_MESSAGE_ERROR");
+      return false;
+    }
   }
 
   teardown(): void {

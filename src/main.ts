@@ -1,6 +1,10 @@
 import "./styles.css";
-import { type PoseFrameResult } from "./pose-contract";
-import { PoseSession, type PoseSessionStatus } from "./pose-session";
+import { createBrowserFrameController } from "./browser-frame-processing";
+import {
+  type FrameProcessingController,
+  type FrameProcessingState,
+  type SampledFrameOutput
+} from "./frame-processing";
 import { getNextWorkflowStep, getWorkflowStep, workflowSteps, type WorkflowStepId } from "./workflow";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -9,13 +13,13 @@ const consentStorageKey = "swing-sync:safety-consent:v1";
 let consentStorageFailed = false;
 let activeStep: WorkflowStepId = "capture";
 let selectedVideo: File | undefined;
-let selectedVideoUrl: string | undefined;
-let poseSession: PoseSession | undefined;
-let poseStatus: PoseSessionStatus = "idle";
+let frameController: FrameProcessingController | undefined;
+let abortFrameController: ((code: string) => void) | undefined;
+let processingState: FrameProcessingState = "idle";
 let poseStatusCode: string | undefined;
 let extractedFrameCount = 0;
+let totalFrameCount = 0;
 let latestLandmarkCount = 0;
-let pendingTimestamps: number[] = [];
 
 function hasSafetyConsent(): boolean {
   if (consentStorageFailed) return false;
@@ -73,15 +77,17 @@ function renderWorkflowPanel(consentAccepted: boolean): string {
 
   if (activeStep === "processing") {
     const statusText =
-      poseStatus === "loading"
+      processingState === "loading"
         ? "Loading the local pose model in a background worker."
-        : poseStatus === "processing"
+        : processingState === "processing"
           ? "Processing a local video frame."
-          : poseStatus === "ready"
-            ? "Local pose worker ready."
-            : poseStatus === "error"
+          : processingState === "completed"
+            ? "Local frame processing completed."
+            : processingState === "failed"
               ? `Local pose analysis stopped (${poseStatusCode ?? "UNKNOWN_ERROR"}).`
-              : poseStatus === "closed"
+              : processingState === "cancelled"
+                ? "Local frame processing cancelled."
+                : processingState === "closed"
                 ? "Local pose session closed."
                 : "Preparing local pose analysis.";
 
@@ -91,13 +97,16 @@ function renderWorkflowPanel(consentAccepted: boolean): string {
         <div>
           <strong>${statusText}</strong>
           <p data-pose-summary>
-            ${extractedFrameCount} video frames processed.
+            ${extractedFrameCount} of ${totalFrameCount} video frames processed.
             ${latestLandmarkCount > 0 ? `${latestLandmarkCount} normalized landmarks retained in the latest result.` : ""}
           </p>
         </div>
       </div>
       <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
-      <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
+      <div class="action-row">
+        <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
+        <button class="secondary-action" type="button" data-retry-analysis hidden>Retry local analysis</button>
+      </div>
     `;
   }
 
@@ -203,18 +212,18 @@ function bindInteractions(): void {
       document.querySelector<HTMLInputElement>("#safety-consent")?.focus();
       return;
     }
-    if (!selectedVideo || !selectedVideoUrl) {
+    if (!selectedVideo) {
       renderApp("Choose a local video before starting analysis.");
       return;
     }
     activeStep = "processing";
     renderApp("Loading approved local pose assets. No video data leaves this device.");
-    startPoseAnalysis();
+    void startFrameAnalysis();
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (activeStep === "processing") stopPoseAnalysis();
+      if (activeStep === "processing") void closeFrameAnalysis();
       activeStep = button.dataset.step as WorkflowStepId;
       renderApp(`${getWorkflowStep(activeStep).label} opened.`);
     });
@@ -232,9 +241,8 @@ function bindInteractions(): void {
   document.querySelector<HTMLInputElement>("#video-file")?.addEventListener("change", (event) => {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
-    releaseSelectedVideo();
+    void closeFrameAnalysis();
     selectedVideo = file;
-    selectedVideoUrl = URL.createObjectURL(file);
     renderApp("Local video selected. It has not been analyzed or persisted.");
   });
 
@@ -243,133 +251,100 @@ function bindInteractions(): void {
   });
 
   document.querySelector<HTMLButtonElement>("[data-cancel-analysis]")?.addEventListener("click", () => {
-    stopPoseAnalysis();
-    activeStep = "capture";
-    renderApp("Local analysis stopped and volatile resources were released.");
+    void stopFrameAnalysis();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-retry-analysis]")?.addEventListener("click", () => {
+    void frameController?.retry();
   });
 }
 
-function releaseSelectedVideo(): void {
-  if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
-  selectedVideo = undefined;
-  selectedVideoUrl = undefined;
-}
-
-function handlePoseStatus(status: PoseSessionStatus, code?: string): void {
-  poseStatus = status;
+function handleProcessingState(state: FrameProcessingState, code?: string): void {
+  processingState = state;
   poseStatusCode = code;
-  if (status === "ready") void processNextFrame();
   updateProcessingUi();
 }
 
-function handlePoseResult(result: PoseFrameResult): void {
-  extractedFrameCount += 1;
-  latestLandmarkCount = result.landmarks[0]?.length ?? 0;
+function handleProcessingProgress(completed: number, total: number): void {
+  extractedFrameCount = completed;
+  totalFrameCount = total;
+  updateProcessingUi();
+}
+
+function handleProcessingOutput(output: SampledFrameOutput): void {
+  latestLandmarkCount = output.pose.landmarks[0]?.length ?? 0;
   updateProcessingUi();
 }
 
 function updateProcessingUi(): void {
   const status = document.querySelector<HTMLElement>(".processing-placeholder strong");
   const summary = document.querySelector<HTMLElement>("[data-pose-summary]");
+  const retry = document.querySelector<HTMLButtonElement>("[data-retry-analysis]");
   if (status) {
     status.textContent =
-      poseStatus === "loading"
+      processingState === "loading"
         ? "Loading the local pose model in a background worker."
-        : poseStatus === "processing"
+        : processingState === "processing"
           ? "Processing a local video frame."
-          : poseStatus === "ready"
-            ? "Local pose worker ready."
-            : poseStatus === "error"
+          : processingState === "completed"
+            ? "Local frame processing completed."
+            : processingState === "failed"
               ? `Local pose analysis stopped (${poseStatusCode ?? "UNKNOWN_ERROR"}).`
-              : "Local pose session closed.";
+              : processingState === "cancelled"
+                ? "Local frame processing cancelled."
+                : "Local pose session closed.";
   }
   if (summary) {
-    summary.textContent = `${extractedFrameCount} video frames processed.${
+    summary.textContent = `${extractedFrameCount} of ${totalFrameCount} video frames processed.${
       latestLandmarkCount > 0
         ? ` ${latestLandmarkCount} normalized landmarks retained in the latest result.`
         : ""
     }`;
   }
+  if (retry) retry.hidden = processingState !== "failed";
 }
 
-function startPoseAnalysis(): void {
+async function startFrameAnalysis(): Promise<void> {
   const video = document.querySelector<HTMLVideoElement>("#analysis-video");
-  if (!video || !selectedVideoUrl) return;
+  if (!video || !selectedVideo) return;
 
   extractedFrameCount = 0;
+  totalFrameCount = 0;
   latestLandmarkCount = 0;
-  pendingTimestamps = [];
-  video.src = selectedVideoUrl;
-  video.addEventListener(
-    "loadedmetadata",
-    () => {
-      const finalSample = Math.max(0, Math.min(video.duration - 0.001, 1.5));
-      // Keep sampled media timestamps distinct before converting them to milliseconds.
-      pendingTimestamps = [...new Set([0, 0.5, 1, finalSample])]
-        .filter((timestamp) => timestamp <= video.duration)
-        .sort((a, b) => a - b);
-      void processNextFrame();
-    },
-    { once: true }
-  );
-
-  poseSession = new PoseSession({ onStatus: handlePoseStatus, onResult: handlePoseResult });
-  poseSession.initialize();
+  const browserController = createBrowserFrameController(video, selectedVideo, {
+    onState: handleProcessingState,
+    onProgress: handleProcessingProgress,
+    onOutput: handleProcessingOutput
+  });
+  frameController = browserController.controller;
+  abortFrameController = browserController.abort;
+  await frameController.start();
 }
 
-async function processNextFrame(): Promise<void> {
-  const video = document.querySelector<HTMLVideoElement>("#analysis-video");
-  if (!video || poseStatus !== "ready" || pendingTimestamps.length === 0) return;
-
-  const timestampSeconds = pendingTimestamps.shift();
-  if (timestampSeconds === undefined) return;
-  if (Math.abs(video.currentTime - timestampSeconds) > 0.001) {
-    await new Promise<void>((resolve) => {
-      video.addEventListener("seeked", () => resolve(), { once: true });
-      video.currentTime = timestampSeconds;
-    });
-  }
-  const bitmap = await createImageBitmap(video);
-  poseSession?.submitFrame(bitmap, Math.round(timestampSeconds * 1000));
+async function stopFrameAnalysis(): Promise<void> {
+  const controller = frameController;
+  await controller?.cancel();
+  activeStep = "capture";
+  renderApp("Local analysis stopped and volatile resources were released.");
 }
 
-function stopPoseAnalysis(): void {
-  // PoseSession owns its worker through the asynchronous teardown acknowledgement.
-  poseSession?.teardown();
-  poseSession = undefined;
-  poseStatus = "closed";
-  pendingTimestamps = [];
-  const video = document.querySelector<HTMLVideoElement>("#analysis-video");
-  if (video) {
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
+async function closeFrameAnalysis(): Promise<void> {
+  const controller = frameController;
+  await controller?.close();
+  if (frameController === controller) {
+    frameController = undefined;
+    abortFrameController = undefined;
   }
-  releaseSelectedVideo();
-}
-
-function failPoseAnalysis(code: string): void {
-  poseSession?.abort(code);
-  poseSession = undefined;
-  pendingTimestamps = [];
-  poseStatus = "error";
-  poseStatusCode = code;
-  const video = document.querySelector<HTMLVideoElement>("#analysis-video");
-  if (video) {
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-  }
-  releaseSelectedVideo();
-  updateProcessingUi();
 }
 
 renderApp();
 
-window.addEventListener("beforeunload", stopPoseAnalysis);
+window.addEventListener("beforeunload", () => {
+  void closeFrameAnalysis();
+});
 document.addEventListener("securitypolicyviolation", () => {
-  if (["loading", "ready", "processing"].includes(poseStatus)) {
-    failPoseAnalysis("UNEXPECTED_NETWORK_BLOCKED");
+  if (["loading", "processing"].includes(processingState)) {
+    abortFrameController?.("UNEXPECTED_NETWORK_BLOCKED");
   }
 });
 
