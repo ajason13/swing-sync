@@ -6,14 +6,14 @@ Last updated: 2026-06-12
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/6
-- Latest merge commit: `7678add7de6b946cc00328d0bef83772b1a11576`
-- Current post-merge context commit: `2a48417`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/7
+- Latest merge commit: `9d937745fe8e446769d6806c21f8e4635bc5ad04`
+- Current post-merge context commit: pending this synchronization commit
 - Current completed task:
-  `SS-005 Integrate MediaPipe Pose Landmarker in browser video mode`
-- Active task: `SS-006 Build frame processing queue and sampling strategy`
-- Active branch: `ss-006-frame-queue`
-- Active handshake: `1. Spec Drafting (Gemini)`
+  `SS-006 Build frame processing queue and sampling strategy`
+- Active task: `SS-007 Implement swing phase detector with manual correction`
+- Active branch: `ss-007-phase-detector`
+- Active handshake: `0. Backlog`
 - Active Pull Request: none
 
 ## SS-006 Coordination
@@ -186,6 +186,29 @@ SS-006 pull request created on 2026-06-12:
 Next owner: PR review and CI. Keep SS-006 at `4. Final Audit (Claude)` until PR
 #7 is merged; after merge, update local `main`, synchronize Notion and this
 context, mark SS-006 `5. Done`, and identify the next task.
+
+SS-006 completed on 2026-06-12:
+
+- PR #7 merged with required compliance CI passing:
+  https://github.com/ajason13/swing-sync/pull/7
+- Merge commit: `9d937745fe8e446769d6806c21f8e4635bc5ad04`.
+- Local `main` was fast-forwarded to the merge commit.
+- Claude focused final re-review PASS, final local verification, accurate
+  SS-TC-010 coverage, and Notion synchronization are complete.
+- SS-006 is `5. Done`.
+
+Next task: `SS-007 Implement swing phase detector with manual correction`.
+
+- Branch: `ss-007-phase-detector`
+- Handshake: `0. Backlog`
+- Pull request: none
+- Acceptance: detect the MVP eight swing frames when confidence is sufficient;
+  allow user correction before metric generation; emit low-confidence warnings
+  for ambiguous swings; and include fixture tests for common side-on videos.
+
+Next owner: start SS-007 from updated `main`, confirm tracker/test-case
+coverage, classify its coaching/safety sensitivity, and begin the required
+Gemini specification workflow before implementation.
 
 ## Completed Foundation
 
