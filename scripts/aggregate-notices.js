@@ -8,6 +8,7 @@ const targetRoot = resolve(targetArg ? targetArg.slice("--target=".length) : "."
 const outputPath = resolve("dist/THIRD_PARTY_NOTICES.txt");
 const rollupNoticePath = resolve("dist/THIRD_PARTY_NOTICES.rollup.txt");
 const viteNoticePath = resolve("dist/.vite/license.md");
+const manualNoticePath = resolve("docs/third-party-notices/mediapipe.md");
 
 function collectProductionPackagesFromFixture(root) {
   const packageRoot = join(root, "packages");
@@ -51,7 +52,7 @@ function collectProductionPackages(root) {
 function readExistingNotice() {
   const parts = [];
 
-  for (const path of [viteNoticePath, rollupNoticePath]) {
+  for (const path of [viteNoticePath, rollupNoticePath, manualNoticePath]) {
     if (existsSync(path)) {
       parts.push(readFileSync(path, "utf8").trim());
     }

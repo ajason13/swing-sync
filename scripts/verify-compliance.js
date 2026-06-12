@@ -36,6 +36,16 @@ function assertSbom() {
       fail(`docs/sbom.json includes dev-only package: ${devOnly}`);
     }
   }
+
+  const mediaPipe = sbom.components.find(
+    (component) =>
+      component.group === "@mediapipe" &&
+      component.name === "tasks-vision" &&
+      component.version === "0.10.35"
+  );
+  if (!mediaPipe) {
+    fail("docs/sbom.json must include exact @mediapipe/tasks-vision@0.10.35.");
+  }
 }
 
 function assertNoticeFixture() {
@@ -62,6 +72,23 @@ function assertNoticeFixture() {
   }
 }
 
+function assertMediaPipeNotice() {
+  const noticePath = "docs/third-party-notices/mediapipe.md";
+  assertNonEmpty(noticePath);
+  const notice = readFileSync(noticePath, "utf8");
+  for (const phrase of [
+    "@mediapipe/tasks-vision@0.10.35",
+    "Pose Landmarker Full float16 version 1",
+    "Apache License 2.0",
+    "mediapipe/issues/6306"
+  ]) {
+    if (!notice.includes(phrase)) {
+      fail(`${noticePath} must include: ${phrase}`);
+    }
+  }
+}
+
 assertSbom();
 assertNoticeFixture();
+assertMediaPipeNotice();
 console.log("Compliance artifacts verified.");

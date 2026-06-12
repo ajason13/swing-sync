@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-06
+Last updated: 2026-06-10
 
 ## Current State
 
@@ -47,7 +47,7 @@ npm run compliance:verify
 ## Next Task
 
 `SS-005 Integrate MediaPipe Pose Landmarker in browser video mode` is next in
-the Notion backlog on branch `ss-005-mediapipe-pose`.
+the delivery workflow on branch `ss-005-mediapipe-pose`.
 
 Acceptance criteria from Notion:
 
@@ -62,8 +62,220 @@ implementation. The current `SS-TC-005` Notion test case describes swing-phase
 correction rather than Pose Landmarker integration and must be corrected or
 replaced before claiming acceptance coverage.
 
-Start the next Codex session with
-`docs/agent-guidance/ss-005-new-codex-session-prompt.md`.
+SS-005 coordination status through 2026-06-07:
+
+- Local `main` was confirmed current at `bf650f2`, including PR #5 merge
+  `1d4aaea` and post-merge context commit `57cda37`.
+- Branch `ss-005-mediapipe-pose` was created from updated `main`.
+- Notion acceptance criteria, branch, empty PR field, and initial
+  `0. Backlog` status were reconfirmed. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- `SS-TC-005` was confirmed invalid for this story. `SS-TC-001` provides
+  complementary local extraction/no-upload coverage but does not cover all
+  SS-005 criteria. Dedicated `SS-TC-009` was created for non-blocking loading,
+  metadata retention, timestamps, cleanup, and post-asset network assertions.
+- The self-contained Gemini Deep Research handoff is
+  `docs/ss-005-gemini-research-prompt.md`.
+- `docs/ss-005-research-disposition.md` records initial primary-source checks
+  and Codex Adopt / Revise / Defer / Reject decisions after the Gemini
+  response.
+- Research handoff commit: `b0a6dca` (`Prepare SS-005 research handoff`).
+- Pre-handoff verification passed on Node 22: `npm run build`,
+  `npm run compliance:verify`, and `git diff --check`.
+- Gemini returned a conditional-GO proposal, but Codex rejected its conclusion
+  that every blocker was resolved. Current MediaPipe terms explicitly describe
+  provider metrics and informed-consent responsibility; the inspected exact
+  0.10.35 npm tarball contains compiled WASM and lacks packaged LICENSE/NOTICE
+  files; explicit model redistribution/local-serving/caching rights were not
+  established; and no generated fixture/provenance exists.
+- Exact `@mediapipe/tasks-vision@0.10.35` and Pose Landmarker Full float16
+  version 1 are blocked candidates, not approved dependencies/assets.
+- `docs/models-licensing.md`, `docs/licensing.md`, and
+  `docs/privacy-architecture.md` record the current provider-metrics,
+  compiled-binary, model-rights, consent, and network-behavior gates.
+- Claude pre-implementation QA-planning handoff:
+  `docs/ss-005-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`. Implementation remains blocked
+  pending Claude's response and closure of every implementation-start blocker.
+- Gemini disposition and Claude QA-planning handoff commit: `48a7376`.
+- Claude QA Planning returned FAIL with six implementation-start blockers.
+  Codex accepted the provider-metrics, compiled-binary, model-rights, fixture,
+  worker-contract, responsiveness-contract, and tracker-coverage concerns while
+  revising technically overbroad recommendations.
+- `docs/ss-005-preimplementation-spec.md` now defines the normative scope,
+  conservative maintainer decisions, exact candidate result schema, worker
+  protocol, fixture provenance, network phases, responsiveness behavior, and
+  implementation-start gate.
+- Exact 0.10.35 API verification corrected the metadata contract: returned
+  normalized/world landmarks expose `x`, `y`, `z`, and `visibility`, but not
+  per-landmark `presence`. Presence remains a configured threshold.
+- `docs/ss-005-claude-qa-response.md` records each finding as accepted, revised,
+  or fixed. SS-005 remains `2. QA Planning (Claude)`.
+- `SS-TC-009` was revised in Notion to match the exact candidate API, worker
+  contract, network phases, fixture prerequisite, responsiveness behavior, and
+  cleanup/privacy coverage.
+- Focused Claude QA re-review handoff:
+  `docs/ss-005-claude-qa-rereview-prompt.md`.
+- Post-Claude-response Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
+- Claude QA findings response and focused re-review handoff commit: `4d616ee`.
+- Claude focused QA re-review returned FAIL while confirming the revised
+  technical specification is sound. Worker contract, responsiveness contract,
+  revised `SS-TC-009`, absence of returned per-landmark presence, and wrapper
+  timestamp behavior are closed.
+- Four blockers remain open: provider metrics decision, compiled-binary
+  obligations/notices, model rights/delivery, and an approved empirically
+  validated fixture/provenance record. Fixture validation depends on resolution
+  of the provider/model blockers.
+- On 2026-06-10, the maintainer supplied a response attributed to Google stating
+  that the current Web SDK has no telemetry, future aggregated usage/performance
+  telemetry is planned, current Web SDKs are Apache-2.0, and the exact Pose
+  Landmarker Full float16 version 1 URL is Apache-2.0.
+- `docs/ss-005-google-provider-response.md` records the response and Codex
+  disposition. Public MediaPipe issue #6306 and collaborator response comment
+  `4673728357` provide durable provenance and explicitly scope the questions to
+  exact `@mediapipe/tasks-vision@0.10.35` and the exact model URL. Explicit
+  maintainer compliance approval was recorded on 2026-06-11.
+- Proposed exact-version policy: pin `@mediapipe/tasks-vision@0.10.35`, require
+  fresh review for every upgrade, fail closed on any unexpected external
+  request, distribute Apache-2.0 text and third-party attribution, and vendor
+  the exact model same-origin with a pinned hash. Runtime provider fetch is not
+  approved; service-worker caching remains separate.
+- Google provider-response evidence/disposition commit: `5b22e5d`.
+- On 2026-06-11, the maintainer explicitly approved reliance on Google's public
+  response for exact `@mediapipe/tasks-vision@0.10.35`, its packaged compiled
+  artifacts, and the exact Pose Landmarker Full float16 version 1 model. The
+  maintainer approved same-origin model vendoring/serving, Apache-2.0 license
+  and attribution handling, fail-closed unexpected-network behavior, and fresh
+  review before every SDK upgrade. B-1, B-2, and B-3 are closed.
+- Gate B-4 is closed. The approved fixture is
+  `test/fixtures/pose-landmarker/mannequin-golf-address.webm`, deterministically
+  derived from a committed AI-generated faceless wooden-mannequin source.
+  `test/fixtures/pose-landmarker/PROVENANCE.md` records the prompt, no-real-
+  person declaration, FFmpeg 8.1.1 derivation, hashes, Apache-2.0 output
+  decision, and exact-model VIDEO-mode validation.
+- Disposable validation with exact `@mediapipe/tasks-vision@0.10.35` and the
+  exact approved model returned one complete 33-normalized-landmark and
+  33-world-landmark pose at 0, 500, 1000, and 1500 ms. The dependency and model
+  remained outside the repository during validation.
+- Third focused pre-implementation Claude QA prompt:
+  `docs/ss-005-claude-qa-third-review-prompt.md`. The prior focused re-review
+  prompt is marked superseded and must not be pasted.
+- `docs/ss-005-claude-qa-rereview-response.md` records the focused result.
+- The pre-implementation spec now tracks the deferred production response to an
+  observed provider-metrics request. No behavior may silently allow, block, or
+  ignore it before the provider decision is approved.
+- Post-focused-re-review Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
+- Focused Claude QA re-review result commit: `c4f961e`.
+- Post-disposition Node 22 verification passed: `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`, and
+  `git diff --check`.
+- No SDK dependency, model/WASM asset, fixture video, runtime implementation,
+  or asset fetch/cache behavior has been added.
+- Observability decision: use only local, sanitized lifecycle/error states
+  needed to debug initialization and inference. Do not log raw frames,
+  landmarks, media characteristics, or sensitive user data.
+
+Next owner: Claude QA. Perform the third focused pre-implementation review of
+the closed provider, licensing, model-delivery, and fixture gates. Do not begin
+application implementation before Claude PASS.
+
+Claude returned PASS on 2026-06-11. All implementation-start blockers B-1
+through B-4 are closed and SS-005 may move to `3. In Development (ChatGPT)`.
+The response is recorded in
+`docs/ss-005-claude-qa-third-review-response.md`. Implementation must manually
+provide auditable MediaPipe notice/attribution, verify the generated fixture
+terms before release, preserve fail-closed unexpected-network handling, and
+complete the full SS-TC-009 verification matrix before final audit.
+
+Next owner: Codex implementation and verification on
+`ss-005-mediapipe-pose`.
+
+SS-005 implementation completed on 2026-06-11 and is ready for final Claude
+audit:
+
+- Exact `@mediapipe/tasks-vision@0.10.35`, packaged WASM, and approved Pose
+  Landmarker Full float16 version 1 model are vendored and served same-origin.
+- Dedicated worker VIDEO-mode inference preserves complete normalized/world
+  landmarks and returned visibility, validates media timestamps, applies
+  one-frame backpressure, closes transferred bitmaps, and fails closed.
+- Existing safety acknowledgement remains required. Local video object URLs
+  are revoked, video/frame/landmark persistence is absent, and CSP-blocked
+  unexpected external requests visibly terminate the active session.
+- Manual MediaPipe attribution is aggregated into production notices. Exact
+  model/WASM hashes and the exact MediaPipe SBOM component are verified.
+- Generated fixture terms review is recorded in its provenance file.
+- Observability impact: intentionally limited to local UI state and sanitized
+  stable error codes; no telemetry or sensitive diagnostics were added.
+- Verification passed on Node 22: 9 unit tests, 22 desktop/mobile production
+  browser tests, build, compliance, safety, privacy, license audit,
+  bundle-license fixture, exact asset hashes, one-component production SBOM,
+  production notice inspection, zero production audit vulnerabilities, and
+  `git diff --check`.
+- Final audit prompt: `docs/ss-005-claude-audit-prompt.md`.
+
+Next owner: Claude final adversarial implementation audit. Story must remain
+`4. Final Audit (Claude)` until explicit PASS.
+
+Claude returned final-audit PASS on 2026-06-11 and permitted PR preparation,
+with eight non-blocking findings. Codex applied focused fixes before PR:
+
+- removed misleading unreachable worker-side backpressure code;
+- removed the invented missing-visibility fallback;
+- made repeated session failure signals idempotent;
+- added worker `messageerror` and repeated-failure unit coverage;
+- pinned Vite ES worker output;
+- documented timestamp-deduplication and asynchronous teardown ownership; and
+- added the missing offline-from-start positive browser test.
+
+Post-fix verification passed: 11 unit tests, 24 desktop/mobile production
+browser tests, build, compliance, safety, privacy, license audit,
+bundle-license fixture, exact asset hashes, one-component production SBOM,
+zero production vulnerabilities, and `git diff --check`.
+
+Final audit response: `docs/ss-005-claude-audit-response.md`.
+Focused re-review prompt: `docs/ss-005-claude-final-rereview-prompt.md`.
+
+Next owner: Claude focused final re-review. Keep SS-005 at
+`4. Final Audit (Claude)` and do not create the PR until focused PASS.
+
+Claude returned focused final re-review PASS on 2026-06-11. All focused fixes
+were accepted, no regression or new blocker was identified, the
+offline-from-start positive test was accepted as closing the highest-priority
+network gap, and Claude explicitly authorized PR preparation.
+
+Focused response:
+`docs/ss-005-claude-final-rereview-response.md`.
+
+Next owner: Codex PR preparation. Keep SS-005 at `4. Final Audit (Claude)`
+until PR checks and merge complete; do not mark Done before post-merge
+repository, Notion, and context synchronization.
+
+SS-005 PR created on 2026-06-11:
+
+- PR #6: https://github.com/ajason13/swing-sync/pull/6
+- Branch: `ss-005-mediapipe-pose`
+- Claude final audit: PASS.
+- Claude focused final re-review after fixes: PASS.
+- Verification recorded in the PR: 11 unit tests, 24 desktop/mobile production
+  browser tests, build, compliance, safety, privacy, license audit,
+  bundle-license fixture, exact asset hashes, one-component production SBOM,
+  zero production vulnerabilities, and `git diff --check`.
+- PR records exact SDK/model terms, fixture provenance, observed network
+  behavior, deferred work, and intentionally privacy-limited observability.
+
+Next owner: GitHub PR checks and merge review. Keep SS-005 at
+`4. Final Audit (Claude)` until PR #6 is merged, then update local `main`,
+Notion, and this file before moving to `5. Done`.
 
 ## Completed Task
 

@@ -27,7 +27,10 @@ if (result.status !== 0 && !result.stdout) {
 
 const productionNames = flattenProductionNames(JSON.parse(result.stdout));
 const sbom = JSON.parse(readFileSync(sbomPath, "utf8"));
-sbom.components = (sbom.components ?? []).filter((component) => productionNames.has(component.name));
+sbom.components = (sbom.components ?? []).filter((component) => {
+  const packageName = component.group ? `${component.group}/${component.name}` : component.name;
+  return productionNames.has(packageName);
+});
 
 writeFileSync(sbomPath, JSON.stringify(sbom, null, 2) + "\n");
 console.log(`Filtered ${sbomPath} to ${sbom.components.length} production component(s).`);

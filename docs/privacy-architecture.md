@@ -13,10 +13,11 @@ frame pixels must not be uploaded, sent to model providers, or shared with
 remote services unless a future feature adds a separate, explicit opt-in flow
 for that action.
 
-The current application does not yet implement video capture, video storage,
-pose extraction, model inference, exports, or remote model APIs. The current
-consent acknowledgement is a local scaffold, not a durable legal or privacy
-record.
+The current application implements local file selection and local Pose
+Landmarker inference for sampled video frames. It does not implement camera
+capture, raw-video or landmark persistence, exports, remote sharing, or remote
+model APIs. The current consent acknowledgement is a local scaffold, not a
+durable legal or privacy record.
 
 ## Data Classes
 
@@ -163,3 +164,37 @@ for:
 - model SDK telemetry and destination origins; and
 - CSP, service worker, and runtime network guard behavior if those controls are
   implemented.
+
+## SS-005 MediaPipe Provider-Metrics Gate
+
+On 2026-06-10, the maintainer provided a response attributed to Google stating
+that the current Web SDK does not include telemetry, does not send input data,
+and may add aggregated performance and usage telemetry in the future without a
+planned opt-out. Google also stated that future outbound requests may be blocked
+while continuing to use the SDK normally.
+
+The maintainer approved exact `@mediapipe/tasks-vision@0.10.35` on 2026-06-11
+as having no current provider-metrics consent requirement. This does not
+approve future versions. Any SDK upgrade requires fresh privacy, terms, and
+observed-network review.
+
+SS-005 implements:
+
+- the exact approved SDK version and public provider response in MediaPipe
+  issue #6306;
+- observed and attempted network requests during initialization and inference;
+- whether the SDK remains functional when all external requests are blocked;
+- fail-closed behavior for any unexpected external request; and
+- a fresh consent/product decision before adopting any future version that
+  includes provider telemetry;
+- a dedicated worker for local model initialization and inference;
+- volatile transferable `ImageBitmap` frames closed after inference;
+- no raw-video, frame, or landmark persistence;
+- same-origin WASM/model delivery without service-worker model caching;
+- CSP blocking of unexpected external connections; and
+- visible sanitized local error codes when initialization, inference, worker,
+  or unexpected-network failures stop a session.
+
+Observability is intentionally limited to local UI state and sanitized stable
+error codes. Raw frames, landmarks, media characteristics, and user identifiers
+must not be written to console output, logs, storage, or remote systems.

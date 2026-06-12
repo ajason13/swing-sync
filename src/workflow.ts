@@ -10,8 +10,8 @@ export const workflowSteps = [
     id: "processing",
     shortLabel: "Process",
     label: "Processing",
-    status: "Preview only",
-    description: "See where local processing progress and controls will appear."
+    status: "Local only",
+    description: "Load the approved local pose model and process selected video frames."
   },
   {
     id: "review",

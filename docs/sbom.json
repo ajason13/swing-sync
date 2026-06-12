@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:be4c67b7-e0d7-4cbf-94c7-b86be57e6ad0",
+  "serialNumber": "urn:uuid:7d061463-3bf8-412b-a954-0ee124b48fb7",
   "metadata": {
-    "timestamp": "2026-06-06T06:07:42.168Z",
+    "timestamp": "2026-06-11T20:49:59.954Z",
     "tools": {
       "components": [
         {
@@ -106,10 +106,59 @@
       ]
     }
   },
-  "components": [],
+  "components": [
+    {
+      "type": "library",
+      "name": "tasks-vision",
+      "group": "@mediapipe",
+      "version": "0.10.35",
+      "bom-ref": "swing-sync@0.1.0|@mediapipe/tasks-vision@0.10.35",
+      "author": "mediapipe@google.com",
+      "description": "MediaPipe Vision Tasks",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40mediapipe/tasks-vision@0.10.35",
+      "externalReferences": [
+        {
+          "url": "http://mediapipe.dev",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@mediapipe/tasks-vision/-/tasks-vision-0.10.35.tgz",
+          "type": "distribution",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "1cebda77055113a242fb8e67c988669f2c27af987f27c299bce794355386f6aff4f3be6966022dce7141f5b453bcb736eb861226a899d4db08a424ad270fde82"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@mediapipe/tasks-vision"
+        }
+      ]
+    }
+  ],
   "dependencies": [
     {
-      "ref": "swing-sync@0.1.0"
+      "ref": "swing-sync@0.1.0",
+      "dependsOn": [
+        "swing-sync@0.1.0|@mediapipe/tasks-vision@0.10.35"
+      ]
+    },
+    {
+      "ref": "swing-sync@0.1.0|@mediapipe/tasks-vision@0.10.35"
     }
   ]
 }

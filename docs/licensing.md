@@ -151,6 +151,16 @@ Optional model API SDKs require two independent approvals:
 - provider service terms must permit Swing Sync's intended local-first,
   opt-in data sharing behavior.
 
+For SS-005, exact `@mediapipe/tasks-vision@0.10.35` is an approved pinned
+production dependency. Google has stated that current Web SDKs are Apache-2.0
+and that the current Web SDK does not include telemetry.
+The inspected exact package contains compiled WASM and does not package LICENSE
+or NOTICE files. On 2026-06-11, the maintainer approved reliance on Google's
+SDK-wide license statement for packaged compiled artifacts and the plan to
+distribute Apache-2.0 license text plus third-party attribution.
+Any later SDK version requires a fresh license, privacy, provider-metrics, and
+network review. See `docs/ss-005-google-provider-response.md`.
+
 ## Trademark Timing
 
 The name "Swing Sync" requires a preliminary trademark search before the

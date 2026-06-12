@@ -15,7 +15,8 @@
     "sbom:generate": "npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file docs/sbom.json --omit dev --validate && node scripts/filter-sbom.js",
     "safety:verify": "node scripts/verify-safety-terms.js",
     "privacy:verify": "node scripts/verify-privacy-boundaries.js",
-    "compliance:verify": "node scripts/verify-compliance.js && npm run safety:verify && npm run privacy:verify",
+    "pose-assets:verify": "node scripts/verify-pose-assets.js",
+    "compliance:verify": "node scripts/verify-compliance.js && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify",
     "test:unit": "vitest run",
     "test:smoke": "playwright test"
   },
@@ -28,5 +29,8 @@
     "typescript": "^5.8.3",
     "vite": "^5.4.21",
     "vitest": "2.1.9"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.35"
   }
 }

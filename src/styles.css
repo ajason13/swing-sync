@@ -32,6 +32,16 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -285,6 +295,14 @@ button:disabled {
 
 .processing-placeholder p {
   margin: 6px 0 0;
+}
+
+.analysis-video {
+  width: min(100%, 640px);
+  max-height: 280px;
+  margin-top: 14px;
+  border-radius: 8px;
+  background: #17211b;
 }
 
 .processing-mark {
