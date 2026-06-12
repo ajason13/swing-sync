@@ -163,6 +163,18 @@ Focused final re-review prompt:
 Next owner: Claude focused final re-review. Keep SS-006 at
 `4. Final Audit (Claude)` and do not prepare the PR until focused PASS.
 
+Claude focused final re-review returned PASS on 2026-06-12:
+
+- B1 and B2 are closed.
+- N1-N3 are closed and N4 is appropriately deferred to a separately reviewed
+  future export story.
+- No new blocker was introduced and the protected SS-005 boundary remains
+  intact.
+- PR preparation is authorized.
+
+Next owner: Codex PR preparation. Keep SS-006 at `4. Final Audit (Claude)`
+until merge; record the PR URL in Notion and this context after creation.
+
 ## Completed Foundation
 
 SS-001 established the project compliance baseline:
