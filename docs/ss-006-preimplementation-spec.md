@@ -1,8 +1,7 @@
 # SS-006 Pre-Implementation Specification
 
-Status: **Blocked at `2. QA Planning (Claude)`. This is the normative candidate
-contract; implementation may begin only after Claude PASS and tracker
-transition to `3. In Development (ChatGPT)`.**
+Status: **Approved for implementation. Claude focused QA re-review returned
+PASS on 2026-06-12 and the tracker moved to `3. In Development (ChatGPT)`.**
 
 ## Scope
 
@@ -329,6 +328,6 @@ remote logging, developer-console media diagnostics, or sensitive values.
 
 ## Implementation Start Gate
 
-Implementation remains prohibited until Claude QA planning returns PASS,
-blocking findings are resolved, `SS-TC-010` matches the approved contract, and
-Notion moves to `3. In Development (ChatGPT)`.
+The implementation-start gate closed on 2026-06-12 after Claude focused QA
+re-review PASS and `SS-TC-010` alignment. This specification remains normative
+during implementation and final audit.

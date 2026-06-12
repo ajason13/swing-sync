@@ -5,6 +5,7 @@ import type { PoseWorkerRequest, PoseWorkerResponse } from "../../src/pose-contr
 class FakeWorker {
   readonly posted: PoseWorkerRequest[] = [];
   terminated = false;
+  throwOnPost = false;
   private listeners = new Map<string, ((event: MessageEvent<PoseWorkerResponse>) => void)[]>();
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
@@ -13,6 +14,7 @@ class FakeWorker {
   }
 
   postMessage(message: PoseWorkerRequest): void {
+    if (this.throwOnPost) throw new DOMException("Clone failed", "DataCloneError");
     this.posted.push(message);
   }
 
@@ -85,6 +87,20 @@ describe("pose session controller", () => {
 
     expect(dropped.close).toHaveBeenCalledOnce();
     expect(worker.posted.filter((message) => message.type === "frame")).toHaveLength(1);
+  });
+
+  it("closes the frame and fails closed when worker transfer throws", () => {
+    const { worker, statuses, session } = createHarness();
+    const input = { close: vi.fn() } as unknown as ImageBitmap;
+
+    session.initialize();
+    worker.emit({ type: "ready" });
+    worker.throwOnPost = true;
+
+    expect(session.submitFrame(input, 0)).toBe(false);
+    expect(input.close).toHaveBeenCalledOnce();
+    expect(statuses).toEqual(["loading", "ready", "processing", "error"]);
+    expect(worker.terminated).toBe(true);
   });
 
   it("fails closed and terminates on initialization error", () => {

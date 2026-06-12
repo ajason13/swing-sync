@@ -101,6 +101,48 @@ closure evidence. Focused re-review handoff:
 Next owner: Claude focused QA re-review. Keep SS-006 at
 `2. QA Planning (Claude)` and do not begin implementation before explicit PASS.
 
+Claude focused QA re-review returned PASS on 2026-06-12. B1-B5 are closed,
+`SS-TC-010` is sufficient, and Claude granted permission to move to
+`3. In Development (ChatGPT)`. Response:
+`docs/ss-006-claude-qa-rereview-response.md`.
+
+SS-006 implementation is in progress:
+
+- `src/frame-processing.ts` implements fixed-budget timestamp sampling,
+  aspect-preserving preview sizing, ordered volatile output, monotonic run
+  generations, cancellation/retry, stale rejection, and exact bitmap cleanup.
+- `src/browser-frame-processing.ts` adapts local video/object URLs and the
+  protected SS-005 PoseSession without changing SDK/model/assets.
+- `src/main.ts` replaces the ad hoc four-frame loop with local progress,
+  cancellation, failure, completion, and retry behavior.
+- Focused unit coverage pins timestamp arrays, invalid-duration no-work
+  behavior, orientation sizing, output ordering, failure cleanup, stale seek
+  cancellation, repeated-cancel idempotence, and non-overlapping retry.
+- Browser coverage validates eight-frame desktop/mobile completion and real
+  initialization failure/retry while preserving SS-005 network/privacy/safety
+  behavior.
+- Observability impact: added only local sanitized lifecycle, progress, retry,
+  completion, and stable error states. No telemetry or sensitive diagnostics.
+
+SS-006 implementation completed on 2026-06-12 and is ready for final Claude
+audit:
+
+- Fixed-budget eight-sample deterministic queue, bounded previews, ordered
+  timestamp/frame/pose output, cancellation, failure cleanup, stale rejection,
+  and clean retry are implemented.
+- Protected SS-005 inference remains dedicated-worker, one-frame-in-flight,
+  same-origin, fail-closed, and volatile. Transfer failure now closes the
+  main-owned bitmap before failing closed.
+- Final verification passed on Node 22: 25 unit tests, 26 desktop/mobile
+  production browser tests, build, compliance, safety, privacy, license audit,
+  bundle-license fixture, approved asset hashes, one-component production SBOM,
+  zero production vulnerabilities, and `git diff --check`.
+- Final audit prompt: `docs/ss-006-claude-audit-prompt.md`.
+
+Next owner: Claude final adversarial implementation audit. Keep SS-006 at
+`4. Final Audit (Claude)` until explicit PASS and any required focused
+re-review.
+
 ## Completed Foundation
 
 SS-001 established the project compliance baseline:

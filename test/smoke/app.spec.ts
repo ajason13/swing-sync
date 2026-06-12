@@ -101,7 +101,7 @@ test("loads locally in a worker and extracts complete fixture landmarks", async 
     "33 normalized landmarks retained",
     { timeout: 30_000 }
   );
-  await expect(page.locator("[data-pose-summary]")).toContainText("4 video frames processed", {
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", {
     timeout: 30_000
   });
 
@@ -140,7 +140,7 @@ test("completes local inference when external network is blocked from navigation
   await page.locator("#video-file").setInputFiles(poseFixture);
   await page.getByRole("button", { name: "Begin analysis" }).click();
 
-  await expect(page.locator("[data-pose-summary]")).toContainText("4 video frames processed", {
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", {
     timeout: 30_000
   });
   expect(blockedExternal).toEqual([]);
@@ -155,7 +155,32 @@ test("reports a useful local error when model initialization fails", async ({ pa
   await expect(page.getByText(/Local pose analysis stopped \(LOCAL_MODEL_INIT_FAILED\)/)).toBeVisible({
     timeout: 20_000
   });
-  await expect(page.locator("[data-pose-summary]")).toContainText("0 video frames processed");
+  await expect(page.locator("[data-pose-summary]")).toContainText("0 of 8 video frames processed");
+  await expect(page.getByRole("button", { name: "Retry local analysis" })).toBeVisible();
+});
+
+test("retries with a fresh local session after initialization failure", async ({ page }) => {
+  let shouldFail = true;
+  await page.route("**/models/pose_landmarker_full-float16-v1.task", (route) => {
+    if (shouldFail) {
+      void route.abort();
+      return;
+    }
+    void route.continue();
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+
+  await expect(page.getByText(/Local pose analysis stopped \(LOCAL_MODEL_INIT_FAILED\)/)).toBeVisible({
+    timeout: 20_000
+  });
+  shouldFail = false;
+  await page.getByRole("button", { name: "Retry local analysis" }).click();
+
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", {
+    timeout: 30_000
+  });
 });
 
 test("keeps the UI responsive while the local model loads", async ({ page }) => {
