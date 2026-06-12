@@ -1,14 +1,67 @@
 # Swing Sync Context
 
-Last updated: 2026-06-10
+Last updated: 2026-06-12
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/5
-- Latest merge commit: `1d4aaea207c57f93bf7aa3c96d56cf58059d603a`
-- Current completed task: `SS-004 Scaffold mobile-first PWA and local analysis shell`
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/6
+- Latest merge commit: `7678add7de6b946cc00328d0bef83772b1a11576`
+- Current post-merge context commit: `2a48417`
+- Current completed task:
+  `SS-005 Integrate MediaPipe Pose Landmarker in browser video mode`
+- Active task: `SS-006 Build frame processing queue and sampling strategy`
+- Active branch: `ss-006-frame-queue`
+- Active handshake: `1. Spec Drafting (Gemini)`
+- Active Pull Request: none
+
+## SS-006 Coordination
+
+SS-006 is privacy-sensitive runtime work controlling decoded frame images and
+derived landmark sets. Gemini researches/specifies, Codex verifies and
+implements, and Claude performs pre-implementation QA planning plus final
+adversarial audit.
+
+Acceptance criteria:
+
+- Video frames are sampled deterministically.
+- Processing can be cancelled or retried.
+- Queue handles long, short, portrait, and landscape videos.
+- Output includes timestamps, frame images, and landmark sets.
+
+Kickoff state on 2026-06-12:
+
+- Local and `origin/main` were confirmed at `2a48417`, including PR #6 merge
+  `7678add`; `git diff --check` passed.
+- The unrelated untracked
+  `docs/agent-guidance/ss-004-new-codex-session-prompt.md` and intentional
+  `docs/agent-guidance/ss-006-new-codex-session-prompt.md` are preserved.
+- Notion reconfirmed branch `ss-006-frame-queue`, initial `0. Backlog` status,
+  empty PR, and the acceptance criteria above. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- `SS-TC-006` was confirmed invalid for SS-006 because it describes Swing Card
+  export leakage. The mismatch was recorded in Notion. Dedicated `SS-TC-010`
+  was created for deterministic bounded ordered processing, cancellation/retry,
+  orientation/duration cases, output association, cleanup, stale-result
+  rejection, and privacy-preserving diagnostics.
+- The protected SS-005 boundary remains exact
+  `@mediapipe/tasks-vision@0.10.35`, approved same-origin model/WASM assets,
+  dedicated worker VIDEO-mode inference, complete returned landmark arrays,
+  finite increasing timestamps, volatile local frames, resource cleanup,
+  fail-closed unexpected requests, and no sensitive persistence or telemetry.
+- The self-contained Gemini Deep Research handoff is
+  `docs/ss-006-gemini-research-prompt.md`.
+- Implementation is blocked pending Gemini response disposition, a normative
+  SS-006 specification, and Claude pre-implementation QA planning PASS.
+- Observability decision at kickoff: retain only local sanitized lifecycle,
+  progress, cancellation, retry, and error states. Do not log frame pixels,
+  landmarks, media characteristics, or user identifiers.
+
+Next owner: Gemini Deep Research. Paste
+`docs/ss-006-gemini-research-prompt.md`, then return the complete response to
+Codex for primary-source verification and Adopt / Revise / Defer / Reject
+disposition. Do not begin implementation.
 
 ## Completed Foundation
 
