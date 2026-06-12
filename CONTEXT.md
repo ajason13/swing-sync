@@ -248,6 +248,18 @@ Focused re-review prompt: `docs/ss-005-claude-final-rereview-prompt.md`.
 Next owner: Claude focused final re-review. Keep SS-005 at
 `4. Final Audit (Claude)` and do not create the PR until focused PASS.
 
+Claude returned focused final re-review PASS on 2026-06-11. All focused fixes
+were accepted, no regression or new blocker was identified, the
+offline-from-start positive test was accepted as closing the highest-priority
+network gap, and Claude explicitly authorized PR preparation.
+
+Focused response:
+`docs/ss-005-claude-final-rereview-response.md`.
+
+Next owner: Codex PR preparation. Keep SS-005 at `4. Final Audit (Claude)`
+until PR checks and merge complete; do not mark Done before post-merge
+repository, Notion, and context synchronization.
+
 ## Completed Task
 
 `SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
