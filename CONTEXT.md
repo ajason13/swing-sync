@@ -63,6 +63,30 @@ Next owner: Gemini Deep Research. Paste
 Codex for primary-source verification and Adopt / Revise / Defer / Reject
 disposition. Do not begin implementation.
 
+Gemini response disposition on 2026-06-12:
+
+- Gemini recommended even spacing, a sequential queue, generation identifiers,
+  explicit bitmap ownership, full retry reconstruction, and deterministic
+  adapter-based tests. Codex adopted those concepts with revisions.
+- `docs/ss-006-research-disposition.md` records primary-source verification and
+  explicit Adopt / Revise / Defer / Reject decisions.
+- Gemini's unsupported configurable `K=20`, one-millisecond clamp rationale,
+  two-bitmap bound, random UUID generation, required
+  `requestVideoFrameCallback()`, sensitive console diagnostics, OOM-elimination
+  claim, and permanent-destruction claim were revised or rejected.
+- `docs/ss-006-preimplementation-spec.md` defines the normative candidate:
+  fixed budget `8`; unique integer-millisecond timestamps; one queued/in-flight
+  inference item; separate aspect-preserving previews bounded to 640 px long
+  edge; maximum nine application-owned bitmaps; monotonic run generations;
+  fail-closed cancellation/retry/stale rejection; volatile ordered output; and
+  sanitized local-only observability.
+- Claude pre-implementation QA handoff:
+  `docs/ss-006-claude-qa-planning-prompt.md`.
+
+Next owner: Claude QA planning. SS-006 must remain
+`2. QA Planning (Claude)` until explicit PASS and closure of any blocking
+findings. Do not begin implementation.
+
 ## Completed Foundation
 
 SS-001 established the project compliance baseline:
