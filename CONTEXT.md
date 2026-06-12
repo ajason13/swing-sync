@@ -260,6 +260,23 @@ Next owner: Codex PR preparation. Keep SS-005 at `4. Final Audit (Claude)`
 until PR checks and merge complete; do not mark Done before post-merge
 repository, Notion, and context synchronization.
 
+SS-005 PR created on 2026-06-11:
+
+- PR #6: https://github.com/ajason13/swing-sync/pull/6
+- Branch: `ss-005-mediapipe-pose`
+- Claude final audit: PASS.
+- Claude focused final re-review after fixes: PASS.
+- Verification recorded in the PR: 11 unit tests, 24 desktop/mobile production
+  browser tests, build, compliance, safety, privacy, license audit,
+  bundle-license fixture, exact asset hashes, one-component production SBOM,
+  zero production vulnerabilities, and `git diff --check`.
+- PR records exact SDK/model terms, fixture provenance, observed network
+  behavior, deferred work, and intentionally privacy-limited observability.
+
+Next owner: GitHub PR checks and merge review. Keep SS-005 at
+`4. Final Audit (Claude)` until PR #6 is merged, then update local `main`,
+Notion, and this file before moving to `5. Done`.
+
 ## Completed Task
 
 `SS-004 Scaffold mobile-first PWA and local analysis shell` merged in
