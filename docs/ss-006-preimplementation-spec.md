@@ -33,11 +33,18 @@ SAMPLE_BUDGET = 8
 PREVIEW_MAX_LONG_EDGE_PX = 640
 ```
 
-Input duration is accepted only after metadata is available and only when
-`durationSeconds` is finite and greater than zero.
+Input duration validation occurs in the queue/controller after metadata is
+available and before timestamp generation, seeking, bitmap creation,
+PoseSession initialization, or any worker call.
 
 ```text
+if durationSeconds is not finite or durationSeconds <= 0:
+  fail with INVALID_DURATION and produce no timestamps
+
 durationMs = floor(durationSeconds * 1000)
+if durationMs < 0:
+  fail with INVALID_DURATION and produce no timestamps
+
 endTimestampMs = max(0, durationMs - 1)
 
 if endTimestampMs == 0:
@@ -54,6 +61,8 @@ Normative properties:
   increasing, and no greater than `endTimestampMs`;
 - the first timestamp is `0`; the last is `endTimestampMs`;
 - output count is between `1` and `8`;
+- a positive duration shorter than eight milliseconds may produce fewer than
+  eight samples after deduplication;
 - convert `timestampMs / 1000` only when assigning `video.currentTime`;
 - use the requested integer `timestampMs` for worker inference and ordering;
 - do not use `fastSeek()`;
@@ -77,6 +86,9 @@ browsers, codecs, operating systems, hardware decoders, or privacy settings.
 - Preserve browser-reported natural orientation and aspect ratio.
 - Do not manually rotate, flip, crop, stretch, or upscale.
 - Native-size inference bitmap capture remains the protected SS-005 input.
+- Inference bitmap dimensions are not governed by the preview scaling rule;
+  capture the browser's natural video frame for the protected SS-005 worker
+  input.
 - Output preview bitmap capture preserves aspect ratio and limits its long edge
   to 640 pixels without upscaling.
 
@@ -116,8 +128,12 @@ its ordered output record is complete.
 - Maintain a process-local monotonically increasing integer `runGeneration`.
 - Every asynchronous closure captures its generation.
 - PoseSession callbacks are wrapped with their generation.
-- A callback may mutate state only when its generation equals the active
-  generation and the controller is in an expected compatible state.
+- Every metadata, media-error, `seeked`, bitmap-resolution, PoseSession status,
+  and PoseSession result callback must validate generation and expected state
+  before any state transition, bitmap creation, output mutation, progress
+  change, or new asynchronous work.
+- A stale callback returns without state mutation. If it carries or resolves an
+  application-owned bitmap, it closes that bitmap before returning.
 - Stale bitmap resolutions must close the bitmap immediately.
 - Stale results/statuses must be ignored and must not append output, advance
   progress, or change the active run's state.
@@ -135,6 +151,7 @@ interface SampledFrameOutput {
   index: number;
   requestedTimestampMs: number;
   observedSeekTimestampMs: number;
+  /** The current owner must close this bitmap when releasing the output. */
   preview: ImageBitmap;
   pose: PoseFrameResult;
 }
@@ -169,33 +186,63 @@ Rules:
 
 No bitmap may appear in both preview output and the worker transfer.
 
+Per-sample creation and assembly order is normative:
+
+1. Create and accept the bounded preview bitmap.
+2. Create the separate natural-frame inference bitmap.
+3. Immediately submit/transfer the inference bitmap to PoseSession.
+4. Accept the matching pose result.
+5. Atomically append the complete output record and transfer preview ownership
+   into the output collection.
+
+If any step after preview creation fails or becomes stale, close the current
+preview before entering failure/returning. If inference bitmap creation fails,
+no inference transfer occurs. If submission rejects the inference bitmap,
+PoseSession closes it under the protected SS-005 contract. If output assembly
+fails, close the uncommitted current preview.
+
 ## Cancellation, Failure, Teardown, And Retry
 
 Cancellation:
 
 1. Increment/invalidate the active generation before other cleanup.
-2. Transition UI to `cancelling`/`cancelled` without waiting for native work.
+2. Use `cancelling` only as an internal cleanup phase; expose `cancelled` to the
+   UI without waiting for native work.
 3. Remove media listeners and clear pending timestamps.
 4. Close all retained preview outputs and clear landmarks/results.
-5. Request PoseSession teardown, then drop the active session reference.
-6. Pause media, remove `src`, call `load()`, and revoke the object URL when the
-   selected video is no longer needed.
+5. Request PoseSession teardown and retain its terminal-state completion handle.
+6. Pause media, remove `src`, call `load()`, and revoke the active object URL.
 7. Any later stale bitmap resolution closes itself; stale status/result
    callbacks are ignored.
 
-Failure follows the same resource-release rules and exposes only a stable
+Failure invalidates the generation before state mutation and follows the same
+resource-release rules as cancellation. Before entering `failed`, it closes:
+
+- the current sample's preview if it has not been atomically committed;
+- every previously retained output preview; and
+- any application-owned inference bitmap that has not been accepted or closed
+  by PoseSession.
+
+A transferred inference bitmap remains worker-owned and closes under the
+protected SS-005 worker `finally` contract. Failure exposes only a stable
 sanitized local error code.
 
 Retry after cancel or failure:
 
 - requires the selected local `File` to remain intentionally available for the
-  retry action; if the object URL was revoked, create a fresh object URL;
-- creates a new media element/adapter and new PoseSession/worker;
+  retry action while the prior active object URL is revoked;
+- waits for the prior PoseSession to reach a confirmed terminal `closed` or
+  `error` state before creating a new PoseSession/worker; two PoseSessions for
+  the controller must never coexist;
+- creates a fresh object URL from the retained `File` and a new media
+  element/adapter;
 - creates a new generation, timestamp cursor, progress state, and empty output;
 - never reuses prior output, pending operations, worker, or failed state; and
 - restarts from requested timestamp `0`.
 
 Starting a different video is supersession and performs full prior-run cleanup.
+If the user dismisses/reset the session instead of retrying, release the
+selected `File` reference after revoking the active object URL.
 
 ## Error And Progress Contract
 
@@ -227,7 +274,11 @@ timestamps, frame index, or user identifiers.
 Unit tests:
 
 - exact timestamp arrays for normal, long, short, sub-millisecond,
-  fractional, invalid, zero, and infinite durations;
+  fractional, invalid, negative, zero, `NaN`, and infinite durations;
+- queue-layer rejection of invalid durations before any seek, bitmap,
+  PoseSession initialization, or worker call;
+- deduplicated output count and exact values below the eight-millisecond
+  full-budget threshold;
 - stable ordering and requested/result timestamp association;
 - fixed queue/inference/bitmap bounds;
 - portrait and landscape dimension/aspect-ratio preview calculations;
@@ -235,6 +286,11 @@ Unit tests:
   creation, in-flight inference, result delivery, and teardown;
 - retry after cancellation and failure;
 - stale bitmap/status/result rejection across generations;
+- stale-generation validation before state mutation, bitmap creation, output
+  assembly, progress, or follow-on work;
+- current and accumulated preview cleanup for inference-bitmap creation,
+  submission, inference, and output-assembly failure;
+- prior PoseSession terminal completion before retry constructs a new session;
 - exact close/release ownership on success, cancel, failure, retry, and
   supersession; and
 - sanitized error/progress output.
@@ -253,6 +309,17 @@ Browser tests:
 Orientation, long-duration, short-duration, invalid-duration, concurrency, and
 stale-result contracts may use deterministic adapters in unit tests. Additional
 committed media fixture binaries require separate provenance and scope review.
+Portrait/landscape bitmap behavior should use programmatically generated canvas
+sources when real bitmap dimensions must be exercised.
+
+The conservative `floor(durationSeconds * 1000)` conversion may place the final
+requested timestamp more than one millisecond before a nominal decimal duration
+because binary floating-point values are approximate. This is accepted and must
+not be "corrected" with an unreviewed tolerance or seek strategy.
+
+`observedSeekTimestampMs` remains excluded from diagnostics, persistence,
+network transit, and any future export unless a later reviewed story explicitly
+changes that boundary.
 
 ## Observability Decision
 

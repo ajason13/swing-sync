@@ -87,6 +87,20 @@ Next owner: Claude QA planning. SS-006 must remain
 `2. QA Planning (Claude)` until explicit PASS and closure of any blocking
 findings. Do not begin implementation.
 
+Claude QA planning returned FAIL on 2026-06-12 with five specification
+blockers: invalid-duration guard contradiction, queue-layer `NaN`/`Infinity`
+defense, failure-path bitmap cleanup, stale-check placement, and prior-worker
+teardown ordering before retry.
+
+Codex accepted and fixed all five in
+`docs/ss-006-preimplementation-spec.md`. The response is recorded in
+`docs/ss-006-claude-qa-response.md`; `SS-TC-010` is refined with explicit
+closure evidence. Focused re-review handoff:
+`docs/ss-006-claude-qa-rereview-prompt.md`.
+
+Next owner: Claude focused QA re-review. Keep SS-006 at
+`2. QA Planning (Claude)` and do not begin implementation before explicit PASS.
+
 ## Completed Foundation
 
 SS-001 established the project compliance baseline:

@@ -1,5 +1,9 @@
 # SS-006 Claude Adversarial QA Planning Prompt
 
+> **Superseded: do not paste this prompt.** Claude completed this review with a
+> FAIL result. Use `docs/ss-006-claude-qa-rereview-prompt.md` for the focused
+> re-review.
+
 Paste this prompt into Claude Chat before SS-006 implementation. Claude does
 not have filesystem, Notion, or GitHub access; all required context is embedded.
 
