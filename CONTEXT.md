@@ -8,7 +8,8 @@ Last updated: 2026-06-18
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/8
 - Latest merge commit: `3cd1d3eefe4af94d95369771d36d8c09d557f8c1`
-- Current post-merge context commit: post-merge Notion sync commit pending.
+- Current post-merge context commit: `e345af9` recorded SS-007 Notion
+  completion and SS-008 next-task handoff.
 - Current completed task:
   `SS-007 Implement swing phase detector with manual correction`
 - Active task: `SS-008 Define Swing Sync metric JSON schema`
