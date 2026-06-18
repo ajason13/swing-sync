@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-17
+Last updated: 2026-06-18
 
 ## Current State
 
@@ -8,13 +8,12 @@ Last updated: 2026-06-17
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/8
 - Latest merge commit: `3cd1d3eefe4af94d95369771d36d8c09d557f8c1`
-- Current post-merge context commit: local post-merge context sync complete;
-  Notion sync blocked by OAuth in this session.
+- Current post-merge context commit: post-merge Notion sync commit pending.
 - Current completed task:
   `SS-007 Implement swing phase detector with manual correction`
-- Active task: Notion reconfirmation blocked by OAuth; next task not started.
-- Active branch: none
-- Active handshake: Notion sync blocked by OAuth
+- Active task: `SS-008 Define Swing Sync metric JSON schema`
+- Active branch: `ss-008-metric-schema`
+- Active handshake: `0. Backlog`
 - Active Pull Request: none
 
 ## SS-006 Coordination
@@ -388,14 +387,22 @@ SS-007 completed locally on 2026-06-17:
 - Local `main` is fast-forwarded to the merge commit.
 - Claude final implementation audit returned PASS.
 - Required local verification and GitHub compliance checks passed.
-- Notion synchronization is blocked in this Codex session by OAuth
-  authorization failure. SS-007 still needs Notion update to `5. Done`, PR URL
-  sync, and next-task reconfirmation once Notion access is restored.
+- Notion synchronization completed after OAuth reauthorization: SS-007 is
+  marked `5. Done`, PR #8 is recorded, and merge/verification evidence is
+  commented on the task.
 
-Next task: Notion task database reconfirmation is required. Existing known
-deferred work includes `SS-014 Create fixture swing dataset policy and test
-fixtures`, which owns moving side-on browser fixture coverage deferred from
-SS-007.
+Next task: `SS-008 Define Swing Sync metric JSON schema`.
+
+- Branch: `ss-008-metric-schema`
+- Handshake: `0. Backlog`
+- Pull request: none
+- Acceptance: schema includes metric name, value, units, phase, handedness,
+  confidence, and limitation notes; naming aligns with CaddieSet-inspired
+  concepts without overclaiming equivalence; fixtures cover valid, missing,
+  and low-confidence data.
+- Existing known deferred work includes `SS-014 Create fixture swing dataset
+  policy and test fixtures`, which owns moving side-on browser fixture coverage
+  deferred from SS-007.
 
 ## Completed Foundation
 
