@@ -122,6 +122,62 @@ test("loads locally in a worker and extracts complete fixture landmarks", async 
   expect(storage.caches).toEqual([]);
 });
 
+test("requires accessible explicit review and accepts only valid nondecreasing phase correction", async ({
+  page
+}) => {
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({
+    timeout: 30_000
+  });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+
+  await expect(page.locator(".phase-warning")).toContainText("Unsupported input");
+  await expect(page.locator(".phase-warning")).toHaveAttribute("aria-live", "polite");
+  await expect(page.getByLabel("View", { exact: true })).toHaveValue("undeclared");
+  await expect(page.getByLabel("Handedness", { exact: true })).toHaveValue("undeclared");
+  await expect(page.getByLabel("Horizontally mirrored", { exact: true })).toHaveValue("undeclared");
+  await expect(page.getByLabel(/I confirm this is one trimmed/)).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeDisabled();
+
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+
+  await expect(page.locator(".phase-warning")).toContainText("Review required");
+  for (const phase of [
+    "Address",
+    "Toe-up",
+    "Mid-backswing",
+    "Top",
+    "Mid-downswing",
+    "Impact",
+    "Mid-follow-through",
+    "Finish"
+  ]) {
+    await expect(page.getByText(phase, { exact: true })).toBeVisible();
+  }
+
+  const assignments = page.locator("[data-phase-index]");
+  await assignments.nth(1).selectOption("2");
+  await assignments.nth(2).selectOption("1");
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeDisabled();
+  await assignments.nth(1).selectOption("1");
+  await assignments.nth(2).selectOption("1");
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeEnabled();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
+  await expect(page.getByText(/Future metric readiness is available/)).toBeVisible();
+
+  await page.getByRole("button", { name: /Export/ }).click();
+  await page.getByRole("button", { name: /Review/ }).click();
+  await expect(page.getByText("Video and pose preview")).toBeVisible();
+});
+
 test("completes local inference when external network is blocked from navigation start", async ({
   page
 }) => {

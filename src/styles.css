@@ -17,7 +17,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -27,6 +28,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 a:focus-visible {
   outline: 3px solid #d7972d;
   outline-offset: 3px;
@@ -318,6 +320,108 @@ button:disabled {
   padding: 14px;
   display: grid;
   gap: 14px;
+}
+
+.phase-review {
+  display: grid;
+  gap: 16px;
+}
+
+.phase-warning {
+  border: 1px solid #d7b56e;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff8e8;
+}
+
+.phase-warning p {
+  margin: 5px 0 0;
+}
+
+.phase-declarations {
+  border: 1px solid #d5dbd4;
+  border-radius: 8px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.phase-declarations legend {
+  padding: 0 5px;
+  color: #173d29;
+  font-weight: 800;
+}
+
+.phase-declarations label,
+.phase-assignment {
+  display: grid;
+  gap: 5px;
+  color: #294b36;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.phase-declarations .phase-setup-confirmation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+
+.phase-setup-confirmation input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: #245b3b;
+}
+
+.phase-declarations select,
+.phase-assignment select {
+  min-height: 42px;
+  border: 1px solid #b8c4ba;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #173d29;
+  background: #ffffff;
+}
+
+.phase-assignment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.phase-assignment {
+  border: 1px solid #dce2dc;
+  border-radius: 7px;
+  padding: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.45fr);
+  align-items: center;
+}
+
+.phase-assignment span {
+  display: grid;
+  gap: 3px;
+}
+
+.phase-assignment small {
+  color: #68766d;
+  font-weight: 600;
+}
+
+.phase-confirmation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: #243b2d;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.phase-confirmation input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: #245b3b;
 }
 
 .swing-frame {
