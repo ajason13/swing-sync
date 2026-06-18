@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-12
+Last updated: 2026-06-17
 
 ## Current State
 
@@ -8,12 +8,12 @@ Last updated: 2026-06-12
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/7
 - Latest merge commit: `9d937745fe8e446769d6806c21f8e4635bc5ad04`
-- Current post-merge context commit: `328d661`
+- Current post-merge context commit: `b261b29`
 - Current completed task:
   `SS-006 Build frame processing queue and sampling strategy`
 - Active task: `SS-007 Implement swing phase detector with manual correction`
 - Active branch: `ss-007-phase-detector`
-- Active handshake: `0. Backlog`
+- Active handshake: `4. Final Audit (Claude)`
 - Active Pull Request: none
 
 ## SS-006 Coordination
@@ -202,13 +202,169 @@ Next task: `SS-007 Implement swing phase detector with manual correction`.
 - Branch: `ss-007-phase-detector`
 - Handshake: `0. Backlog`
 - Pull request: none
-- Acceptance: detect the MVP eight swing frames when confidence is sufficient;
-  allow user correction before metric generation; emit low-confidence warnings
-  for ambiguous swings; and include fixture tests for common side-on videos.
+- Revised acceptance after Claude QA: propose a deterministic initial phase
+  assignment for explicit review; allow nondecreasing shared-sample correction
+  with confirmation before future metric readiness; emit accessible
+  `unsupported-input`/`review-required` warnings with no automatic acceptance;
+  and cover the contract with deterministic programmatic pose fixtures.
+- Moving side-on browser fixture coverage is deferred to existing `SS-014` and
+  is not claimed as SS-007 coverage.
 
 Next owner: start SS-007 from updated `main`, confirm tracker/test-case
 coverage, classify its coaching/safety sensitivity, and begin the required
 Gemini specification workflow before implementation.
+
+## SS-007 Coordination
+
+SS-007 is safety- and coaching-sensitive runtime work. It converts the
+protected ordered SS-006 pose outputs into named swing phases, confidence and
+warnings, and a manual-review gate before future metric generation. Gemini
+researches/specifies, Codex independently dispositions and implements, and
+Claude performs pre-implementation QA planning plus final adversarial audit.
+
+Kickoff state on 2026-06-13:
+
+- Local and `origin/main` were confirmed at `b261b29`, including PR #7 merge
+  `9d937745fe8e446769d6806c21f8e4635bc5ad04`; `git diff --check` passed.
+- Branch `ss-007-phase-detector` was created from the verified updated main.
+- The unrelated intentional untracked guidance files for SS-004, SS-006, and
+  SS-007 are preserved.
+- Notion reconfirmed branch `ss-007-phase-detector`, initial `0. Backlog`
+  status, empty PR, and the four SS-007 acceptance criteria. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- `SS-TC-007` was confirmed invalid for SS-007 because it describes API-backed
+  coaching consent/provider notice. The mismatch is recorded in Notion.
+- Existing `SS-TC-005` remains complementary broad eight-keyframe/manual-
+  correction coverage but is insufficient for confidence, ambiguity,
+  ordering, stale-result, provenance, fixture, and protected-queue behavior.
+- Dedicated `SS-TC-011` was created for accurate SS-007 acceptance coverage.
+- The self-contained Gemini Deep Research handoff is
+  `docs/ss-007-gemini-research-prompt.md`.
+- Implementation is blocked pending Gemini response disposition, a normative
+  SS-007 specification, and Claude pre-implementation QA planning PASS.
+- Observability decision at kickoff: retain local sanitized lifecycle/error
+  state only. Do not add diagnostics containing landmarks, phase assignments,
+  confidence, warnings, corrections, timestamps, media characteristics, or
+  identifiers.
+
+Next owner: Gemini Deep Research. Paste
+`docs/ss-007-gemini-research-prompt.md`, then return the complete response to
+Codex for primary-source verification and Adopt / Revise / Defer / Reject
+disposition. Do not begin implementation.
+
+Gemini response disposition on 2026-06-13:
+
+- Gemini proposed GolfDB event vocabulary, posture-cost heuristics, dynamic-
+  programming alignment, numeric confidence, a manual timeline, and synthetic
+  pose fixtures. Codex adopted the bounded vocabulary, separate provenance,
+  active-generation binding, fail-closed ambiguity, accessible review, and
+  volatile local state with revisions.
+- `docs/ss-007-research-disposition.md` records primary-source/repository
+  verification and explicit Adopt / Revise / Defer / Reject decisions.
+- Gemini's unsupported posture formulas, interpolation, clipping, closest-
+  person selection, numeric thresholds, automatic metric-readiness unlock,
+  worker/framework additions, and absolute performance/privacy claims were
+  rejected.
+- The protected eight-sample input exposes a blocking contradiction: eight
+  unique ordered samples assigned to eight ordered phases permits only identity
+  mapping and no meaningful correction.
+- Numeric sufficient-confidence detection is also blocked because no approved
+  moving side-on fixture, representative validation set, heuristic validation,
+  or calibration evidence exists.
+- `docs/ss-007-preimplementation-spec.md` defines the conservative blocked
+  candidate and the required allocation, confidence/acceptance, and fixture
+  decisions.
+- Claude pre-implementation QA handoff:
+  `docs/ss-007-claude-qa-planning-prompt.md`.
+
+Next owner: Claude QA planning. SS-007 must remain
+`2. QA Planning (Claude)` until explicit PASS and closure of the allocation,
+confidence/acceptance, and moving side-on fixture blockers. Do not begin
+implementation.
+
+Claude first QA planning returned FAIL on 2026-06-13 with three blockers:
+unresolved allocation/correction policy, unsatisfiable sufficient-confidence
+acceptance, and unavailable moving side-on browser fixture coverage.
+
+Codex accepted and revised all three:
+
+- B1 adopts nondecreasing repeated sample references for meaningful correction
+  while preserving ordered phases.
+- B2 revises acceptance to a deterministic provisional initial assignment plus
+  mandatory explicit review; numeric confidence and automatic acceptance remain
+  prohibited.
+- B3 revises SS-007 fixture acceptance to deterministic programmatic pose
+  fixtures and explicitly defers moving side-on browser fixture policy and
+  coverage to existing `SS-014`.
+- `undeclared` inputs fail closed, unreachable `insufficient-evidence` was
+  removed, and stale indices clear immediately with owning output release.
+- Response: `docs/ss-007-claude-qa-response.md`.
+- Focused re-review handoff:
+  `docs/ss-007-claude-qa-rereview-prompt.md`.
+
+Next owner: Claude focused QA re-review. Keep SS-007 at
+`2. QA Planning (Claude)` and do not begin implementation before explicit PASS.
+
+Claude focused QA re-review returned PASS on 2026-06-13:
+
+- B1-B3 are closed and SS-007 may move to `3. In Development (ChatGPT)`.
+- Required pre-merge revisions: enumerate stable sanitized warning codes; add
+  matching/mismatched pose/request timestamp tests; and align `SS-TC-011` with
+  those cases.
+- Response: `docs/ss-007-claude-qa-rereview-response.md`.
+
+SS-007 implementation is in progress under the approved manual-review-only
+contract. Observability remains intentionally unchanged: local sanitized
+lifecycle/error state only, with no phase assignments, evidence, warnings,
+corrections, timestamps, landmarks, media characteristics, or identifiers in
+diagnostics.
+
+SS-007 implementation completed on 2026-06-13 and is ready for final Claude
+audit:
+
+- `src/phase-review.ts` implements deterministic identity initial review
+  layout, typed stable warning codes, strict protected-input validation,
+  nondecreasing shared-index correction, separate provenance, explicit
+  confirmation, and generation-bound stale rejection.
+- `src/main.ts` integrates explicit declarations and accessible review controls
+  after completed SS-006 processing while clearing phase state before cancel,
+  retry, new file, navigation, close, and owning-output release.
+- No protected SS-005/SS-006 module, dependency, model, asset, network,
+  persistence, export, metric, coaching, or observability boundary changed.
+- R1-R3 are closed: warning codes are enumerated; matching/mismatched pose/
+  request timestamps are tested; and `SS-TC-011` records those cases.
+- Final clean verification passed: 40 unit tests, 28 desktop/mobile browser
+  tests, build, compliance, safety, privacy, license audit, bundle-license
+  fixture, approved asset hashes, one-component production SBOM, zero
+  production vulnerabilities, and `git diff --check`.
+- Final audit prompt: `docs/ss-007-claude-audit-prompt.md`.
+
+Next owner: Claude final adversarial implementation audit. Keep SS-007 at
+`4. Final Audit (Claude)` until explicit PASS and any required focused
+re-review. Do not prepare the PR before audit PASS.
+
+Claude final audit returned PASS on 2026-06-17 and cleared SS-007 for PR
+preparation. Claude identified no blocking findings and five non-blocking
+recommendations. Codex applied the cheap defensive/test clarifications before
+PR:
+
+- added an explicit finite guard for `requestedTimestampMs`;
+- confirmed and tested the review status uses `aria-live="polite"`;
+- added explicit over-count sample coverage;
+- split setup confirmation into a named fail-closed unit test; and
+- added explicit over-count correction coverage.
+
+Final audit response: `docs/ss-007-claude-audit-response.md`.
+
+Post-audit verification passed on Node 22: 40 unit tests, 28 desktop/mobile
+browser tests, build, compliance, safety, privacy, license audit,
+bundle-license fixture, approved asset hashes, one-component production SBOM,
+zero production vulnerabilities, and `git diff --check`.
+
+Next owner: Codex PR preparation. Keep SS-007 at `4. Final Audit (Claude)`
+until PR checks and merge complete; record the PR URL in Notion and this
+context after creation. Do not mark Done before post-merge repository, Notion,
+and context synchronization.
 
 ## Completed Foundation
 

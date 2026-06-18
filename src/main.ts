@@ -5,6 +5,16 @@ import {
   type FrameProcessingState,
   type SampledFrameOutput
 } from "./frame-processing";
+import {
+  applyPhaseCorrection,
+  createPhaseProposal,
+  createPhaseReviewState,
+  isValidCorrection,
+  phaseDefinitions,
+  type PhaseAssignment,
+  type PhaseDeclarations,
+  type PhaseReviewState
+} from "./phase-review";
 import { getNextWorkflowStep, getWorkflowStep, workflowSteps, type WorkflowStepId } from "./workflow";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -20,6 +30,11 @@ let poseStatusCode: string | undefined;
 let extractedFrameCount = 0;
 let totalFrameCount = 0;
 let latestLandmarkCount = 0;
+let phaseOutputs: readonly SampledFrameOutput[] = [];
+let phaseDeclarations: PhaseDeclarations = undeclaredPhaseDeclarations();
+let phaseReviewState: PhaseReviewState | undefined;
+let phaseDraft: PhaseAssignment[] = [];
+let phaseConfirmation = false;
 
 function hasSafetyConsent(): boolean {
   if (consentStorageFailed) return false;
@@ -106,11 +121,15 @@ function renderWorkflowPanel(consentAccepted: boolean): string {
       <div class="action-row">
         <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
         <button class="secondary-action" type="button" data-retry-analysis hidden>Retry local analysis</button>
+        <button class="primary-action" type="button" data-review-phases ${
+          processingState === "completed" ? "" : "hidden"
+        }>Review phase labels</button>
       </div>
     `;
   }
 
   if (activeStep === "review") {
+    if (phaseOutputs.length > 0) return renderPhaseReview();
     return `
       <div class="review-placeholder" aria-label="Review placeholder">
         <div class="swing-frame"><span>Video and pose preview</span></div>
@@ -132,6 +151,88 @@ function renderWorkflowPanel(consentAccepted: boolean): string {
     </div>
     <button class="secondary-action" type="button" disabled>Export is not available yet</button>
   `;
+}
+
+function renderPhaseReview(): string {
+  const proposal = phaseReviewState?.automaticProposal;
+  const reviewRequired = proposal?.evidenceStatus === "review-required";
+  const ready = phaseReviewState?.readyForFutureMetrics ?? false;
+  const warning =
+    proposal?.evidenceStatus === "unsupported-input"
+      ? "Select every required declaration and provide a supported active eight-sample run."
+      : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
+
+  return `
+    <section class="phase-review" aria-labelledby="phase-review-heading">
+      <div class="phase-warning" role="status" aria-live="polite">
+        <strong id="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</strong>
+        <p>${warning}</p>
+      </div>
+      <fieldset class="phase-declarations">
+        <legend>Required video declarations</legend>
+        ${renderDeclarationSelect("phase-view", "View", phaseDeclarations.view, [
+          ["undeclared", "Select view"],
+          ["face-on", "Face-on side view"]
+        ])}
+        ${renderDeclarationSelect("phase-handedness", "Handedness", phaseDeclarations.handedness, [
+          ["undeclared", "Select handedness"],
+          ["right", "Right-handed"],
+          ["left", "Left-handed"]
+        ])}
+        ${renderDeclarationSelect("phase-mirrored", "Horizontally mirrored", phaseDeclarations.mirrored, [
+          ["undeclared", "Select mirrored status"],
+          ["no", "No"],
+          ["yes", "Yes"]
+        ])}
+        <label class="phase-setup-confirmation">
+          <input id="phase-setup" type="checkbox" ${phaseDeclarations.setup === "confirmed" ? "checked" : ""} />
+          <span>I confirm this is one trimmed, complete swing with the golfer substantially full-body visible and the camera reasonably stable.</span>
+        </label>
+      </fieldset>
+      <div class="phase-assignment-list" aria-label="Swing phase assignments">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const selected = phaseDraft[index]?.sampleIndex ?? index;
+            return `
+              <label class="phase-assignment">
+                <span><strong>${phase.label}</strong><small>Ordered phase ${index + 1}</small></span>
+                <select aria-label="${phase.label} sample" data-phase-index="${index}" ${reviewRequired && !ready ? "" : "disabled"}>
+                  ${phaseDefinitions
+                    .map(
+                      (_, sampleIndex) =>
+                        `<option value="${sampleIndex}" ${sampleIndex === selected ? "selected" : ""}>Sample ${sampleIndex + 1}</option>`
+                    )
+                    .join("")}
+                </select>
+              </label>`;
+          })
+          .join("")}
+      </div>
+      <label class="phase-confirmation">
+        <input id="phase-confirmation" type="checkbox" ${phaseConfirmation ? "checked" : ""} ${
+          reviewRequired && !ready ? "" : "disabled"
+        } />
+        <span>I reviewed these provisional labels. They may not represent each exact swing event.</span>
+      </label>
+      <div class="action-row">
+        <button class="primary-action" type="button" data-confirm-phase-review ${
+          reviewRequired && phaseConfirmation && isValidCorrection(phaseDraft) && !ready ? "" : "disabled"
+        }>Confirm phase review</button>
+        <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderDeclarationSelect(
+  id: string,
+  label: string,
+  selected: string,
+  options: readonly (readonly [string, string])[]
+): string {
+  return `<label for="${id}">${label}<select id="${id}" aria-label="${label}">${options
+    .map(([value, text]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${text}</option>`)
+    .join("")}</select></label>`;
 }
 
 function renderApp(statusMessage?: string): void {
@@ -223,8 +324,17 @@ function bindInteractions(): void {
 
   document.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (activeStep === "processing") void closeFrameAnalysis();
-      activeStep = button.dataset.step as WorkflowStepId;
+      const nextStep = button.dataset.step as WorkflowStepId;
+      const opensCompletedReview =
+        activeStep === "processing" && processingState === "completed" && nextStep === "review";
+      if (
+        ["processing", "review"].includes(activeStep) &&
+        nextStep !== activeStep &&
+        !opensCompletedReview
+      ) {
+        void closeFrameAnalysis();
+      }
+      activeStep = nextStep;
       renderApp(`${getWorkflowStep(activeStep).label} opened.`);
     });
   });
@@ -255,13 +365,66 @@ function bindInteractions(): void {
   });
 
   document.querySelector<HTMLButtonElement>("[data-retry-analysis]")?.addEventListener("click", () => {
+    clearPhaseReview();
     void frameController?.retry();
+  });
+  document.querySelector<HTMLButtonElement>("[data-review-phases]")?.addEventListener("click", () => {
+    activeStep = "review";
+    renderApp("Review the provisional phase labels before future measurements become available.");
+  });
+
+  document.querySelector<HTMLSelectElement>("#phase-view")?.addEventListener("change", (event) => {
+    phaseDeclarations.view = (event.currentTarget as HTMLSelectElement).value as PhaseDeclarations["view"];
+    rebuildPhaseReview();
+  });
+  document.querySelector<HTMLSelectElement>("#phase-handedness")?.addEventListener("change", (event) => {
+    phaseDeclarations.handedness = (event.currentTarget as HTMLSelectElement)
+      .value as PhaseDeclarations["handedness"];
+    rebuildPhaseReview();
+  });
+  document.querySelector<HTMLSelectElement>("#phase-mirrored")?.addEventListener("change", (event) => {
+    phaseDeclarations.mirrored = (event.currentTarget as HTMLSelectElement)
+      .value as PhaseDeclarations["mirrored"];
+    rebuildPhaseReview();
+  });
+  document.querySelector<HTMLInputElement>("#phase-setup")?.addEventListener("change", (event) => {
+    phaseDeclarations.setup = (event.currentTarget as HTMLInputElement).checked
+      ? "confirmed"
+      : "undeclared";
+    rebuildPhaseReview();
+  });
+  document.querySelectorAll<HTMLSelectElement>("[data-phase-index]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const index = Number(select.dataset.phaseIndex);
+      phaseDraft[index] = { phaseId: phaseDefinitions[index].id, sampleIndex: Number(select.value) };
+      phaseConfirmation = false;
+      renderApp();
+    });
+  });
+  document.querySelector<HTMLInputElement>("#phase-confirmation")?.addEventListener("change", (event) => {
+    phaseConfirmation = (event.currentTarget as HTMLInputElement).checked;
+    renderApp();
+  });
+  document.querySelector<HTMLButtonElement>("[data-confirm-phase-review]")?.addEventListener("click", () => {
+    if (!phaseReviewState) return;
+    phaseReviewState = applyPhaseCorrection(
+      phaseReviewState,
+      phaseDraft,
+      phaseConfirmation,
+      phaseOutputs[0]?.runGeneration ?? -1
+    );
+    renderApp();
   });
 }
 
 function handleProcessingState(state: FrameProcessingState, code?: string): void {
   processingState = state;
   poseStatusCode = code;
+  if (state === "completed" && frameController) {
+    phaseOutputs = frameController.getOutputs();
+    phaseDeclarations = undeclaredPhaseDeclarations();
+    rebuildPhaseReview(false);
+  }
   updateProcessingUi();
 }
 
@@ -280,6 +443,7 @@ function updateProcessingUi(): void {
   const status = document.querySelector<HTMLElement>(".processing-placeholder strong");
   const summary = document.querySelector<HTMLElement>("[data-pose-summary]");
   const retry = document.querySelector<HTMLButtonElement>("[data-retry-analysis]");
+  const review = document.querySelector<HTMLButtonElement>("[data-review-phases]");
   if (status) {
     status.textContent =
       processingState === "loading"
@@ -302,6 +466,7 @@ function updateProcessingUi(): void {
     }`;
   }
   if (retry) retry.hidden = processingState !== "failed";
+  if (review) review.hidden = processingState !== "completed";
 }
 
 async function startFrameAnalysis(): Promise<void> {
@@ -311,6 +476,7 @@ async function startFrameAnalysis(): Promise<void> {
   extractedFrameCount = 0;
   totalFrameCount = 0;
   latestLandmarkCount = 0;
+  clearPhaseReview();
   const browserController = createBrowserFrameController(video, selectedVideo, {
     onState: handleProcessingState,
     onProgress: handleProcessingProgress,
@@ -323,6 +489,7 @@ async function startFrameAnalysis(): Promise<void> {
 
 async function stopFrameAnalysis(): Promise<void> {
   const controller = frameController;
+  clearPhaseReview();
   await controller?.cancel();
   activeStep = "capture";
   renderApp("Local analysis stopped and volatile resources were released.");
@@ -330,11 +497,37 @@ async function stopFrameAnalysis(): Promise<void> {
 
 async function closeFrameAnalysis(): Promise<void> {
   const controller = frameController;
+  clearPhaseReview();
   await controller?.close();
   if (frameController === controller) {
     frameController = undefined;
     abortFrameController = undefined;
   }
+}
+
+function rebuildPhaseReview(shouldRender = true): void {
+  const proposal = createPhaseProposal(phaseOutputs, phaseDeclarations);
+  phaseReviewState = createPhaseReviewState(proposal);
+  phaseDraft = proposal.assignments.map((assignment) => ({ ...assignment }));
+  phaseConfirmation = false;
+  if (shouldRender) renderApp();
+}
+
+function clearPhaseReview(): void {
+  phaseOutputs = [];
+  phaseDeclarations = undeclaredPhaseDeclarations();
+  phaseReviewState = undefined;
+  phaseDraft = [];
+  phaseConfirmation = false;
+}
+
+function undeclaredPhaseDeclarations(): PhaseDeclarations {
+  return {
+    view: "undeclared",
+    handedness: "undeclared",
+    mirrored: "undeclared",
+    setup: "undeclared"
+  };
 }
 
 renderApp();
