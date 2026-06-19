@@ -10,8 +10,8 @@ workflow and keep Notion plus CONTEXT.md synchronized.
 
 Current repository state:
 - Default branch: main
-- main/origin main should be at post-SS-008 context-sync commit f8a34e8,
-  which includes SS-008 merge commit
+- main/origin main should include post-SS-008 context sync and SS-008 merge
+  commit
   35a569941b46744338f274f70d5eb826cfabdb1f.
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/9
 - Completed task: SS-008 Define Swing Sync metric JSON schema
