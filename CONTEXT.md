@@ -15,7 +15,7 @@ Last updated: 2026-06-19
 - Active task: `SS-009 Implement joint angle and coordinate normalization utilities`
 - Active branch: `ss-009-angle-utils`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/10
 
 ## SS-009 Coordination
 
@@ -162,15 +162,16 @@ Kickoff state on 2026-06-19:
   `npm run privacy:verify`, `npm run license:audit`, `npm run sbom:generate`,
   and `git diff --check`. `docs/sbom.json` timestamp/serial churn from
   generation was restored because SS-009 adds no dependencies.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/10
 - Notion moved to `4. Final Audit (Claude)`.
 - A new Codex session prompt is available at
   `docs/agent-guidance/ss-009-new-codex-session-prompt.md`.
 - Preserve the existing untracked agent-guidance prompt files unless the user
   explicitly asks to clean or commit them.
 
-Next owner: Codex PR preparation. Keep SS-009 at
-`4. Final Audit (Claude)` during PR review because the task database has no
-separate PR-review status; move to `5. Done` only after merge and context sync.
+Next owner: PR review and CI. Keep SS-009 at `4. Final Audit (Claude)` during
+PR review because the task database has no separate PR-review status; move to
+`5. Done` only after merge and context sync.
 
 ## SS-008 Coordination
 
