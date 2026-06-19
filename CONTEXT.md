@@ -15,7 +15,7 @@ Last updated: 2026-06-18
 - Active task: `SS-008 Define Swing Sync metric JSON schema`
 - Active branch: `ss-008-metric-schema`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/9
 
 ## SS-008 Coordination
 
@@ -122,6 +122,7 @@ Kickoff state on 2026-06-18:
 - Claude focused final re-review returned PASS. B5-B7 are closed, no new
   blockers were introduced, and Claude signed off that Codex may prepare the
   PR. Response: `docs/ss-008-claude-final-rereview-response.md`.
+- PR opened: https://github.com/ajason13/swing-sync/pull/9.
 - Post-PASS PR verification passed: `npm run test:unit` (51 tests across
   7 files), `npm run build`, `npm run compliance:verify`,
   `npm run safety:verify`, `npm run privacy:verify`,
@@ -134,10 +135,9 @@ Kickoff state on 2026-06-18:
   contain metric values, confidence values, limitation text, phase labels,
   handedness, timestamps, landmarks, media characteristics, or identifiers.
 
-Next owner: Codex PR preparation. Include Claude PASS evidence, verification
-results, schema/test-only scope, and the no-runtime-observability decision in
-the PR. Keep Notion at `4. Final Audit (Claude)` until the PR is created and
-recorded; do not mark `5. Done` before merge.
+Next owner: PR review / merge readiness. Keep Notion at
+`4. Final Audit (Claude)` until PR #9 is merged and recorded; do not mark
+`5. Done` before merge synchronization.
 
 ## SS-006 Coordination
 
