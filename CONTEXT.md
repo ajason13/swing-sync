@@ -8,7 +8,7 @@ Last updated: 2026-06-19
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/9
 - Latest merge commit: `35a569941b46744338f274f70d5eb826cfabdb1f`
-- Current pushed `main` includes PR #9 merge commit
+- Current pushed `main` head: `f8a34e8`, including PR #9 merge commit
   `35a569941b46744338f274f70d5eb826cfabdb1f` and post-SS-008 context sync.
 - Current completed task:
   `SS-008 Define Swing Sync metric JSON schema`
@@ -36,7 +36,8 @@ Acceptance criteria:
 
 Kickoff state for the next session:
 
-- Local `main` and `origin/main` are at merge commit
+- Local `main` and `origin/main` are at post-SS-008 context-sync commit
+  `f8a34e8`, which includes merge commit
   `35a569941b46744338f274f70d5eb826cfabdb1f`.
 - SS-008 is merged and marked `5. Done` in Notion.
 - SS-009 Notion page:
