@@ -14,7 +14,7 @@ Last updated: 2026-06-19
   `SS-008 Define Swing Sync metric JSON schema`
 - Active task: `SS-009 Implement joint angle and coordinate normalization utilities`
 - Active branch: `ss-009-angle-utils`
-- Active handshake: `0. Backlog`
+- Active handshake: `4. Final Audit (Claude)`
 - Active Pull Request: none
 
 ## SS-009 Coordination
@@ -34,7 +34,7 @@ Acceptance criteria:
 - Unit tests cover synthetic coordinates and edge cases.
 - Invalid or missing landmarks return warnings, not fabricated metrics.
 
-Kickoff state for the next session:
+Kickoff state on 2026-06-19:
 
 - Local `main` and `origin/main` include post-SS-008 context sync and merge
   commit
@@ -42,17 +42,135 @@ Kickoff state for the next session:
 - SS-008 is merged and marked `5. Done` in Notion.
 - SS-009 Notion page:
   https://app.notion.com/p/375834a0c8a68184b16fed21d44b5394
-- Notion currently shows branch `ss-009-angle-utils`, status `0. Backlog`,
-  and no pull request.
+- Notion reconfirmed branch `ss-009-angle-utils`, initial `0. Backlog`
+  status, empty PR, and the acceptance criteria above.
+- Branch `ss-009-angle-utils` was created from current `main` at
+  `8e2b44942a15fde9863853c6be30dc2b4ceaeb3d` after `git fetch origin`
+  confirmed `HEAD` and `origin/main` matched.
+- Notion moved to `1. Spec Drafting (Gemini)`.
+- No SS-009-specific test case existed in Notion. Dedicated `SS-TC-013` was
+  created for deterministic synthetic coordinate coverage, left/right and
+  mirrored handedness behavior, missing/invalid landmark warnings, edge cases,
+  and protected local-first safety/privacy boundaries.
+- The Gemini Chat Deep Research handoff is
+  `docs/handoffs/ss-009-gemini-chat-deep-research-prompt.md`. It uses a lean
+  steering prompt, a 10-file maximum attachment list for Gemini Chat, embedded
+  summaries of omitted prior-story artifacts, and a required task-specific
+  research plan before the deep research run.
+- Gemini Chat Deep Research returned a broad metric-utilities report. Codex
+  dispositioned it in `docs/ss-009-research-disposition.md`, adopting the
+  zero-dependency geometry direction while revising or rejecting the global 3D
+  target-line transform, unverified world-axis claims, payload/schema expansion,
+  diagnostic logging, absolute privacy claims, unsupported biological ranges,
+  and CaddieSet formula/data reuse.
+- The candidate normative specification is
+  `docs/ss-009-preimplementation-spec.md`.
+- The self-contained Claude QA planning handoff is
+  `docs/ss-009-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with five specification blockers:
+  underspecified lead-arm-plane landmarks/reference, missing ratio denominator
+  guards, unclear mirroring rules for magnitude primitives, ambiguous malformed
+  landmark handling, and undefined warning collection order.
+- `docs/ss-009-preimplementation-spec.md` now addresses B1-B5 with explicit
+  public functions, exact lead-arm-plane vectors/formula, cumulative warning
+  order, malformed-landmark classification, warning-applicability and
+  denominator-threshold tables, raw-distance-only ratio semantics, and expanded
+  synthetic edge-case test requirements.
+- Claude QA response: `docs/ss-009-claude-qa-response.md`.
+- Focused re-review handoff:
+  `docs/ss-009-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned FAIL with one new blocker, B6: warning
+  results could be ambiguous if geometry was technically computable, and
+  baseline landmark visibility scope was unclear for ratio primitives.
+- B6 is now addressed in `docs/ss-009-preimplementation-spec.md`: any
+  non-empty warning array forces `status: "unavailable"` and `value: null`;
+  `measured` requires zero warnings; baseline landmarks use the same malformed,
+  non-finite, and `MIN_LANDMARK_VISIBILITY` validation as active landmarks; and
+  the test matrix covers warning-only unavailable results plus baseline
+  low-visibility cases.
+- Claude second focused QA re-review returned PASS. B1-B6 are closed, and
+  Claude authorized moving SS-009 to `3. In Development (ChatGPT)`.
+- Implementation completed for geometry utility/test scope only:
+  `src/geometry-metrics.ts` and `test/unit/geometry-metrics.test.ts`.
+- The implementation adds pure zero-dependency geometry primitives for
+  shoulder angle, spine angle, lead/trail knee flex, lead arm plane, hip
+  rotation proxy, and head displacement. Invalid, missing, low-visibility,
+  undeclared, malformed, zero-length, missing-baseline, or insufficient-
+  baseline inputs return deterministic warnings with `status: "unavailable"`
+  and `value: null`.
+- No metric payload generation, schema expansion, runtime UI, export,
+  persistence, telemetry, remote logging, network behavior, dependencies,
+  SDK/model/provider changes, workers, or public serving were added.
+- Observability is intentionally unchanged; no logs, diagnostics, analytics,
+  traces, telemetry, storage writes, or debug payloads were added.
+- Pre-audit verification passed before the final audit: `npm run test:unit -- geometry-metrics`
+  (21 tests), `npm run test:unit` (72 tests across 8 files),
+  `npm run build`, `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, and `git diff --check`.
+- Final audit prompt: `docs/ss-009-claude-audit-prompt.md`.
+- Claude final implementation audit returned FAIL with B7: the audit prompt
+  summarized `src/geometry-metrics.ts` and
+  `test/unit/geometry-metrics.test.ts` instead of embedding the actual source,
+  so Claude could not directly verify the implementation.
+- B7 is accepted as a valid process blocker for this sensitive story.
+  Response recorded in `docs/ss-009-claude-audit-response.md`.
+- Codex added focused hardening tests for active low visibility, unused-array
+  corruption independence for lead/trail knee flex, and single-warning-only
+  unavailable results across all public primitives.
+- Targeted verification after B7 response passed:
+  `npm run test:unit -- geometry-metrics` (24 tests).
+- Full verification after B7 response passed: `npm run test:unit` (75 tests
+  across 8 files), `npm run build`, `npm run compliance:verify`,
+  `npm run safety:verify`, `npm run privacy:verify`, and `git diff --check`.
+- Source-inclusive focused final re-review prompt:
+  `docs/ss-009-claude-final-rereview-prompt.md`. It embeds the full current
+  contents of `src/geometry-metrics.ts` and
+  `test/unit/geometry-metrics.test.ts` for direct Claude audit.
+- Claude source-inclusive focused final re-review returned FAIL. B7 was closed
+  and C2-C4 were confirmed closed, but C1 remained blocking because `finalize`
+  guessed `["ZERO_LENGTH_VECTOR"]` when a null or non-finite value reached
+  finalization with no collected warnings.
+- C1 is now addressed: `finalize` no longer fabricates a fallback warning;
+  null or non-finite values without collected warnings throw an invariant error;
+  and side selection now records `UNDECLARED_HANDEDNESS` at `leadSide` /
+  `trailSide` through `sideIndex(..., collector)`.
+- Added a focused cumulative-warning regression for low visibility plus
+  zero-length geometry warnings.
+- Verification after the C1 fix passed: `npm run test:unit -- geometry-metrics`
+  (25 tests), `npm run test:unit` (76 tests across 8 files),
+  `npm run build`, `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, and `git diff --check`.
+- Focused final re-review 2 prompt:
+  `docs/ss-009-claude-final-rereview-2-prompt.md`.
+- Claude second focused final re-review returned FAIL only pending explicit
+  confirmation of the intentional `calculateSpineAngle` handedness-validation
+  asymmetry. Claude retracted B10 and confirmed the C1 structural fix.
+- B11/N13 response: `calculateSpineAngle` intentionally relies on standalone
+  `validateHandedness` because it does not side-select and `signedHorizontal`
+  has no undefined/error path where a warning can be emitted structurally. A
+  code comment now records this at the validation call.
+- Focused verification after the B11/N13 comment passed:
+  `npm run test:unit -- geometry-metrics` (25 tests) and `git diff --check`.
+- Focused final re-review 3 prompt:
+  `docs/ss-009-claude-final-rereview-3-prompt.md`.
+- Claude final implementation audit closing review returned PASS. All B1-B7,
+  C1-C4, B10, and B11/N13 items are closed or confirmed, and Claude signed off
+  that SS-009 is ready for PR preparation.
+- Pre-PR verification passed: `npm run test:unit` (76 tests across 8 files),
+  `npm run build`, `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`, `npm run sbom:generate`,
+  and `git diff --check`. `docs/sbom.json` timestamp/serial churn from
+  generation was restored because SS-009 adds no dependencies.
+- Notion moved to `4. Final Audit (Claude)`.
 - A new Codex session prompt is available at
   `docs/agent-guidance/ss-009-new-codex-session-prompt.md`.
 - Preserve the existing untracked agent-guidance prompt files unless the user
   explicitly asks to clean or commit them.
 
-Next owner: fresh Codex session. Read `AGENTS.md` and this file, confirm SS-009
-state in Notion, create branch `ss-009-angle-utils` from current `main`, move
-SS-009 to `1. Spec Drafting (Gemini)`, create or confirm a dedicated SS-009
-test case if needed, then prepare the Gemini research/specification handoff.
+Next owner: Codex PR preparation. Keep SS-009 at
+`4. Final Audit (Claude)` during PR review because the task database has no
+separate PR-review status; move to `5. Done` only after merge and context sync.
 
 ## SS-008 Coordination
 
