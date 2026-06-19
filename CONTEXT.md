@@ -1,21 +1,57 @@
 # Swing Sync Context
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/8
-- Latest merge commit: `3cd1d3eefe4af94d95369771d36d8c09d557f8c1`
-- Current pushed `main` head: `186ae4e`, including PR #8 merge commit
-  `3cd1d3eefe4af94d95369771d36d8c09d557f8c1` and post-SS-007 context sync.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/9
+- Latest merge commit: `35a569941b46744338f274f70d5eb826cfabdb1f`
+- Current pushed `main` includes PR #9 merge commit
+  `35a569941b46744338f274f70d5eb826cfabdb1f` and post-SS-008 context sync.
 - Current completed task:
-  `SS-007 Implement swing phase detector with manual correction`
-- Active task: `SS-008 Define Swing Sync metric JSON schema`
-- Active branch: `ss-008-metric-schema`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/9
+  `SS-008 Define Swing Sync metric JSON schema`
+- Active task: `SS-009 Implement joint angle and coordinate normalization utilities`
+- Active branch: `ss-009-angle-utils`
+- Active handshake: `0. Backlog`
+- Active Pull Request: none
+
+## SS-009 Coordination
+
+SS-009 is safety-, coaching-, and privacy-sensitive metric-calculation support
+work. It will implement local joint angle and coordinate-normalization
+utilities that consume pose landmark-like inputs and return bounded educational
+metric primitives or warnings. Treat this as sensitive: Gemini researches and
+drafts the specification, Codex verifies and implements only after approved
+planning gates, and Claude performs adversarial QA planning plus final audit.
+
+Acceptance criteria:
+
+- Computes shoulder angle, spine angle, knee flex, arm plane, hip rotation
+  proxy, and head displacement.
+- Handles left/right handedness.
+- Unit tests cover synthetic coordinates and edge cases.
+- Invalid or missing landmarks return warnings, not fabricated metrics.
+
+Kickoff state for the next session:
+
+- Local `main` and `origin/main` are at merge commit
+  `35a569941b46744338f274f70d5eb826cfabdb1f`.
+- SS-008 is merged and marked `5. Done` in Notion.
+- SS-009 Notion page:
+  https://app.notion.com/p/375834a0c8a68184b16fed21d44b5394
+- Notion currently shows branch `ss-009-angle-utils`, status `0. Backlog`,
+  and no pull request.
+- A new Codex session prompt is available at
+  `docs/agent-guidance/ss-009-new-codex-session-prompt.md`.
+- Preserve the existing untracked agent-guidance prompt files unless the user
+  explicitly asks to clean or commit them.
+
+Next owner: fresh Codex session. Read `AGENTS.md` and this file, confirm SS-009
+state in Notion, create branch `ss-009-angle-utils` from current `main`, move
+SS-009 to `1. Spec Drafting (Gemini)`, create or confirm a dedicated SS-009
+test case if needed, then prepare the Gemini research/specification handoff.
 
 ## SS-008 Coordination
 
@@ -24,7 +60,7 @@ future metric generation and review features may consume. Gemini Chat Deep
 Research performs research and draft-specification support with attached
 repository files, Codex verifies research and implements only after approved
 planning gates, and Claude performs adversarial QA planning plus final audit.
-The Notion tracker status is `4. Final Audit (Claude)`.
+The Notion tracker status is `5. Done`.
 
 Acceptance criteria:
 
@@ -135,9 +171,8 @@ Kickoff state on 2026-06-18:
   contain metric values, confidence values, limitation text, phase labels,
   handedness, timestamps, landmarks, media characteristics, or identifiers.
 
-Next owner: PR review / merge readiness. Keep Notion at
-`4. Final Audit (Claude)` until PR #9 is merged and recorded; do not mark
-`5. Done` before merge synchronization.
+SS-008 is complete. PR #9 is merged, Notion is marked `5. Done`, and local
+`main` has been fast-forwarded to the merge commit.
 
 ## SS-006 Coordination
 
