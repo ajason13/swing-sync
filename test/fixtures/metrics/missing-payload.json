@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.1.0",
+  "caddieSetEquivalence": "not-equivalent",
+  "metrics": [
+    {
+      "metricName": "top-shoulder-line-angle",
+      "value": {
+        "status": "missing",
+        "numericValue": null
+      },
+      "units": "degrees",
+      "phaseId": "top",
+      "handedness": "undeclared",
+      "confidence": {
+        "kind": "unavailable"
+      },
+      "limitationNotes": ["metric-not-calculated", "phase-review-required"]
+    }
+  ]
+}

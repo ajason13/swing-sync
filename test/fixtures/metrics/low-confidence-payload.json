@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.1.0",
+  "caddieSetEquivalence": "not-equivalent",
+  "metrics": [
+    {
+      "metricName": "impact-spine-line-angle",
+      "value": {
+        "status": "measured",
+        "numericValue": 9.75
+      },
+      "units": "degrees",
+      "phaseId": "impact",
+      "handedness": "right",
+      "confidence": {
+        "kind": "low-evidence"
+      },
+      "limitationNotes": ["pose-evidence-low", "impact-not-directly-observed"]
+    }
+  ]
+}
