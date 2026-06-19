@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ajason13/swing-sync/schemas/swing-metric-payload-v0.1.0.schema.json",
+  "title": "Swing Sync Metric Payload v0.1.0",
+  "description": "Repository documentation schema for synthetic, local-first Swing Sync metric payloads. SS-008 does not approve metric calculation, storage, export, telemetry, remote sharing, or public schema serving.",
+  "$comment": "Prohibited-key rejection is implemented by the TypeScript validator as exact-match and case-sensitive; it does not catch casing or naming variants.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "caddieSetEquivalence", "metrics"],
+  "properties": {
+    "schemaVersion": {
+      "const": "0.1.0"
+    },
+    "caddieSetEquivalence": {
+      "const": "not-equivalent"
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/metric"
+      }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metricName",
+        "value",
+        "units",
+        "phaseId",
+        "handedness",
+        "confidence",
+        "limitationNotes"
+      ],
+      "properties": {
+        "metricName": {
+          "enum": [
+            "address-stance-ratio",
+            "top-shoulder-line-angle",
+            "impact-spine-line-angle",
+            "finish-balance-line-angle"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        },
+        "units": {
+          "enum": ["ratio", "degrees"]
+        },
+        "phaseId": {
+          "enum": [
+            "address",
+            "toe-up",
+            "mid-backswing",
+            "top",
+            "mid-downswing",
+            "impact",
+            "mid-follow-through",
+            "finish"
+          ]
+        },
+        "handedness": {
+          "enum": ["right", "left", "undeclared"]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "limitationNotes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "none",
+              "phase-review-required",
+              "phase-unsupported",
+              "metric-not-calculated",
+              "pose-evidence-low",
+              "impact-not-directly-observed"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "metricName": { "const": "address-stance-ratio" } },
+            "required": ["metricName"]
+          },
+          "then": {
+            "properties": {
+              "units": { "const": "ratio" },
+              "phaseId": { "const": "address" },
+              "limitationNotes": {
+                "items": {
+                  "enum": [
+                    "none",
+                    "phase-review-required",
+                    "phase-unsupported",
+                    "metric-not-calculated",
+                    "pose-evidence-low"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "metricName": { "const": "top-shoulder-line-angle" } },
+            "required": ["metricName"]
+          },
+          "then": {
+            "properties": {
+              "units": { "const": "degrees" },
+              "phaseId": { "const": "top" },
+              "limitationNotes": {
+                "items": {
+                  "enum": [
+                    "none",
+                    "phase-review-required",
+                    "phase-unsupported",
+                    "metric-not-calculated",
+                    "pose-evidence-low"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "metricName": { "const": "impact-spine-line-angle" } },
+            "required": ["metricName"]
+          },
+          "then": {
+            "properties": {
+              "units": { "const": "degrees" },
+              "phaseId": { "const": "impact" },
+              "limitationNotes": {
+                "items": {
+                  "enum": [
+                    "none",
+                    "phase-review-required",
+                    "phase-unsupported",
+                    "metric-not-calculated",
+                    "pose-evidence-low",
+                    "impact-not-directly-observed"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "metricName": { "const": "finish-balance-line-angle" } },
+            "required": ["metricName"]
+          },
+          "then": {
+            "properties": {
+              "units": { "const": "degrees" },
+              "phaseId": { "const": "finish" },
+              "limitationNotes": {
+                "items": {
+                  "enum": [
+                    "none",
+                    "phase-review-required",
+                    "phase-unsupported",
+                    "metric-not-calculated",
+                    "pose-evidence-low"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "value": {
+                "properties": { "status": { "const": "measured" } },
+                "required": ["status"]
+              }
+            },
+            "required": ["value"]
+          },
+          "then": {
+            "not": {
+              "properties": { "handedness": { "const": "undeclared" } },
+              "required": ["handedness"]
+            },
+            "properties": {
+              "confidence": {
+                "properties": { "kind": { "enum": ["not-calibrated", "low-evidence"] } },
+                "required": ["kind"]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "confidence": {
+                "properties": { "kind": { "const": "unavailable" } },
+                "required": ["kind"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "limitationNotes": { "contains": { "const": "none" } } },
+            "required": ["limitationNotes"]
+          },
+          "then": {
+            "properties": { "limitationNotes": { "maxItems": 1 } }
+          }
+        }
+      ]
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "numericValue"],
+      "properties": {
+        "status": {
+          "enum": ["measured", "missing", "unsupported", "not-reviewed"]
+        },
+        "numericValue": {
+          "type": ["number", "null"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "measured" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "numericValue": { "type": "number" } }
+          },
+          "else": {
+            "properties": { "numericValue": { "type": "null" } }
+          }
+        }
+      ]
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["not-calibrated", "low-evidence", "unavailable"]
+        }
+      }
+    }
+  }
+}

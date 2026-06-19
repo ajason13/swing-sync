@@ -8,14 +8,136 @@ Last updated: 2026-06-18
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/8
 - Latest merge commit: `3cd1d3eefe4af94d95369771d36d8c09d557f8c1`
-- Current post-merge context commit: `e345af9` recorded SS-007 Notion
-  completion and SS-008 next-task handoff.
+- Current pushed `main` head: `186ae4e`, including PR #8 merge commit
+  `3cd1d3eefe4af94d95369771d36d8c09d557f8c1` and post-SS-007 context sync.
 - Current completed task:
   `SS-007 Implement swing phase detector with manual correction`
 - Active task: `SS-008 Define Swing Sync metric JSON schema`
 - Active branch: `ss-008-metric-schema`
-- Active handshake: `0. Backlog`
-- Active Pull Request: none
+- Active handshake: `4. Final Audit (Claude)`
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/9
+
+## SS-008 Coordination
+
+SS-008 is safety- and coaching-sensitive schema work. It defines the contract
+future metric generation and review features may consume. Gemini Chat Deep
+Research performs research and draft-specification support with attached
+repository files, Codex verifies research and implements only after approved
+planning gates, and Claude performs adversarial QA planning plus final audit.
+The Notion tracker status is `4. Final Audit (Claude)`.
+
+Acceptance criteria:
+
+- Schema includes metric name, value, units, phase, handedness, confidence, and
+  limitation notes.
+- Aligns naming with CaddieSet-inspired concepts without overclaiming
+  equivalence.
+- Has fixtures for valid, missing, and low-confidence data.
+
+Kickoff state on 2026-06-18:
+
+- Local `main` and `origin/main` were confirmed at `186ae4e`; PR #8 merge
+  commit `3cd1d3eefe4af94d95369771d36d8c09d557f8c1` is an ancestor.
+- `git diff --check` passed before branch creation.
+- Branch `ss-008-metric-schema` was created from verified `main`.
+- The intentional untracked story-guidance files for SS-004, SS-006, SS-007,
+  and SS-008 are preserved.
+- Notion reconfirmed branch `ss-008-metric-schema`, initial `0. Backlog`
+  status, empty PR, and the acceptance criteria above. The task moved to
+  `1. Spec Drafting (Gemini)`.
+- No SS-008-specific test case existed in Notion. Dedicated `SS-TC-012` was
+  created for accurate acceptance coverage of metric schema validation,
+  bounded vocabulary, synthetic valid/missing/low-confidence fixtures,
+  CaddieSet naming boundaries, and privacy/safety/protected-boundary checks.
+- The first `agy`/Antigravity CLI route returned no artifacts before the user
+  identified likely rate-limit exhaustion. Per the 2026-06-18 Multi-Agent SDLC
+  Framework routing note, SS-008 is now routed through Gemini Chat Deep
+  Research with attached files instead of local `agy`.
+- The Gemini Chat Deep Research handoff is
+  `docs/handoffs/ss-008-gemini-chat-deep-research-prompt.md`. It uses a lean
+  steering prompt, explicit file-attachment list, and a required task-specific
+  research plan before the deep research run.
+- Gemini Chat Deep Research returned a broad report. Codex dispositioned it in
+  `docs/ss-008-research-disposition.md`, rejecting the malformed schema and
+  overclaims while revising the useful zero-dependency, versioned-payload, and
+  synthetic-fixture recommendations.
+- The candidate normative specification is
+  `docs/ss-008-preimplementation-spec.md`.
+- The self-contained Claude QA planning handoff is
+  `docs/ss-008-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with four blockers: missing
+  status/confidence pairing, optional per-metric CaddieSet disclaimer, undefined
+  recursive prohibited-key strategy, and undefined off-version validation.
+- `docs/ss-008-preimplementation-spec.md` now addresses the blockers with an
+  explicit status/confidence compatibility table, required payload-level
+  `caddieSetEquivalence: "not-equivalent"`, exact case-sensitive recursive
+  prohibited-key list, exact `schemaVersion: "0.1.0"` rejection rules, and
+  required tests for finite zero, explicit non-finite values, empty/duplicate
+  limitation notes, and case/whitespace-sensitive enum rejection.
+- Claude QA response: `docs/ss-008-claude-qa-response.md`.
+- Focused re-review handoff:
+  `docs/ss-008-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned PASS. B1-B4 are closed and Claude
+  authorized moving to `3. In Development (ChatGPT)`.
+- Implementation completed for schema/test scope only:
+  `docs/schemas/swing-metric-payload-v0.1.0.schema.json`,
+  `src/metric-contract.ts`, `test/fixtures/metrics/valid-payload.json`,
+  `test/fixtures/metrics/missing-payload.json`,
+  `test/fixtures/metrics/low-confidence-payload.json`, and
+  `test/unit/metric-contract.test.ts`.
+- The implementation adds a versioned payload wrapper, required
+  `caddieSetEquivalence: "not-equivalent"`, bounded metric/unit/phase/
+  handedness/value/confidence/limitation vocabularies, status/confidence
+  pairing, exact `0.1.0` version acceptance, exact case-sensitive recursive
+  prohibited-key rejection, and deterministic synthetic fixtures.
+- Claude final implementation audit returned FAIL with three narrow blockers:
+  unconstrained `impact-not-directly-observed` limitation-code usage, missing
+  itemized negative tests for `caddieSetEquivalence`, and insufficiently
+  explicit low-evidence impact fixture coverage.
+- Final audit response: `docs/ss-008-claude-audit-response.md`.
+- B5-B7 fixes are implemented: `impact-not-directly-observed` is valid only
+  for `impact-spine-line-angle` in the TypeScript validator, JSON Schema,
+  spec, and tests; `caddieSetEquivalence` now has omitted/wrong/empty/non-string
+  rejection assertions; and the low-confidence fixture's
+  `impact-spine-line-angle` entry is asserted directly.
+- No runtime UI, metric calculation, export, persistence, telemetry, remote
+  logging, remote review, dependency, model/SDK/asset, worker, or public schema
+  serving behavior was added.
+- Pre-audit verification passed: `npm run test:unit -- metric-contract`
+  (10 tests), `npm run test:unit` (50 tests across 7 files),
+  `npm run build`, `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`,
+  `npm audit --omit=dev` (0 vulnerabilities), and `git diff --check`.
+- Focused post-fix verification passed: `npm run test:unit -- metric-contract`
+  (11 tests), `npm run test:unit` (51 tests across 7 files), and
+  `git diff --check`.
+- `npm run sbom:generate` changed only generated metadata
+  (UUID/timestamp/npm tool version) because no production dependency changed;
+  that metadata churn was restored after verification.
+- Final audit prompt: `docs/ss-008-claude-audit-prompt.md`.
+- Focused final re-review prompt:
+  `docs/ss-008-claude-final-rereview-prompt.md`.
+- Claude focused final re-review returned PASS. B5-B7 are closed, no new
+  blockers were introduced, and Claude signed off that Codex may prepare the
+  PR. Response: `docs/ss-008-claude-final-rereview-response.md`.
+- PR opened: https://github.com/ajason13/swing-sync/pull/9.
+- Post-PASS PR verification passed: `npm run test:unit` (51 tests across
+  7 files), `npm run build`, `npm run compliance:verify`,
+  `npm run safety:verify`, `npm run privacy:verify`,
+  `npm run license:audit`, `npm run verify:bundle-license-fixture`,
+  `npm run sbom:generate`, `npm audit --omit=dev` (0 vulnerabilities), and
+  `git diff --check`. `npm run sbom:generate` again changed only generated
+  SBOM serial/timestamp metadata, and that metadata churn was restored.
+- Observability decision at kickoff: no runtime behavior is approved yet.
+  Prefer no new observability; if diagnostics are proposed, they must not
+  contain metric values, confidence values, limitation text, phase labels,
+  handedness, timestamps, landmarks, media characteristics, or identifiers.
+
+Next owner: PR review / merge readiness. Keep Notion at
+`4. Final Audit (Claude)` until PR #9 is merged and recorded; do not mark
+`5. Done` before merge synchronization.
 
 ## SS-006 Coordination
 

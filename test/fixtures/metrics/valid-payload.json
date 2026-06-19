@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "0.1.0",
+  "caddieSetEquivalence": "not-equivalent",
+  "metrics": [
+    {
+      "metricName": "address-stance-ratio",
+      "value": {
+        "status": "measured",
+        "numericValue": 0
+      },
+      "units": "ratio",
+      "phaseId": "address",
+      "handedness": "right",
+      "confidence": {
+        "kind": "not-calibrated"
+      },
+      "limitationNotes": ["none"]
+    },
+    {
+      "metricName": "top-shoulder-line-angle",
+      "value": {
+        "status": "measured",
+        "numericValue": 42.5
+      },
+      "units": "degrees",
+      "phaseId": "top",
+      "handedness": "right",
+      "confidence": {
+        "kind": "not-calibrated"
+      },
+      "limitationNotes": ["none"]
+    },
+    {
+      "metricName": "impact-spine-line-angle",
+      "value": {
+        "status": "measured",
+        "numericValue": 18.25
+      },
+      "units": "degrees",
+      "phaseId": "impact",
+      "handedness": "left",
+      "confidence": {
+        "kind": "not-calibrated"
+      },
+      "limitationNotes": ["none"]
+    },
+    {
+      "metricName": "finish-balance-line-angle",
+      "value": {
+        "status": "measured",
+        "numericValue": -3.5
+      },
+      "units": "degrees",
+      "phaseId": "finish",
+      "handedness": "left",
+      "confidence": {
+        "kind": "not-calibrated"
+      },
+      "limitationNotes": ["none"]
+    }
+  ]
+}
