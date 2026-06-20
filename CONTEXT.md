@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ## Current State
 
@@ -13,9 +13,9 @@ Last updated: 2026-06-19
   sync commits.
 - Current completed task:
   `SS-009 Implement joint angle and coordinate normalization utilities`
-- Active task: pending Notion task selection
+- Active task: `SS-010 Render skeleton-overlaid keyframes`
 - Active branch: `main`
-- Active handshake: pending Notion task selection
+- Active handshake: `0. Backlog`
 - Active Pull Request: none
 
 ## SS-009 Coordination
@@ -167,18 +167,47 @@ Kickoff state on 2026-06-19:
 - PR #10 merged on 2026-06-20 at merge commit
   `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`. Local `main` and `origin/main`
   both include that merge plus post-SS-009 context/prompt sync commits.
-- Post-merge Notion update attempted but failed with `Auth required`. Restore
-  Notion auth, then mark SS-009 `5. Done` and add the merge commit / PR link if
-  not already updated.
+- Post-merge Notion sync is complete. Notion auth was restored, SS-009 is
+  marked `5. Done`, PR #10 is recorded, and a comment records merge commit
+  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86` plus post-merge context sync.
 - A new Codex session prompt is available at
   `docs/agent-guidance/post-ss-009-next-codex-session-prompt.md`.
 - Preserve the existing untracked agent-guidance prompt files unless the user
   explicitly asks to clean or commit them.
 
-Next owner: next Codex session. Restore Notion auth, complete SS-009 Done
-sync, query the Swing Sync task database for the next accepted Backlog task,
-and create the next story branch from current `main` only after the Notion task
-details are verified.
+## SS-010 Coordination
+
+SS-010 is a privacy- and export-sensitive rendering story. It will add readable
+skeleton overlays to selected keyframes while preserving the local-first raw
+video boundary and avoiding unapproved raw-video export. Treat it as gated:
+Gemini researches and drafts the rendering/privacy specification, Codex verifies
+and implements after approved planning gates, and Claude performs adversarial QA
+planning plus final audit.
+
+Acceptance criteria from Notion:
+
+- Keyframes render with readable skeleton overlays.
+- Overlays preserve user privacy by favoring annotated stills over raw video
+  export.
+- Mobile preview is legible.
+- Export pipeline can reuse rendered frames.
+
+Kickoff state on 2026-06-20:
+
+- Notion page:
+  https://app.notion.com/p/375834a0c8a681c280ccc35381721a27
+- Branch: `ss-010-skeleton-overlays`
+- Handshake Status: `0. Backlog`
+- Pull Request: empty
+- Task Type: `Feature`
+- The next session should create branch `ss-010-skeleton-overlays` from current
+  `main`, move SS-010 to `1. Spec Drafting (Gemini)`, search for or create a
+  dedicated SS-010 test case, and prepare a self-contained Gemini Chat prompt
+  before implementation.
+
+Next owner: next Codex session. Start SS-010 from current `main`, keep Notion
+and `CONTEXT.md` synchronized, and do not implement overlay rendering before the
+research/specification and Claude QA planning gates are complete.
 
 ## SS-008 Coordination
 
