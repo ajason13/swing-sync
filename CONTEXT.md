@@ -6,16 +6,16 @@ Last updated: 2026-06-19
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/9
-- Latest merge commit: `35a569941b46744338f274f70d5eb826cfabdb1f`
-- Current pushed `main` includes PR #9 merge commit
-  `35a569941b46744338f274f70d5eb826cfabdb1f` and post-SS-008 context sync.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/10
+- Latest merge commit: `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`
+- Current pushed `main` includes PR #10 merge commit
+  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`.
 - Current completed task:
-  `SS-008 Define Swing Sync metric JSON schema`
-- Active task: `SS-009 Implement joint angle and coordinate normalization utilities`
-- Active branch: `ss-009-angle-utils`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/10
+  `SS-009 Implement joint angle and coordinate normalization utilities`
+- Active task: pending Notion task selection
+- Active branch: `main`
+- Active handshake: pending Notion task selection
+- Active Pull Request: none
 
 ## SS-009 Coordination
 
@@ -163,15 +163,21 @@ Kickoff state on 2026-06-19:
   and `git diff --check`. `docs/sbom.json` timestamp/serial churn from
   generation was restored because SS-009 adds no dependencies.
 - Pull Request: https://github.com/ajason13/swing-sync/pull/10
-- Notion moved to `4. Final Audit (Claude)`.
+- PR #10 merged on 2026-06-20 at merge commit
+  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`. Local `main` and `origin/main`
+  both point at the merge commit after fast-forward sync.
+- Post-merge Notion update attempted but failed with `Auth required`. Restore
+  Notion auth, then mark SS-009 `5. Done` and add the merge commit / PR link if
+  not already updated.
 - A new Codex session prompt is available at
-  `docs/agent-guidance/ss-009-new-codex-session-prompt.md`.
+  `docs/agent-guidance/post-ss-009-next-codex-session-prompt.md`.
 - Preserve the existing untracked agent-guidance prompt files unless the user
   explicitly asks to clean or commit them.
 
-Next owner: PR review and CI. Keep SS-009 at `4. Final Audit (Claude)` during
-PR review because the task database has no separate PR-review status; move to
-`5. Done` only after merge and context sync.
+Next owner: next Codex session. Restore Notion auth, complete SS-009 Done
+sync, query the Swing Sync task database for the next accepted Backlog task,
+and create the next story branch from current `main` only after the Notion task
+details are verified.
 
 ## SS-008 Coordination
 
