@@ -11,8 +11,8 @@ workflow and keep Notion plus CONTEXT.md synchronized.
 Current repository state:
 - Default branch: main
 - local main and origin/main should include SS-009 merge commit
-  3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86 and post-SS-009 context sync
-  commit 228d7a8d92bdee8da7b4a1edd1f57ab912f7667d.
+  3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86 and post-SS-009 context/prompt
+  sync commits.
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/10
 - Completed task: SS-009 Implement joint angle and coordinate normalization
   utilities.
@@ -50,8 +50,9 @@ Start-of-session steps:
    - git status --short --branch
    - git rev-parse HEAD
    - git rev-parse origin/main
-   Expected: main at 228d7a8d92bdee8da7b4a1edd1f57ab912f7667d, clean except
-   for intentional untracked agent-guidance prompt files.
+   Expected: main includes 3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86 and the
+   post-SS-009 context/prompt sync commits, clean except for intentional
+   untracked agent-guidance prompt files.
 2. Verify PR #10 is merged:
    - gh pr view 10 --json state,mergedAt,mergeCommit,url
 3. Restore/confirm Notion auth.

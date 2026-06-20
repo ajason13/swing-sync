@@ -9,8 +9,8 @@ Last updated: 2026-06-19
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/10
 - Latest merge commit: `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`
 - Current pushed `main` includes PR #10 merge commit
-  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86` and post-SS-009 context sync
-  commit `228d7a8d92bdee8da7b4a1edd1f57ab912f7667d`.
+  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86` and post-SS-009 context/prompt
+  sync commits.
 - Current completed task:
   `SS-009 Implement joint angle and coordinate normalization utilities`
 - Active task: pending Notion task selection
@@ -166,8 +166,7 @@ Kickoff state on 2026-06-19:
 - Pull Request: https://github.com/ajason13/swing-sync/pull/10
 - PR #10 merged on 2026-06-20 at merge commit
   `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`. Local `main` and `origin/main`
-  both include that merge plus post-SS-009 context sync commit
-  `228d7a8d92bdee8da7b4a1edd1f57ab912f7667d`.
+  both include that merge plus post-SS-009 context/prompt sync commits.
 - Post-merge Notion update attempted but failed with `Auth required`. Restore
   Notion auth, then mark SS-009 `5. Done` and add the merge commit / PR link if
   not already updated.
