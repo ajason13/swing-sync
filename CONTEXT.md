@@ -6,17 +6,17 @@ Last updated: 2026-06-25
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/10
-- Latest merge commit: `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86`
-- Current pushed `main` includes PR #10 merge commit
-  `3d7ad6cb0c0b8b7d18baf36a3079c6bd6666bb86` and post-SS-009 context/prompt
-  sync commits.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/11
+- Latest merge commit: `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`
+- Current pushed `main` includes PR #11 merge commit
+  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`. Local `main` and `origin/main`
+  both resolve to that commit after post-SS-010 fast-forward.
 - Current completed task:
-  `SS-009 Implement joint angle and coordinate normalization utilities`
-- Active task: `SS-010 Render skeleton-overlaid keyframes`
-- Active branch: `ss-010-skeleton-overlays`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/11
+  `SS-010 Render skeleton-overlaid keyframes`
+- Active task: `SS-011 Generate downloadable Swing Card`
+- Active branch: `main`
+- Active handshake: `0. Backlog`
+- Active Pull Request: none
 
 ## SS-009 Coordination
 
@@ -333,10 +333,51 @@ Kickoff state on 2026-06-20:
   recorded and a Notion comment records Claude PASS, final verification, the
   restored SBOM metadata churn, and the remaining local Playwright runner
   limitation.
+- PR #11 merged on 2026-06-25 at merge commit
+  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`. Local `main` and `origin/main`
+  both resolve to that merge commit after fast-forward.
+- Post-merge Notion sync is complete. SS-010 is marked `5. Done`, PR #11 is
+  recorded, and a Notion comment records the merge commit and post-merge state.
+- A new Codex session prompt for SS-011 is available at
+  `docs/agent-guidance/ss-011-new-codex-session-prompt.md`.
 
-Next owner: PR review and merge. Keep SS-010 at `4. Final Audit (Claude)` until
-the PR is merged, then sync local `main`, Notion, and `CONTEXT.md` and mark the
-task `5. Done`.
+SS-010 is complete.
+
+## SS-011 Coordination
+
+SS-011 is an export-, privacy-, safety/copy-, and AI-chat-prompt-sensitive
+story. It will generate a downloadable Swing Card that can include selected
+annotated keyframes, bounded metric outputs, warnings/limitations, and an
+analysis prompt suitable for manual upload to an LLM chat interface. Treat it
+as gated: Gemini researches and drafts the export/privacy/prompt
+specification, Codex verifies and implements after approved planning gates, and
+Claude performs adversarial QA planning plus final audit.
+
+Acceptance criteria from Notion:
+
+- Swing Card includes selected keyframes, metrics, warnings, and analysis
+  prompt.
+- Export works as PNG or PDF.
+- No unapproved raw video is included.
+- Output remains usable for manual upload to an LLM chat interface.
+
+Kickoff state on 2026-06-25:
+
+- Notion page:
+  https://app.notion.com/p/375834a0c8a6813ba976c741f4837614
+- Branch: `ss-011-swing-card`
+- Handshake Status: `0. Backlog`
+- Pull Request: empty
+- Task Type: `Feature`
+- Local `main` and `origin/main` resolve to SS-010 merge commit
+  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`.
+- Existing untracked `docs/agent-guidance/ss-00*-new-codex-session-prompt.md`
+  files remain preserved unless the user explicitly asks to clean or commit
+  them.
+
+Next owner: next Codex session. Start SS-011 from current `main`, keep Notion
+and `CONTEXT.md` synchronized, and do not implement Swing Card export before
+the research/specification and Claude QA planning gates are complete.
 
 ## SS-008 Coordination
 
