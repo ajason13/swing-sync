@@ -9,8 +9,9 @@ Last updated: 2026-06-25
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/11
 - Latest merge commit: `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`
 - Current pushed `main` includes PR #11 merge commit
-  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`. Local `main` and `origin/main`
-  both resolve to that commit after post-SS-010 fast-forward.
+  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec` and post-SS-010 context/prompt
+  sync commits. Local `main` and `origin/main` matched after the post-SS-010
+  sync push.
 - Current completed task:
   `SS-010 Render skeleton-overlaid keyframes`
 - Active task: `SS-011 Generate downloadable Swing Card`
@@ -369,8 +370,9 @@ Kickoff state on 2026-06-25:
 - Handshake Status: `0. Backlog`
 - Pull Request: empty
 - Task Type: `Feature`
-- Local `main` and `origin/main` resolve to SS-010 merge commit
-  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec`.
+- Local `main` and `origin/main` include SS-010 merge commit
+  `1bb76b1c9dbfd1943cb65ad0176f859417d52eec` and post-SS-010 context/prompt
+  sync commits.
 - Existing untracked `docs/agent-guidance/ss-00*-new-codex-session-prompt.md`
   files remain preserved unless the user explicitly asks to clean or commit
   them.
