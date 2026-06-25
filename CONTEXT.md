@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-20
+Last updated: 2026-06-25
 
 ## Current State
 
@@ -14,9 +14,9 @@ Last updated: 2026-06-20
 - Current completed task:
   `SS-009 Implement joint angle and coordinate normalization utilities`
 - Active task: `SS-010 Render skeleton-overlaid keyframes`
-- Active branch: `main`
-- Active handshake: `0. Backlog`
-- Active Pull Request: none
+- Active branch: `ss-010-skeleton-overlays`
+- Active handshake: `4. Final Audit (Claude)`
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/11
 
 ## SS-009 Coordination
 
@@ -197,17 +197,146 @@ Kickoff state on 2026-06-20:
 - Notion page:
   https://app.notion.com/p/375834a0c8a681c280ccc35381721a27
 - Branch: `ss-010-skeleton-overlays`
-- Handshake Status: `0. Backlog`
-- Pull Request: empty
+- Handshake Status: `4. Final Audit (Claude)`
+- Pull Request: https://github.com/ajason13/swing-sync/pull/11
 - Task Type: `Feature`
-- The next session should create branch `ss-010-skeleton-overlays` from current
-  `main`, move SS-010 to `1. Spec Drafting (Gemini)`, search for or create a
-  dedicated SS-010 test case, and prepare a self-contained Gemini Chat prompt
-  before implementation.
+- Local `main` and `origin/main` were confirmed at
+  `850b012652ca4c1553f852aec48188c04bd49202` after `git fetch origin`.
+- Worktree was clean except for intentional untracked
+  `docs/agent-guidance/ss-00*-new-codex-session-prompt.md` files, which remain
+  preserved.
+- Branch `ss-010-skeleton-overlays` was created from current `main`.
+- Notion moved to `1. Spec Drafting (Gemini)`.
+- No dedicated SS-010 test case existed in Notion. Dedicated `SS-TC-014` was
+  created for readable skeleton overlays, mobile preview legibility,
+  privacy-preserving annotated still output, reusable export-frame boundaries,
+  malformed or unavailable landmark/keyframe handling, and protected
+  local-first privacy/safety boundaries.
+- The Gemini Chat Deep Research handoff is
+  `docs/handoffs/ss-010-gemini-chat-deep-research-prompt.md`. It uses a
+  10-file maximum attachment list, embedded summaries of omitted prior-story
+  artifacts, and a required task-specific research plan before the deep
+  research run.
+- Gemini Chat Deep Research returned a broad skeleton-overlay rendering report.
+  Codex dispositioned it in `docs/ss-010-research-disposition.md`, adopting the
+  zero-dependency Canvas 2D direction, DPR-aware rendering with a local cap,
+  facial-landmark exclusion, explicit 18-segment topology, and segment-level
+  visibility gating while revising or rejecting guaranteed-contrast claims,
+  whole-overlay occlusion thresholds, mirroring transforms for overlay
+  alignment, and `toBlob`/Object URL export serialization in SS-010.
+- The candidate normative specification is
+  `docs/ss-010-preimplementation-spec.md`. It defines `src/pose-topology.ts`,
+  `src/pose-renderer.ts`, reusable caller-provided canvas rendering, review UI
+  integration, mobile/desktop verification, and strict no-serialization,
+  no-download, no-persistence, no-remote-sharing boundaries.
+- The self-contained Claude QA planning handoff is
+  `docs/ss-010-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with seven specification blockers:
+  ambiguous `mapNormalizedPoint` validation ownership, missing warning
+  precedence for multi-failure landmarks, underdetermined core-evidence versus
+  no-renderable-segment status semantics, undefined segment count invariants,
+  unconstrained accessible-label content, unstated canvas/`ImageBitmap`
+  lifecycle ownership across keyframe switches, and unclear re-render versus
+  caching expectations.
+- `docs/ss-010-preimplementation-spec.md` now addresses B1-B7 with explicit
+  mapper versus renderer validation ownership, exact per-landmark warning
+  precedence, deterministic segment-count invariants, independent
+  `NO_RENDERABLE_SEGMENTS` and `INSUFFICIENT_CORE_LANDMARKS` fixtures,
+  accessible-label privacy/copy constraints, synchronous render semantics,
+  `ImageBitmap` ownership retained by `FrameProcessingController`, and a
+  no-cached-annotated-pixels rule for keyframe switching.
+- Claude QA response: `docs/ss-010-claude-qa-response.md`.
+- Focused re-review handoff:
+  `docs/ss-010-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned PASS. B1-B7 are closed, no new blockers
+  were introduced, and Claude signed off that Codex may move to implementation.
+- Notion moved to `3. In Development (ChatGPT)`.
+- Implementation completed for approved overlay-rendering scope only:
+  `src/pose-topology.ts`, `src/pose-renderer.ts`,
+  `test/unit/pose-renderer.test.ts`, plus focused integration changes in
+  `src/main.ts`, `src/styles.css`, and `test/smoke/app.spec.ts`.
+- The implementation adds a zero-dependency Canvas 2D annotated-still renderer
+  for selected sampled keyframes, explicit 18-segment non-facial topology,
+  deterministic warning/status semantics, DPR capping, one reused primary
+  review canvas, bounded accessible labels, mobile keyframe controls, and
+  no-cached-annotated-pixel keyframe switching.
+- No raw-video export, image serialization, `toBlob`, `toDataURL`,
+  `URL.createObjectURL`, downloads, persistence, remote sharing, telemetry,
+  remote logging, dependencies, SDK/model/provider changes, workers, public
+  serving, metric payload export, or coaching/correctness claims were added.
+- Observability is intentionally unchanged; no logs, analytics, metrics,
+  traces, telemetry, debug payloads, storage writes, or console diagnostics
+  were added.
+- Verification passed: `npm run test:unit` (88 tests across 9 files),
+  `npm run build`, `npm run compliance:verify`, and `git diff --check`.
+- Browser verification: direct built-preview Chromium overlay smoke check
+  passed. It served the built app, selected the local fixture video, opened
+  review after local inference, switched to the `Top` keyframe, verified one
+  annotated canvas with positive dimensions and mobile layout, no horizontal
+  overflow, no IndexedDB or Cache API entries, no external requests, no
+  sensitive console logs matching landmarks/worldLandmarks/media
+  characteristics/filename, and no forbidden export/privacy text matching
+  download/raw video export/anonymous/guaranteed.
+- `npm run test:smoke` was attempted in sandboxed and escalated modes but hung
+  before Playwright emitted test progress. `node_modules/.bin/playwright test
+  --list --no-deps` also hung, including after temporarily removing new smoke
+  blocks, so Codex treated this as a local Playwright runner/environment issue
+  and used the direct built-preview Chromium check as browser evidence.
+- Source-inclusive final audit prompt:
+  `docs/ss-010-claude-audit-prompt.md`.
+- Notion moved to `4. Final Audit (Claude)`.
+- Claude final implementation audit returned FAIL with three blockers:
+  duplicated finite/range validation ownership between `classifyLandmark` and
+  `mapNormalizedPoint`, hardcoded no-pose segment/core warning derivation, and
+  incomplete direct browser smoke evidence for exact mobile viewport,
+  touch-target, and keyframe-switch single-canvas assertions.
+- Audit response: `docs/ss-010-claude-audit-response.md`.
+- B1 is addressed in `src/pose-renderer.ts`: one `classifyCoordinate` helper
+  now owns coordinate finite/range checks for both `mapNormalizedPoint` and
+  `classifyLandmark`; `validateLandmark` calls non-validating
+  `mapValidatedPoint` only after classification succeeds; and the dead
+  `mapNormalizedPoint` fallback warning path is removed.
+- B2 is addressed in `src/pose-renderer.ts`: the missing-pose path adds
+  `MISSING_POSE`, uses an empty landmark array, and lets the standard segment
+  and core loops derive `MISSING_LANDMARK`, `NO_RENDERABLE_SEGMENTS`, and
+  `INSUFFICIENT_CORE_LANDMARKS`.
+- B3 is addressed with expanded direct built-preview Chromium verification at
+  exact viewport `390x844`, asserting one canvas after switching to `Top`,
+  bounded accessible label, canvas rect `306x172`, no horizontal overflow,
+  `minButtonHeight: 48`, no IndexedDB or Cache API entries, no external
+  requests, no sensitive console logs, and no forbidden export/privacy text.
+- Verification after the audit fixes passed:
+  `npm run test:unit -- pose-renderer` (12 tests), `npm run test:unit` (88
+  tests across 9 files), `npm run build`, `npm run compliance:verify`,
+  expanded direct built-preview Chromium overlay smoke check, and
+  `git diff --check`.
+- Observability remains intentionally unchanged after the audit fixes; no logs,
+  analytics, metrics, traces, telemetry, debug payloads, storage writes, or
+  console diagnostics were added.
+- The superseded final audit prompt now redirects to the source-focused
+  re-review prompt:
+  `docs/ss-010-claude-final-rereview-prompt.md`.
+- Claude focused final re-review returned PASS. B1-B3 are closed, no new
+  blockers were introduced, and Claude signed off that SS-010 may proceed to
+  PR preparation.
+- Claude final re-review response:
+  `docs/ss-010-claude-final-rereview-response.md`.
+- Final pre-PR verification passed after Claude PASS:
+  `npm run test:unit` (88 tests across 9 files), `npm run build`,
+  `npm run compliance:verify`, `npm run license:audit`,
+  `npm run sbom:generate`, and `git diff --check`. `docs/sbom.json`
+  changed only generated serial/timestamp metadata, so that churn was restored
+  because SS-010 adds no dependencies.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/11. Notion Pull Request is
+  recorded and a Notion comment records Claude PASS, final verification, the
+  restored SBOM metadata churn, and the remaining local Playwright runner
+  limitation.
 
-Next owner: next Codex session. Start SS-010 from current `main`, keep Notion
-and `CONTEXT.md` synchronized, and do not implement overlay rendering before the
-research/specification and Claude QA planning gates are complete.
+Next owner: PR review and merge. Keep SS-010 at `4. Final Audit (Claude)` until
+the PR is merged, then sync local `main`, Notion, and `CONTEXT.md` and mark the
+task `5. Done`.
 
 ## SS-008 Coordination
 

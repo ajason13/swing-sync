@@ -135,6 +135,27 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
 
   await expect(page.locator(".phase-warning")).toContainText("Unsupported input");
   await expect(page.locator(".phase-warning")).toHaveAttribute("aria-live", "polite");
+  const canvas = page.locator("[data-keyframe-canvas]");
+  await expect(canvas).toHaveCount(1);
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Address");
+  await expect(page.locator("[data-overlay-status]")).toContainText(/Skeleton overlay/);
+  await page.locator("[data-keyframe-index='3']").click();
+  await expect(canvas).toHaveCount(1);
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Top");
+  const canvasState = await page.evaluate(() => {
+    const element = document.querySelector("[data-keyframe-canvas]") as HTMLCanvasElement;
+    const label = element.getAttribute("aria-label") ?? "";
+    return {
+      width: element.width,
+      height: element.height,
+      label,
+      canvasCount: document.querySelectorAll("[data-keyframe-canvas]").length
+    };
+  });
+  expect(canvasState.width).toBeGreaterThan(0);
+  expect(canvasState.height).toBeGreaterThan(0);
+  expect(canvasState.canvasCount).toBe(1);
+  expect(canvasState.label).not.toMatch(/right|left|face-on|mirrored|warning|confidence|filename|timestamp|correct/i);
   await expect(page.getByLabel("View", { exact: true })).toHaveValue("undeclared");
   await expect(page.getByLabel("Handedness", { exact: true })).toHaveValue("undeclared");
   await expect(page.getByLabel("Horizontally mirrored", { exact: true })).toHaveValue("undeclared");
@@ -157,7 +178,7 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
     "Mid-follow-through",
     "Finish"
   ]) {
-    await expect(page.getByText(phase, { exact: true })).toBeVisible();
+    await expect(page.locator(".phase-assignment").getByText(phase, { exact: true })).toBeVisible();
   }
 
   const assignments = page.locator("[data-phase-index]");
@@ -307,4 +328,31 @@ test("fits the mobile viewport without horizontal page overflow", async ({ page 
 
   expect(hasOverflow).toBe(false);
   await expect(page.getByRole("checkbox")).toBeVisible();
+
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({
+    timeout: 30_000
+  });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+
+  const layout = await page.evaluate(() => {
+    const canvas = document.querySelector("[data-keyframe-canvas]") as HTMLCanvasElement;
+    const canvasRect = canvas.getBoundingClientRect();
+    const buttonRects = [...document.querySelectorAll("[data-keyframe-index]")].map((button) =>
+      button.getBoundingClientRect()
+    );
+    return {
+      hasOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      canvasWidth: canvasRect.width,
+      canvasHeight: canvasRect.height,
+      minButtonHeight: Math.min(...buttonRects.map((rect) => rect.height))
+    };
+  });
+
+  expect(layout.hasOverflow).toBe(false);
+  expect(layout.canvasWidth).toBeGreaterThan(300);
+  expect(layout.canvasHeight).toBeGreaterThan(160);
+  expect(layout.minButtonHeight).toBeGreaterThanOrEqual(44);
 });
