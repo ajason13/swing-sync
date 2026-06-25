@@ -16,7 +16,7 @@ Last updated: 2026-06-25
 - Active task: `SS-010 Render skeleton-overlaid keyframes`
 - Active branch: `ss-010-skeleton-overlays`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/11
 
 ## SS-009 Coordination
 
@@ -198,7 +198,7 @@ Kickoff state on 2026-06-20:
   https://app.notion.com/p/375834a0c8a681c280ccc35381721a27
 - Branch: `ss-010-skeleton-overlays`
 - Handshake Status: `4. Final Audit (Claude)`
-- Pull Request: empty
+- Pull Request: https://github.com/ajason13/swing-sync/pull/11
 - Task Type: `Feature`
 - Local `main` and `origin/main` were confirmed at
   `850b012652ca4c1553f852aec48188c04bd49202` after `git fetch origin`.
@@ -328,9 +328,15 @@ Kickoff state on 2026-06-20:
   `npm run sbom:generate`, and `git diff --check`. `docs/sbom.json`
   changed only generated serial/timestamp metadata, so that churn was restored
   because SS-010 adds no dependencies.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/11. Notion Pull Request is
+  recorded and a Notion comment records Claude PASS, final verification, the
+  restored SBOM metadata churn, and the remaining local Playwright runner
+  limitation.
 
-Next owner: Codex PR preparation. Run final pre-PR verification, create the PR,
-and keep Notion plus `CONTEXT.md` synchronized with the PR URL and state.
+Next owner: PR review and merge. Keep SS-010 at `4. Final Audit (Claude)` until
+the PR is merged, then sync local `main`, Notion, and `CONTEXT.md` and mark the
+task `5. Done`.
 
 ## SS-008 Coordination
 
