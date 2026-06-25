@@ -15,6 +15,7 @@ import {
   type PhaseDeclarations,
   type PhaseReviewState
 } from "./phase-review";
+import { renderPoseOverlayFrame, type PoseOverlayRenderResult } from "./pose-renderer";
 import { getNextWorkflowStep, getWorkflowStep, workflowSteps, type WorkflowStepId } from "./workflow";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -35,6 +36,8 @@ let phaseDeclarations: PhaseDeclarations = undeclaredPhaseDeclarations();
 let phaseReviewState: PhaseReviewState | undefined;
 let phaseDraft: PhaseAssignment[] = [];
 let phaseConfirmation = false;
+let selectedKeyframeIndex = 0;
+let latestOverlayResult: PoseOverlayRenderResult | undefined;
 
 function hasSafetyConsent(): boolean {
   if (consentStorageFailed) return false;
@@ -164,6 +167,7 @@ function renderPhaseReview(): string {
 
   return `
     <section class="phase-review" aria-labelledby="phase-review-heading">
+      ${renderKeyframeOverlayReview()}
       <div class="phase-warning" role="status" aria-live="polite">
         <strong id="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</strong>
         <p>${warning}</p>
@@ -219,6 +223,44 @@ function renderPhaseReview(): string {
           reviewRequired && phaseConfirmation && isValidCorrection(phaseDraft) && !ready ? "" : "disabled"
         }>Confirm phase review</button>
         <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderKeyframeOverlayReview(): string {
+  const selectedOutput = phaseOutputs[selectedKeyframeIndex] ?? phaseOutputs[0];
+  const selectedPhase = phaseDefinitions[selectedOutput?.index ?? 0] ?? phaseDefinitions[0];
+  const overlayStatus =
+    latestOverlayResult?.status === "unavailable"
+      ? "Skeleton overlay unavailable for this keyframe."
+      : latestOverlayResult?.status === "partial"
+        ? "Skeleton overlay partially available for this keyframe."
+        : "Skeleton overlay rendered for this keyframe.";
+
+  return `
+    <section class="keyframe-review" aria-labelledby="keyframe-review-heading">
+      <div class="keyframe-review__heading">
+        <div>
+          <p class="placeholder-kicker">Annotated keyframes</p>
+          <h3 id="keyframe-review-heading">${selectedPhase.label}</h3>
+        </div>
+        <span class="stage-status">Annotated still</span>
+      </div>
+      <div class="keyframe-canvas-wrap">
+        <canvas class="keyframe-canvas" data-keyframe-canvas aria-label="Annotated keyframe: ${selectedPhase.label}"></canvas>
+      </div>
+      <p class="action-note" data-overlay-status>${overlayStatus}</p>
+      <div class="keyframe-strip" aria-label="Select keyframe">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const isSelected = selectedKeyframeIndex === index;
+            return `<button class="keyframe-button ${isSelected ? "is-selected" : ""}" type="button" data-keyframe-index="${index}" aria-pressed="${isSelected ? "true" : "false"}">
+              <span>${index + 1}</span>
+              <strong>${phase.label}</strong>
+            </button>`;
+          })
+          .join("")}
       </div>
     </section>
   `;
@@ -299,6 +341,7 @@ function renderApp(statusMessage?: string): void {
   `;
 
   bindInteractions();
+  renderSelectedKeyframeCanvas();
 }
 
 function bindInteractions(): void {
@@ -415,6 +458,13 @@ function bindInteractions(): void {
     );
     renderApp();
   });
+  document.querySelectorAll<HTMLButtonElement>("[data-keyframe-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedKeyframeIndex = Number(button.dataset.keyframeIndex);
+      latestOverlayResult = undefined;
+      renderApp();
+    });
+  });
 }
 
 function handleProcessingState(state: FrameProcessingState, code?: string): void {
@@ -422,6 +472,7 @@ function handleProcessingState(state: FrameProcessingState, code?: string): void
   poseStatusCode = code;
   if (state === "completed" && frameController) {
     phaseOutputs = frameController.getOutputs();
+    selectedKeyframeIndex = 0;
     phaseDeclarations = undeclaredPhaseDeclarations();
     rebuildPhaseReview(false);
   }
@@ -519,6 +570,28 @@ function clearPhaseReview(): void {
   phaseReviewState = undefined;
   phaseDraft = [];
   phaseConfirmation = false;
+  selectedKeyframeIndex = 0;
+  latestOverlayResult = undefined;
+}
+
+function renderSelectedKeyframeCanvas(): void {
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-keyframe-canvas]");
+  if (!canvas || phaseOutputs.length === 0) return;
+  const output = phaseOutputs[selectedKeyframeIndex] ?? phaseOutputs[0];
+  const status = document.querySelector<HTMLElement>("[data-overlay-status]");
+  const result = renderPoseOverlayFrame(canvas, {
+    preview: output.preview,
+    landmarks: output.pose.landmarks[0]
+  });
+  latestOverlayResult = result;
+  if (status) {
+    status.textContent =
+      result.status === "unavailable"
+        ? "Skeleton overlay unavailable for this keyframe."
+        : result.status === "partial"
+          ? "Skeleton overlay partially available for this keyframe."
+          : "Skeleton overlay rendered for this keyframe.";
+  }
 }
 
 function undeclaredPhaseDeclarations(): PhaseDeclarations {
