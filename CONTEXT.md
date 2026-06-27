@@ -15,9 +15,9 @@ Last updated: 2026-06-25
 - Current completed task:
   `SS-010 Render skeleton-overlaid keyframes`
 - Active task: `SS-011 Generate downloadable Swing Card`
-- Active branch: `main`
-- Active handshake: `0. Backlog`
-- Active Pull Request: none
+- Active branch: `ss-011-swing-card`
+- Active handshake: `3. In Development (ChatGPT)`
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/12
 
 ## SS-009 Coordination
 
@@ -367,8 +367,8 @@ Kickoff state on 2026-06-25:
 - Notion page:
   https://app.notion.com/p/375834a0c8a6813ba976c741f4837614
 - Branch: `ss-011-swing-card`
-- Handshake Status: `0. Backlog`
-- Pull Request: empty
+- Handshake Status: `3. In Development (ChatGPT)`
+- Pull Request: https://github.com/ajason13/swing-sync/pull/12
 - Task Type: `Feature`
 - Local `main` and `origin/main` include SS-010 merge commit
   `1bb76b1c9dbfd1943cb65ad0176f859417d52eec` and post-SS-010 context/prompt
@@ -376,10 +376,154 @@ Kickoff state on 2026-06-25:
 - Existing untracked `docs/agent-guidance/ss-00*-new-codex-session-prompt.md`
   files remain preserved unless the user explicitly asks to clean or commit
   them.
+- `git fetch origin` confirmed local `main` and `origin/main` matched at
+  `c28ebbca5b0b60dc0cb54f3967e0d0150b7904c7`; branch
+  `ss-011-swing-card` was created from that commit.
+- Notion moved to `1. Spec Drafting (Gemini)`.
+- No SS-011-specific test case existed in Notion. Dedicated `SS-TC-015` was
+  created for downloadable PNG/PDF Swing Card export, selected annotated
+  keyframes, bounded metric and warning inclusion, no raw-video inclusion,
+  prompt-copy safety, privacy boundaries, and manual LLM upload usability.
+- The Gemini Chat Deep Research handoff is
+  `docs/handoffs/ss-011-gemini-chat-deep-research-prompt.md`. It uses a
+  10-file maximum attachment list, embedded summaries of omitted prior-story
+  artifacts, and a required task-specific research plan before the deep
+  research run.
+- Gemini Chat Deep Research returned a broad export architecture report.
+  Codex dispositioned it in `docs/ss-011-research-disposition.md`, adopting
+  the zero-dependency Canvas 2D PNG direction, same-origin/local draw inputs,
+  user-initiated Blob/Object URL downloads, bounded text wrapping, and
+  browser-native print/save-to-PDF path while revising or rejecting hard memory
+  cleanup timing guarantees, app-generated PDF binaries, `vitest-canvas-mock`,
+  free-form metric schemas, numeric confidence values, `Math.random`
+  filenames, absolute privacy/security claims, dependency additions,
+  automatic AI upload, and local card history.
+- The candidate normative specification is
+  `docs/ss-011-preimplementation-spec.md`. It defines
+  `src/swing-card-contract.ts`, `src/swing-card-generator.ts`, local PNG
+  composition via `toBlob("image/png")`, browser print/save-to-PDF via
+  `window.print()`, object URL cleanup, bounded prompt copy for manual LLM
+  upload only, no raw-video inclusion, no persistence, no telemetry, no remote
+  sharing, no provider changes, and no new dependencies.
+- The self-contained Claude QA planning handoff is
+  `docs/ss-011-claude-qa-planning-prompt.md`.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with ten specification blockers:
+  undefined `SwingCardPngResult`, conflated content warnings versus PNG export
+  failures, contradictory metric-payload prose, undefined missing-overlay
+  behavior, unenforced PNG/print parity, permissive alternate overlay-renderer
+  wording, unspecified canvas caps, underspecified object URL lifecycle,
+  unpinned filename date source, and unpinned `PoseOverlayRenderResult` import.
+- Claude QA response is recorded in
+  `docs/ss-011-claude-qa-response.md`.
+- `docs/ss-011-preimplementation-spec.md` now addresses B1-B10 with a
+  discriminated PNG result union, separate content-warning and PNG-failure
+  types, strict `SwingMetricPayload | undefined`, mandatory
+  `renderPoseOverlayFrame` reuse, `Keyframe unavailable` fallback for missing
+  overlays, shared `renderSwingCardPrintSurface(content)`, exact canvas caps,
+  module-scoped object URL lifecycle rules, wall-clock export-click filename
+  dates, imported SS-010 `PoseOverlayRenderResult`, a content warning decision
+  table, and focused test requirements.
+- Focused Claude QA re-review handoff:
+  `docs/ss-011-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned FAIL with one narrow new blocker, B11:
+  `SwingCardPngResult.warnings` lacked an explicit invariant requiring exact
+  unchanged passthrough of `content.warnings`.
+- Claude confirmed B1-B10 are closed.
+- B11 response is recorded in
+  `docs/ss-011-claude-qa-rereview-response.md`.
+- `docs/ss-011-preimplementation-spec.md` now states that
+  `SwingCardPngResult.warnings` must be exactly `content.warnings` in both
+  success and error variants, and `composeSwingCardPng` must not add, remove,
+  reorder, filter, or recompute warning codes before returning them. Unit test
+  requirements now cover unchanged passthrough for both result branches.
+- B11-only focused re-review handoff:
+  `docs/ss-011-claude-qa-rereview-2-prompt.md`.
+- Claude B11-only focused QA re-review returned PASS. B1-B11 are closed with
+  concrete, testable mechanisms, and Claude authorized moving SS-011 to
+  `3. In Development (ChatGPT)`.
+- Notion moved to `3. In Development (ChatGPT)`.
+- Implementation completed for the approved SS-011 scope:
+  `src/swing-card-contract.ts`, `src/swing-card-generator.ts`,
+  `test/unit/swing-card-generator.test.ts`, Swing Card export wiring in
+  `src/main.ts`, print/export styles in `src/styles.css`, workflow copy in
+  `src/workflow.ts`, and smoke coverage in `test/smoke/app.spec.ts`.
+- The implementation adds local PNG composition, browser print/save-to-PDF,
+  prompt copy, selected annotated keyframe rendering through SS-010
+  `renderPoseOverlayFrame`, deterministic content warnings, exact PNG result
+  failure variants, crypto-based sanitized filenames, module-scoped object URL
+  cleanup, print-surface parity, and export-control busy guards.
+- No raw-video export, remote sharing, telemetry, remote logging, remote review,
+  cloud storage, SDK/provider/model/asset changes, new workers, new
+  dependencies, local card history, or public serving behavior was added.
+- Runtime observability is intentionally unchanged/deferred for SS-011: no new
+  logs, traces, analytics, telemetry, or remote diagnostics were added because
+  acceptance criteria cover local user-initiated export rather than diagnostics.
+- Post-implementation verification passed after the final all-selected-keyframe
+  renderer fix: `npm run test:unit -- swing-card-generator` (13 tests),
+  `npm run test:unit` (101 tests across 10 files), `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, and `git diff --check`.
+- `npm run test:smoke` was attempted earlier but hung before useful progress in
+  this local repo state. Codex also ran a built-preview Chromium verification
+  against the current UI flow at `390x844`: sanitized PNG
+  `swing-sync-card-20260626-f8a09047.png`, 398432 bytes, print invoked once,
+  no horizontal overflow, minimum export button height 46px, zero external
+  requests, zero export-time requests, zero IndexedDB/cache entries, and zero
+  sensitive console output under the SS-011 check regex.
+- Final Claude implementation audit handoff:
+  `docs/ss-011-claude-audit-prompt.md`.
+- Notion moved to `4. Final Audit (Claude)` with the implementation summary and
+  verification evidence recorded in a comment.
+- Claude final implementation audit returned FAIL with two implementation-stage
+  blockers after confirming B1-B11 were correctly implemented:
+  - B12: `prepareSwingCardContent` could silently fabricate phase-to-frame
+    mappings on assignment length mismatch.
+  - B13: the committed smoke suite was unconfirmed because prior
+    `npm run test:smoke` attempts were run under shell-default Node 24 instead
+    of repo-required Node 22 and appeared to hang.
+- B12 fix: Swing Card export preparation now uses
+  `getCompleteSwingCardAssignments()`, which returns assignments only when
+  `isValidCorrection(assignments)` accepts them. Unsupported or incomplete
+  review states now export `Keyframe unavailable` slots and force
+  `PHASE_REVIEW_REQUIRED` rather than falling back to positional phase/sample
+  mappings.
+- B12 regression coverage: `test/smoke/app.spec.ts` now includes
+  `keeps Swing Card keyframes unavailable until phase review is complete`,
+  which opens export from an unsupported review state, checks phase-review
+  warning copy, stubs `window.print`, inspects the print DOM at print-call time,
+  and asserts eight unavailable keyframe placeholders.
+- B13 fix: verification now runs with Node 22 from `.nvmrc`; under Node 22,
+  `npm run test:smoke -- --list` completes and the full committed smoke suite
+  passes. A stale smoke assertion after Export -> Review navigation was updated
+  from removed copy (`Video and pose preview`) to the current `Review` heading
+  and `Annotated keyframes` surface.
+- Claude audit response: `docs/ss-011-claude-audit-response.md`.
+- Focused Claude B12/B13 re-review handoff:
+  `docs/ss-011-claude-audit-rereview-prompt.md`.
+- Post-fix verification with Node 22 passed:
+  `npm run test:unit -- swing-card-generator` (13 tests),
+  `npm run test:unit` (101 tests across 10 files),
+  `npm run test:smoke -- --list` (32 tests listed),
+  `npm run test:smoke -- --project=desktop-chromium --grep "Swing Card"`
+  (2 tests), `npm run test:smoke` (32 tests across desktop and mobile
+  Chromium), `npm run build`, `npm run compliance:verify`,
+  `npm run safety:verify`, `npm run privacy:verify`, and `git diff --check`.
+- Claude focused final-audit re-review returned PASS for B12 and B13. Claude
+  confirmed B12 is closed by the `isValidCorrection` assignment gate plus
+  unavailable-keyframe/`PHASE_REVIEW_REQUIRED` regression coverage, and B13 is
+  closed by running the committed smoke suite under Node 22. No new blockers
+  were introduced.
+- Claude focused final-audit re-review response:
+  `docs/ss-011-claude-audit-rereview-response.md`.
+- Pull request created: https://github.com/ajason13/swing-sync/pull/12.
+- Notion `Pull Request` property was updated to PR #12, with a PR-created
+  comment recorded. Status remains `4. Final Audit (Claude)` pending PR checks
+  and merge.
 
-Next owner: next Codex session. Start SS-011 from current `main`, keep Notion
-and `CONTEXT.md` synchronized, and do not implement Swing Card export before
-the research/specification and Claude QA planning gates are complete.
+Next owner: Codex PR checks/merge readiness. Monitor PR #12 checks and review
+state. Do not mark SS-011 `5. Done` until PR #12 is merged and local `main`,
+Notion, and `CONTEXT.md` are synchronized with the merge commit.
 
 ## SS-008 Coordination
 

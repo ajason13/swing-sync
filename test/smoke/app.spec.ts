@@ -196,7 +196,104 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
 
   await page.getByRole("button", { name: /Export/ }).click();
   await page.getByRole("button", { name: /Review/ }).click();
-  await expect(page.getByText("Video and pose preview")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review" })).toBeVisible();
+  await expect(page.getByText("Annotated keyframes")).toBeVisible();
+});
+
+test("downloads a local Swing Card PNG and exposes print and prompt controls", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const requests: string[] = [];
+  const consoleMessages: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => consoleMessages.push(message.text()));
+
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({
+    timeout: 30_000
+  });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+
+  await expect(page.getByRole("heading", { name: "Downloadable summary" })).toBeVisible();
+  const controlLayout = await page.evaluate(() => {
+    const buttons = [
+      ...document.querySelectorAll("[data-download-swing-card], [data-print-swing-card], [data-copy-swing-card-prompt]")
+    ];
+    return {
+      hasOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      minButtonHeight: Math.min(...buttons.map((button) => button.getBoundingClientRect().height))
+    };
+  });
+  expect(controlLayout.hasOverflow).toBe(false);
+  expect(controlLayout.minButtonHeight).toBeGreaterThanOrEqual(44);
+
+  await page.evaluate(() => {
+    Object.assign(window, { __swingCardPrintCalls: 0 });
+    window.print = () => {
+      (window as typeof window & { __swingCardPrintCalls: number }).__swingCardPrintCalls += 1;
+    };
+  });
+  await page.getByRole("button", { name: "Print / Save as PDF" }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __swingCardPrintCalls: number }).__swingCardPrintCalls)).toBe(1);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^swing-sync-card-\d{8}-[a-f0-9]{8}\.png$/);
+
+  const requestsAtDownload = requests.length;
+  await page.waitForTimeout(500);
+  expect(requests).toHaveLength(requestsAtDownload);
+  const external = requests.filter(
+    (url) => !url.startsWith("http://127.0.0.1:4174/") && !url.startsWith("blob:")
+  );
+  expect(external).toEqual([]);
+
+  const storage = await page.evaluate(async () => ({
+    indexedDb: "databases" in indexedDB ? await indexedDB.databases() : [],
+    caches: await caches.keys()
+  }));
+  expect(storage.indexedDb).toEqual([]);
+  expect(storage.caches).toEqual([]);
+  expect(consoleMessages.join("\n")).not.toMatch(
+    /landmarks|worldLandmarks|requestedTimestampMs|observedSeekTimestampMs|filename|media characteristics|objectUrl|metricPayload/i
+  );
+});
+
+test("keeps Swing Card keyframes unavailable until phase review is complete", async ({ page }) => {
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({
+    timeout: 30_000
+  });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+  await expect(page.locator(".phase-warning")).toContainText("Unsupported input");
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+  await expect(page.getByRole("heading", { name: "Downloadable summary" })).toBeVisible();
+  await expect(page.getByLabel("Swing Card warnings")).toContainText("Phase review is required");
+
+  await page.evaluate(() => {
+    Object.assign(window, { __swingCardUnavailablePrintKeyframes: 0 });
+    window.print = () => {
+      (window as typeof window & { __swingCardUnavailablePrintKeyframes: number }).__swingCardUnavailablePrintKeyframes =
+        document.querySelectorAll(".swing-card-print__placeholder").length;
+    };
+  });
+  await page.getByRole("button", { name: "Print / Save as PDF" }).click();
+
+  const unavailableCount = await page.evaluate(
+    () => (window as typeof window & { __swingCardUnavailablePrintKeyframes: number }).__swingCardUnavailablePrintKeyframes
+  );
+  expect(unavailableCount).toBe(8);
 });
 
 test("completes local inference when external network is blocked from navigation start", async ({
