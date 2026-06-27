@@ -13,10 +13,156 @@ Last updated: 2026-06-27
   Local `main` and `origin/main` matched after the post-merge sync push.
 - Current completed task:
   `SS-011 Generate downloadable Swing Card`
-- Active task: none selected
-- Active branch: `main`
-- Active handshake: none
-- Active Pull Request: none
+- Active task: `SS-012 Design multimodal coaching prompt and response schema`
+- Active branch: `ss-012-coach-prompt`
+- Active handshake: `4. Final Audit (Claude)`
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/13
+
+## SS-012 Coordination
+
+SS-012 is safety-, AI-coaching-, model-provider-adjacent, export-adjacent, and
+user-facing-copy sensitive. It will design a multimodal coaching prompt and
+response schema for educational golf movement feedback grounded in approved
+Swing Card evidence. Treat it as gated: Codex owns research/spec drafting under
+the 2026-06-26 LLM-team routing update, and Claude remains the independent QA
+planning and final adversarial audit reviewer.
+
+Acceptance criteria from Notion:
+
+- Prompt uses frames, metrics, confidence, and safety constraints.
+- Response schema separates observations, likely causes, drills, cautions, and
+  next focus.
+- Prompt refuses medical diagnosis and overconfident biomechanical claims.
+- Includes adversarial prompt tests.
+
+Kickoff state on 2026-06-27:
+
+- Local `main`, `origin/main`, and `HEAD` were confirmed at
+  `ac5aed1b840a9f881b5875cca0b82cf2ac50d3f8` after `git fetch origin`.
+- Worktree was clean except for intentional untracked
+  `docs/agent-guidance/*new-codex-session-prompt.md` files, which remain
+  preserved.
+- Notion page:
+  https://app.notion.com/p/375834a0c8a681659faaf9db57c6f759
+- Branch from current `main`: `ss-012-coach-prompt`.
+- Notion first moved to `1. Spec Drafting (Gemini)` for board compatibility,
+  with Codex noted as the research/spec owner under the 2026-06-26 LLM-team
+  routing update. After Codex-owned planning artifacts were drafted, Notion was
+  moved to `2. QA Planning (Claude)`.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/13.
+- Task Type: `Feature`.
+- Dedicated test case `SS-TC-016` was created for acceptance-aligned coverage:
+  prompt inputs from approved frames, metrics, confidence, warnings, and safety
+  constraints; structured observations/likely-causes/drills/cautions/next-focus
+  output; medical, rehabilitation, pain-triage, aggressive-prescription,
+  overconfident-biomechanics, prompt-injection, fabricated-metric, and
+  provider-specific adversarial cases; and protected no-raw-video, no-remote
+  API, no-telemetry, no-persistence, no-new-SDK/provider/model/dependency
+  boundaries.
+- Codex-owned research/disposition note:
+  `docs/ss-012-research-disposition.md`.
+- Candidate normative specification:
+  `docs/ss-012-preimplementation-spec.md`.
+- Self-contained Claude QA planning handoff:
+  `docs/ss-012-claude-qa-planning-prompt.md`.
+- Claude QA planning returned FAIL with six specification blockers:
+  unspecified item text length, unbounded response-section arrays,
+  unconstrained `phaseId`, no structural unavailable/review-required text
+  rule, missing validation error-code taxonomy, and unspecified unsafe-text
+  detection.
+- Codex accepted B1-B6 as valid and revised
+  `docs/ss-012-preimplementation-spec.md` with exported text/count bounds,
+  closed `PhaseId` use, exact unavailable/review-required templates,
+  validation context for fabricated supported evidence, exhaustive
+  `CoachingValidationErrorCode` values, exported prohibited text patterns, and
+  explicit SS-006 `observedSeekTimestampMs` non-regression.
+- Claude QA response:
+  `docs/ss-012-claude-qa-response.md`.
+- Focused re-review handoff:
+  `docs/ss-012-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned FAIL after confirming B1-B6 are closed.
+  New blocker B7 identified `CoachingValidationContext` as a potential second
+  source of truth unless tied by construction to actual Swing Card evidence.
+  Minor issue B8 asked for an explicit prohibited-text normalization floor and
+  adversarial evasion test expectations.
+- B7/B8 response: `docs/ss-012-claude-qa-rereview-response.md`.
+- `docs/ss-012-preimplementation-spec.md` now requires
+  `validateCoachingResponse(value, content: SwingCardContent)` to derive
+  `CoachingValidationContext` internally from the same Swing Card content used
+  for prompt generation; production validation must not accept caller-supplied
+  context. The spec also requires NFKC normalization, zero-width character
+  removal, Unicode whitespace collapse, and trim before prohibited-pattern
+  matching, with adversarial tests for mixed case, whitespace padding,
+  zero-width insertion, and a documented Unicode-lookalike limitation case.
+- Focused B7/B8 re-review handoff:
+  `docs/ss-012-claude-qa-rereview-2-prompt.md`.
+- Claude focused B7/B8 QA re-review returned PASS. B7 and B8 are closed with no
+  new blockers, and Claude cleared SS-012 to move to
+  `3. In Development (ChatGPT)`.
+- Claude B7/B8 PASS response:
+  `docs/ss-012-claude-qa-rereview-2-response.md`.
+- Non-blocking implementation audit watch items: confirm `limited` evidence
+  status derives by elimination rather than a separate mutable list, and add a
+  code comment that `coachingProhibitedTextPatterns.description` is
+  developer/test-only and must not be surfaced through validation results or UI.
+- Notion moved to `3. In Development (ChatGPT)`.
+- Implementation completed for approved prompt/schema scope only:
+  `src/coaching-contract.ts`, `src/coaching-prompt.ts`, and
+  `test/unit/coaching-prompt.test.ts`.
+- The implementation adds a zero-dependency educational coaching prompt
+  builder, versioned coaching response contract, deterministic validation
+  result codes, Swing Card-derived validation context, exact unavailable and
+  review-required templates, prohibited text pattern data, text normalization,
+  and SS-TC-016 adversarial unit coverage.
+- `limited` evidence status is derived by elimination from real
+  `SwingCardContent` evidence and is not tracked in a separate mutable list.
+  `coachingProhibitedTextPatterns.description` has a code comment documenting
+  that descriptions are developer/test-only and must not surface through
+  validation results or UI.
+- No connected model API calls, provider SDKs, API keys, server config, remote
+  sharing, cloud storage, telemetry, remote logging, public serving, model
+  assets, new workers, new dependencies, raw swing video upload, persistence,
+  or UI integration were added.
+- Observability is intentionally unchanged; no logs, analytics, telemetry,
+  traces, remote diagnostics, storage writes, console payload dumps, provider
+  calls, or persistent debug artifacts were added.
+- Verification passed: `npm run test:unit -- coaching-prompt` (12 tests),
+  `npm run test:unit` (113 tests across 11 files), `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, and `git diff --check`.
+- Source-inclusive final audit prompt:
+  `docs/ss-012-claude-audit-prompt.md`.
+- Notion moved to `4. Final Audit (Claude)`.
+- Claude final implementation audit returned FAIL with B9/B10:
+  `supported` was not rejected for limited-evidence phases, and the
+  partial-overlay test only asserted the permissive `limited` path.
+- B9/B10 response: `docs/ss-012-claude-audit-response.md`.
+- `src/coaching-contract.ts` now derives `limitedPhaseIds` from
+  `SwingCardContent` and rejects `supported` on limited-evidence phases with
+  `LIMITED_EVIDENCE_REQUIRES_LIMITED_STATUS`. Limited evidence is present but
+  incomplete evidence, such as partial overlay without measured metric,
+  rendered keyframe without measured metric, or measured metric without rendered
+  keyframe.
+- `test/unit/coaching-prompt.test.ts` now asserts partial-overlay evidence
+  accepts `limited` and rejects `supported`, and separately covers metric-only
+  limited evidence plus missing-metric unavailable evidence.
+- B9/B10 verification passed: `npm run test:unit -- coaching-prompt` (13
+  tests), `npm run test:unit` (114 tests across 11 files), `npm run build`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, and `git diff --check`.
+- The original final audit prompt is superseded. Focused B9/B10 re-review
+  prompt: `docs/ss-012-claude-final-rereview-prompt.md`.
+- Claude focused B9/B10 final re-review returned PASS with no new blockers.
+  Response: `docs/ss-012-claude-final-rereview-response.md`.
+- Non-blocking recommendation from Claude: add a future regression test for a
+  rendered-overlay phase with no measured metric to complete the evidence
+  matrix. This does not block SS-012 PR preparation.
+
+- Pull Request created: https://github.com/ajason13/swing-sync/pull/13.
+
+Next owner: Codex merge verification. SS-012 remains at
+`4. Final Audit (Claude)` until PR merge state is synchronized; do not mark
+Done before merge state is recorded.
 
 ## SS-009 Coordination
 
