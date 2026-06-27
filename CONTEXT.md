@@ -16,7 +16,7 @@ Last updated: 2026-06-27
 - Active task: `SS-012 Design multimodal coaching prompt and response schema`
 - Active branch: `ss-012-coach-prompt`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/13
 
 ## SS-012 Coordination
 
@@ -49,7 +49,7 @@ Kickoff state on 2026-06-27:
   with Codex noted as the research/spec owner under the 2026-06-26 LLM-team
   routing update. After Codex-owned planning artifacts were drafted, Notion was
   moved to `2. QA Planning (Claude)`.
-- Pull Request: none.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/13.
 - Task Type: `Feature`.
 - Dedicated test case `SS-TC-016` was created for acceptance-aligned coverage:
   prompt inputs from approved frames, metrics, confidence, warnings, and safety
@@ -158,9 +158,11 @@ Kickoff state on 2026-06-27:
   rendered-overlay phase with no measured metric to complete the evidence
   matrix. This does not block SS-012 PR preparation.
 
-Next owner: Codex PR preparation. SS-012 remains at
-`4. Final Audit (Claude)` until PR state is recorded; do not mark Done before
-PR and merge state are synchronized.
+- Pull Request created: https://github.com/ajason13/swing-sync/pull/13.
+
+Next owner: Codex merge verification. SS-012 remains at
+`4. Final Audit (Claude)` until PR merge state is synchronized; do not mark
+Done before merge state is recorded.
 
 ## SS-009 Coordination
 
