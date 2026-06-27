@@ -16,6 +16,14 @@ import {
   type PhaseReviewState
 } from "./phase-review";
 import { renderPoseOverlayFrame, type PoseOverlayRenderResult } from "./pose-renderer";
+import {
+  buildSwingCardPrompt,
+  composeSwingCardPng,
+  deriveSwingCardContentWarnings,
+  renderSwingCardPrintSurface,
+  triggerSwingCardDownload
+} from "./swing-card-generator";
+import type { SwingCardContent, SwingCardKeyframe } from "./swing-card-contract";
 import { getNextWorkflowStep, getWorkflowStep, workflowSteps, type WorkflowStepId } from "./workflow";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -38,6 +46,8 @@ let phaseDraft: PhaseAssignment[] = [];
 let phaseConfirmation = false;
 let selectedKeyframeIndex = 0;
 let latestOverlayResult: PoseOverlayRenderResult | undefined;
+let swingCardBusy = false;
+let swingCardStatus = "Swing Card export is generated locally after review data exists.";
 
 function hasSafetyConsent(): boolean {
   if (consentStorageFailed) return false;
@@ -146,14 +156,18 @@ function renderWorkflowPanel(consentAccepted: boolean): string {
     `;
   }
 
-  return `
-    <div class="export-placeholder" aria-label="Export placeholder">
-      <p class="placeholder-kicker">Future local export</p>
-      <h3>Swing summary</h3>
-      <p>A future export may include selected metrics, feedback, or keyframes. Raw swing video will not be included by default.</p>
-    </div>
-    <button class="secondary-action" type="button" disabled>Export is not available yet</button>
-  `;
+  if (phaseOutputs.length === 0) {
+    return `
+      <div class="export-placeholder" aria-label="Export placeholder">
+        <p class="placeholder-kicker">Local Swing Card</p>
+        <h3>Swing Card unavailable</h3>
+        <p>Complete local analysis before creating a Swing Card. Raw swing video is not included in Swing Card exports.</p>
+      </div>
+      <button class="secondary-action" type="button" disabled>Export is not available yet</button>
+    `;
+  }
+
+  return renderSwingCardExport();
 }
 
 function renderPhaseReview(): string {
@@ -222,8 +236,51 @@ function renderPhaseReview(): string {
         <button class="primary-action" type="button" data-confirm-phase-review ${
           reviewRequired && phaseConfirmation && isValidCorrection(phaseDraft) && !ready ? "" : "disabled"
         }>Confirm phase review</button>
+        <button class="secondary-action" type="button" data-open-export>Open Swing Card export</button>
         <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
       </div>
+    </section>
+  `;
+}
+
+function renderSwingCardExport(): string {
+  const phaseReady = phaseReviewState?.readyForFutureMetrics ?? false;
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes: phaseDefinitions.map((phase) => ({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: undefined,
+      overlay: undefined
+    })),
+    metricPayload: undefined,
+    phaseReviewConfirmed: phaseReady
+  });
+
+  return `
+    <section class="swing-card-panel" aria-labelledby="swing-card-heading">
+      <div class="swing-card-panel__header">
+        <div>
+          <p class="placeholder-kicker">Local Swing Card</p>
+          <h3 id="swing-card-heading">Downloadable summary</h3>
+        </div>
+        <span class="stage-status">Manual sharing</span>
+      </div>
+      <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included.</p>
+      <div class="swing-card-summary" aria-label="Swing Card contents">
+        <div><strong>${phaseOutputs.length}</strong><span>local keyframes</span></div>
+        <div><strong>PNG</strong><span>download</span></div>
+        <div><strong>Print</strong><span>save as PDF where supported</span></div>
+      </div>
+      <ul class="swing-card-warning-list" aria-label="Swing Card warnings">
+        ${warnings.map((warning) => `<li>${escapeHtml(formatSwingCardWarning(warning))}</li>`).join("")}
+      </ul>
+      <div class="action-row swing-card-actions">
+        <button class="primary-action" type="button" data-download-swing-card ${swingCardBusy ? "disabled" : ""}>Download PNG</button>
+        <button class="secondary-action" type="button" data-print-swing-card ${swingCardBusy ? "disabled" : ""}>Print / Save as PDF</button>
+        <button class="secondary-action" type="button" data-copy-swing-card-prompt ${swingCardBusy ? "disabled" : ""}>Copy prompt</button>
+        <p class="action-note" data-swing-card-status role="status">${escapeHtml(swingCardStatus)}</p>
+      </div>
+      <div class="swing-card-print-host" data-swing-card-print-host aria-hidden="true"></div>
     </section>
   `;
 }
@@ -370,10 +427,13 @@ function bindInteractions(): void {
       const nextStep = button.dataset.step as WorkflowStepId;
       const opensCompletedReview =
         activeStep === "processing" && processingState === "completed" && nextStep === "review";
+      const preservesReviewData =
+        ["review", "export"].includes(activeStep) && ["review", "export"].includes(nextStep);
       if (
-        ["processing", "review"].includes(activeStep) &&
+        ["processing", "review", "export"].includes(activeStep) &&
         nextStep !== activeStep &&
-        !opensCompletedReview
+        !opensCompletedReview &&
+        !preservesReviewData
       ) {
         void closeFrameAnalysis();
       }
@@ -458,12 +518,25 @@ function bindInteractions(): void {
     );
     renderApp();
   });
+  document.querySelector<HTMLButtonElement>("[data-open-export]")?.addEventListener("click", () => {
+    activeStep = "export";
+    renderApp("Swing Card export opened.");
+  });
   document.querySelectorAll<HTMLButtonElement>("[data-keyframe-index]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedKeyframeIndex = Number(button.dataset.keyframeIndex);
       latestOverlayResult = undefined;
       renderApp();
     });
+  });
+  document.querySelector<HTMLButtonElement>("[data-download-swing-card]")?.addEventListener("click", () => {
+    void downloadSwingCard();
+  });
+  document.querySelector<HTMLButtonElement>("[data-print-swing-card]")?.addEventListener("click", () => {
+    void printSwingCard();
+  });
+  document.querySelector<HTMLButtonElement>("[data-copy-swing-card-prompt]")?.addEventListener("click", () => {
+    void copySwingCardPrompt();
   });
 }
 
@@ -572,6 +645,8 @@ function clearPhaseReview(): void {
   phaseConfirmation = false;
   selectedKeyframeIndex = 0;
   latestOverlayResult = undefined;
+  swingCardBusy = false;
+  swingCardStatus = "Swing Card export is generated locally after review data exists.";
 }
 
 function renderSelectedKeyframeCanvas(): void {
@@ -601,6 +676,134 @@ function undeclaredPhaseDeclarations(): PhaseDeclarations {
     mirrored: "undeclared",
     setup: "undeclared"
   };
+}
+
+async function downloadSwingCard(): Promise<void> {
+  if (swingCardBusy) return;
+  swingCardBusy = true;
+  swingCardStatus = "Preparing local Swing Card PNG.";
+  renderApp();
+  const prepared = await prepareSwingCardContent();
+  try {
+    const result = await composeSwingCardPng(prepared.content);
+    if (result.status === "ok") {
+      triggerSwingCardDownload(result.blob, result.filename);
+      swingCardStatus = "Swing Card PNG download started.";
+    } else {
+      swingCardStatus = `Swing Card PNG export stopped (${result.reason}).`;
+    }
+  } finally {
+    prepared.release();
+    swingCardBusy = false;
+    renderApp();
+  }
+}
+
+async function printSwingCard(): Promise<void> {
+  if (swingCardBusy) return;
+  swingCardBusy = true;
+  swingCardStatus = "Preparing browser print view.";
+  renderApp();
+  const prepared = await prepareSwingCardContent();
+  try {
+    const host = document.querySelector<HTMLElement>("[data-swing-card-print-host]");
+    host?.replaceChildren(renderSwingCardPrintSurface(prepared.content));
+    swingCardStatus = "Browser print dialog opened. Save as PDF if your browser supports it.";
+    window.print();
+  } finally {
+    prepared.release();
+    swingCardBusy = false;
+    renderApp();
+  }
+}
+
+async function copySwingCardPrompt(): Promise<void> {
+  if (swingCardBusy) return;
+  swingCardBusy = true;
+  swingCardStatus = "Preparing prompt text.";
+  renderApp();
+  const prepared = await prepareSwingCardContent();
+  try {
+    await navigator.clipboard.writeText(prepared.content.analysisPrompt);
+    swingCardStatus = "Prompt copied for manual use.";
+  } catch {
+    swingCardStatus = "Prompt copy unavailable in this browser.";
+  } finally {
+    prepared.release();
+    swingCardBusy = false;
+    renderApp();
+  }
+}
+
+async function prepareSwingCardContent(): Promise<{ content: SwingCardContent; release(): void }> {
+  const createdBitmaps: ImageBitmap[] = [];
+  const keyframes: SwingCardKeyframe[] = [];
+  const assignments = getCompleteSwingCardAssignments();
+
+  for (const phase of phaseDefinitions) {
+    const assignment = assignments?.find((item) => item.phaseId === phase.id);
+    const output = assignment ? phaseOutputs[assignment.sampleIndex] : undefined;
+    const rendered = output ? await renderAnnotatedKeyframe(output) : undefined;
+    if (rendered?.preview) createdBitmaps.push(rendered.preview);
+    keyframes.push({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: rendered?.preview,
+      overlay: rendered?.overlay
+    });
+  }
+
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes,
+    metricPayload: undefined,
+    phaseReviewConfirmed: (phaseReviewState?.readyForFutureMetrics ?? false) && !!assignments
+  });
+  const base: SwingCardContent = {
+    keyframes,
+    metricPayload: undefined,
+    warnings,
+    analysisPrompt: ""
+  };
+  const content = { ...base, analysisPrompt: buildSwingCardPrompt(base) };
+  return {
+    content,
+    release: () => {
+      for (const bitmap of createdBitmaps) bitmap.close();
+    }
+  };
+}
+
+function getCompleteSwingCardAssignments(): readonly PhaseAssignment[] | undefined {
+  const assignments =
+    phaseReviewState?.correction?.assignments ?? phaseReviewState?.automaticProposal.assignments;
+  return assignments && isValidCorrection(assignments) ? assignments : undefined;
+}
+
+async function renderAnnotatedKeyframe(
+  output: SampledFrameOutput
+): Promise<{ preview?: ImageBitmap; overlay: PoseOverlayRenderResult } | undefined> {
+  const canvas = document.createElement("canvas");
+  const overlay = renderPoseOverlayFrame(canvas, {
+    preview: output.preview,
+    landmarks: output.pose.landmarks[0]
+  });
+  if (overlay.status === "unavailable") return { overlay };
+  try {
+    return { preview: await createImageBitmap(canvas), overlay };
+  } catch {
+    return { overlay };
+  }
+}
+
+function formatSwingCardWarning(warning: string): string {
+  const labels: Record<string, string> = {
+    NO_KEYFRAMES_SELECTED: "No keyframes were selected.",
+    KEYFRAME_UNAVAILABLE: "One or more keyframes are unavailable.",
+    METRICS_UNAVAILABLE: "Metrics are unavailable.",
+    PHASE_REVIEW_REQUIRED: "Phase review is required before metrics should be interpreted.",
+    PROMPT_LIMITED_EVIDENCE: "Evidence is limited; do not infer missing values."
+  };
+  return labels[warning] ?? warning;
 }
 
 renderApp();

@@ -24,8 +24,8 @@ export const workflowSteps = [
     id: "export",
     shortLabel: "Export",
     label: "Export",
-    status: "Unavailable",
-    description: "Review how future user-initiated local exports will be explained."
+    status: "Local download",
+    description: "Download a local Swing Card or open the browser print dialog."
   }
 ] as const;
 

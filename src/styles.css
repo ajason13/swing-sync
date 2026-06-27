@@ -543,6 +543,103 @@ button:disabled {
   max-width: 52ch;
 }
 
+.swing-card-panel {
+  min-height: 280px;
+  border: 1px solid #dce2dc;
+  border-radius: 8px;
+  padding: 18px;
+  background: #f8faf7;
+  display: grid;
+  gap: 14px;
+}
+
+.swing-card-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.swing-card-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.swing-card-summary div {
+  min-width: 0;
+  border-left: 2px solid #b7c5ba;
+  padding-left: 10px;
+}
+
+.swing-card-summary strong,
+.swing-card-summary span {
+  display: block;
+}
+
+.swing-card-summary strong {
+  color: #173d29;
+  font-size: 1rem;
+}
+
+.swing-card-summary span {
+  color: #566c5d;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.swing-card-warning-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.swing-card-warning-list li {
+  font-size: 0.86rem;
+}
+
+.swing-card-actions {
+  margin-top: 0;
+  padding-top: 8px;
+}
+
+.swing-card-print-host {
+  display: none;
+}
+
+.swing-card-print {
+  color: #17211b;
+  background: #ffffff;
+}
+
+.swing-card-print__section,
+.swing-card-print__keyframe {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.swing-card-print__keyframes {
+  display: block;
+}
+
+.swing-card-print__keyframe {
+  margin: 0 0 16px;
+}
+
+.swing-card-print__keyframe canvas,
+.swing-card-print__placeholder {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #b8c4ba;
+}
+
+.swing-card-print__placeholder {
+  min-height: 180px;
+  padding: 72px 16px 0;
+  color: #405047;
+  background: #eef2ed;
+  font-weight: 800;
+}
+
 .consent-panel {
   padding: 20px;
 }
@@ -626,6 +723,15 @@ button:disabled {
     grid-template-columns: 1fr;
     align-content: center;
   }
+
+  .swing-card-actions {
+    grid-template-columns: repeat(3, max-content);
+    align-items: center;
+  }
+
+  .swing-card-actions .action-note {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (min-width: 980px) {
@@ -652,5 +758,52 @@ button:disabled {
 
   .keyframe-canvas-wrap {
     padding: 4px;
+  }
+
+  .swing-card-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body {
+    color: #000000;
+    background: #ffffff;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .topbar,
+  .workflow-intro,
+  .step-nav,
+  .stage-heading,
+  .stage-description,
+  .consent-panel,
+  .swing-card-panel > :not(.swing-card-print-host) {
+    display: none !important;
+  }
+
+  .workspace,
+  .workflow,
+  .stage,
+  .swing-card-panel,
+  .swing-card-print-host {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    display: block !important;
+    background: #ffffff !important;
+  }
+
+  .swing-card-print-host[aria-hidden="true"] {
+    display: block !important;
+  }
+
+  .swing-card-print__section,
+  .swing-card-print__keyframe {
+    display: block !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
