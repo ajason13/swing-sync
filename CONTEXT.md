@@ -17,7 +17,7 @@ Last updated: 2026-06-25
 - Active task: `SS-011 Generate downloadable Swing Card`
 - Active branch: `ss-011-swing-card`
 - Active handshake: `3. In Development (ChatGPT)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/12
 
 ## SS-009 Coordination
 
@@ -368,7 +368,7 @@ Kickoff state on 2026-06-25:
   https://app.notion.com/p/375834a0c8a6813ba976c741f4837614
 - Branch: `ss-011-swing-card`
 - Handshake Status: `3. In Development (ChatGPT)`
-- Pull Request: empty
+- Pull Request: https://github.com/ajason13/swing-sync/pull/12
 - Task Type: `Feature`
 - Local `main` and `origin/main` include SS-010 merge commit
   `1bb76b1c9dbfd1943cb65ad0176f859417d52eec` and post-SS-010 context/prompt
@@ -516,10 +516,14 @@ Kickoff state on 2026-06-25:
   were introduced.
 - Claude focused final-audit re-review response:
   `docs/ss-011-claude-audit-rereview-response.md`.
+- Pull request created: https://github.com/ajason13/swing-sync/pull/12.
+- Notion `Pull Request` property was updated to PR #12, with a PR-created
+  comment recorded. Status remains `4. Final Audit (Claude)` pending PR checks
+  and merge.
 
-Next owner: Codex PR prep. Prepare the SS-011 pull request from branch
-`ss-011-swing-card`, include Claude final-audit PASS evidence and Node 22
-verification, and keep Notion plus `CONTEXT.md` synchronized with the PR URL.
+Next owner: Codex PR checks/merge readiness. Monitor PR #12 checks and review
+state. Do not mark SS-011 `5. Done` until PR #12 is merged and local `main`,
+Notion, and `CONTEXT.md` are synchronized with the merge commit.
 
 ## SS-008 Coordination
 
