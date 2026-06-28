@@ -263,12 +263,11 @@ Kickoff/spec state on 2026-06-27:
 - Notion Pull Request property was updated with PR #14, and a Notion comment
   recorded the commit, PR URL, Claude PASS, verification evidence, unchanged
   runtime/observability boundaries, and non-blocking PR review notes.
-- Initial PR state after creation: open, mergeable, with GitHub compliance
-  check in progress.
+- PR #14 GitHub compliance check completed successfully on head
+  `e79aa8d74def2202022b37509dd0589d33fea5cd`; PR remained open and mergeable.
 
-Next owner: GitHub PR checks and merge review. Keep SS-014 at
-`4. Final Audit (Claude)` until PR #14 is merged, then update local `main`,
-Notion, and `CONTEXT.md` with the merged PR state before moving to Done.
+Next owner: merge PR #14, then update local `main`, Notion, and `CONTEXT.md`
+with the merged PR state before moving SS-014 to Done.
 
 ## SS-012 Coordination
 
