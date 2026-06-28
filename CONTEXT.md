@@ -16,7 +16,7 @@ Last updated: 2026-06-27
 - Active task: `SS-014 Create fixture swing dataset policy and test fixtures`
 - Active branch: `ss-014-fixtures-policy`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/14
 
 Next-task kickoff check on 2026-06-27:
 
@@ -256,10 +256,19 @@ Kickoff/spec state on 2026-06-27:
   that the pinned branch-base commit remains an ancestor of `HEAD`.
 - Claude final audit response record:
   `docs/ss-014-claude-audit-response.md`.
+- Codex committed SS-014 implementation and audit artifacts at
+  `54283df292272e6679ec8c0e65da46290ef168d1` and pushed branch
+  `ss-014-fixtures-policy`.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/14.
+- Notion Pull Request property was updated with PR #14, and a Notion comment
+  recorded the commit, PR URL, Claude PASS, verification evidence, unchanged
+  runtime/observability boundaries, and non-blocking PR review notes.
+- Initial PR state after creation: open, mergeable, with GitHub compliance
+  check in progress.
 
-Next owner: Codex PR preparation. Keep SS-014 at `4. Final Audit (Claude)`
-until PR review/merge is complete, then update Notion and `CONTEXT.md` with the
-merged PR state before moving to Done.
+Next owner: GitHub PR checks and merge review. Keep SS-014 at
+`4. Final Audit (Claude)` until PR #14 is merged, then update local `main`,
+Notion, and `CONTEXT.md` with the merged PR state before moving to Done.
 
 ## SS-012 Coordination
 
