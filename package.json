@@ -16,7 +16,8 @@
     "safety:verify": "node scripts/verify-safety-terms.js",
     "privacy:verify": "node scripts/verify-privacy-boundaries.js",
     "pose-assets:verify": "node scripts/verify-pose-assets.js",
-    "compliance:verify": "node scripts/verify-compliance.js && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify",
+    "fixture:verify": "node scripts/verify-fixtures.js",
+    "compliance:verify": "node scripts/verify-compliance.js && npm run fixture:verify && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify",
     "test:unit": "vitest run",
     "test:smoke": "playwright test"
   },

@@ -1,0 +1,43 @@
+{
+  "fixtureId": "ss-005-pose-landmarker-mannequin",
+  "files": [
+    {
+      "path": "mannequin-source.png",
+      "sizeBytes": 1474887,
+      "sha256": "b5d2a9d4eef284997d49826e1b177ecfa6cce7b439ae0973b307d65bf3e7c605",
+      "sizeException": "Existing SS-005 approved source image is over 1 MiB and under 5 MiB; retained for deterministic pose-extraction fixture provenance."
+    },
+    {
+      "path": "mannequin-golf-address.webm",
+      "sizeBytes": 8697,
+      "sha256": "e52dc416e1196ecd064972a606cc8e488cd46844a0644197735cca1c177ad390"
+    }
+  ],
+  "fixtureClass": "project-authored-synthetic-media",
+  "author": "Codex imagegen for Swing Sync SS-005",
+  "createdDate": "2026-06-11",
+  "source": "Project-authored synthetic faceless mannequin image; derived WebM produced from that image with FFmpeg.",
+  "generationMethod": "third-party-ai-generated",
+  "derivationNotes": "OpenAI image generation produced the source PNG. FFmpeg deterministically derived the WebM from the approved source PNG. No real-person source input was supplied.",
+  "license": "Apache-2.0",
+  "thirdPartyNotices": "OpenAI Terms of Use and Service Terms reviewed for generated output-rights decision. FFmpeg used as a derivation tool; the committed fixture output is distributed under the project approval recorded in PROVENANCE.md.",
+  "consentReleaseStatus": "Not applicable: no real person or personal media.",
+  "privacyReview": "Synthetic faceless mannequin fixture. No real-person recording, real-person face, known biometric identity, voice, account name, geolocation, EXIF, or device metadata is intended.",
+  "intendedTestScope": "Deterministic local pose-extraction integration tests only.",
+  "limitations": "Not evidence of golf-swing accuracy, phase timing, swing-mechanics quality, coaching correctness, safety, identity protection, legal status, deletion behavior, or performance across devices.",
+  "maintainerApproval": {
+    "approver": "Jason Alvarez",
+    "date": "2026-06-11",
+    "mechanism": "Recorded maintainer approval in PROVENANCE.md before SS-005 implementation."
+  },
+  "generationToolName": "OpenAI image generation through Codex imagegen",
+  "generationToolVersion": "Not exposed by tool",
+  "termsUrl": "https://openai.com/policies/terms-of-use/",
+  "termsReviewDate": "2026-06-11",
+  "inputSourceStatement": "No real-person, third-party copyrighted, or identifying source media was supplied as input.",
+  "aiGeneratedOutputRightsApproval": {
+    "approver": "Jason Alvarez",
+    "date": "2026-06-11",
+    "mechanism": "Recorded project compliance decision in PROVENANCE.md."
+  }
+}

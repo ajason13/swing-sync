@@ -13,10 +13,253 @@ Last updated: 2026-06-27
   Local `main` and `origin/main` matched after the post-merge sync push.
 - Current completed task:
   `SS-012 Design multimodal coaching prompt and response schema`
-- Active task: none selected
-- Active branch: `main`
-- Active handshake: none
+- Active task: `SS-014 Create fixture swing dataset policy and test fixtures`
+- Active branch: `ss-014-fixtures-policy`
+- Active handshake: `4. Final Audit (Claude)`
 - Active Pull Request: none
+
+Next-task kickoff check on 2026-06-27:
+
+- Local `main` was confirmed at
+  `7399ea0403da4ad4da41f7d18cb1312e3445bcc7`, matching the post-SS-012
+  context-sync handoff, with a clean tracked worktree and only intentional
+  untracked `docs/agent-guidance/*new-codex-session-prompt.md` files present.
+- Codex recorded on the SS-012 Notion page that it can emulate the former Deep
+  Research workflow for Swing Sync kickoff/spec work: structured research
+  questions, source discovery, primary-source verification where needed,
+  source URLs/check dates, Adopt / Revise / Defer / Reject dispositions, and
+  self-contained spec plus Claude QA planning handoff. This is a Codex-owned
+  workflow using available tools, not a separate ChatGPT Deep Research product
+  mode invocation in this environment.
+- Swing Sync Tasks database view sorts by `Name`. Visible backlog candidates
+  inspected in Notion:
+  - `SS-014 Create fixture swing dataset policy and test fixtures`, branch
+    `ss-014-fixtures-policy`, status `0. Backlog`, empty Pull Request, Task
+    Type `Research`.
+  - `SS-015 Add browser regression tests for MVP flow`, branch
+    `ss-015-browser-tests`, status `0. Backlog`, empty Pull Request, Task Type
+    `Feature`.
+- SS-014 has a prior SS-007 Notion comment noting that moving side-on browser
+  fixture policy, provenance, and coverage were deferred to SS-014 and that it
+  is a prerequisite for future stories that make moving-side-on video phase
+  accuracy or coverage claims.
+- User confirmed SS-014 as the next task. Branch `ss-014-fixtures-policy` was
+  created from `main` at `7399ea0403da4ad4da41f7d18cb1312e3445bcc7`.
+- Notion was moved to `1. Spec Drafting (Gemini)` for board compatibility,
+  with Codex noted as research/spec owner under the 2026-06-26 routing update.
+
+## SS-014 Coordination
+
+SS-014 is privacy-, licensing-, compliance-, export/test-fixture-, and future
+user-facing-policy sensitive. It will define fixture consent, licensing,
+provenance, preferred synthetic/derived landmark fixture usage, and blocked
+repo-commit content. Treat it as gated: Codex owns research/spec drafting under
+the 2026-06-26 LLM-team routing update, and Claude remains the independent QA
+planning and final adversarial audit reviewer.
+
+Acceptance criteria from Notion:
+
+- Define consent and licensing policy for fixture videos.
+- Prefer synthetic/derived landmark fixtures when possible.
+- Add at least one non-identifying fixture for math tests.
+- Document what cannot be committed to the repo.
+
+Kickoff/spec state on 2026-06-27:
+
+- Local `main`, `origin/main`, and `HEAD` were confirmed at
+  `7399ea0403da4ad4da41f7d18cb1312e3445bcc7` after `git fetch origin`.
+- Worktree was clean except for the SS-014 kickoff `CONTEXT.md` update and
+  intentional untracked `docs/agent-guidance/*new-codex-session-prompt.md`
+  files, which remain preserved.
+- Notion page:
+  https://app.notion.com/p/375834a0c8a681f08c96eeb40e2213f2
+- Branch from current `main`: `ss-014-fixtures-policy`.
+- Pull Request: none.
+- Task Type: `Research`.
+- Dedicated test case `SS-TC-017` was created:
+  https://app.notion.com/p/38d834a0c8a681ffb241edf6cfe45788
+- `SS-TC-017` covers allowed/blocked fixture classes, consent/licensing/
+  provenance metadata, non-identifying synthetic or derived landmark fixture
+  preference, at least one repo-committable non-identifying math-test fixture,
+  protected no-raw-personal-video/no-unverified-third-party-media boundaries,
+  no hidden identifiers, no telemetry/remote storage, and no overbroad privacy,
+  deletion, anonymity, legal, compliance, safety, professional coaching, or
+  moving-video phase-accuracy claims.
+- Codex-owned research/disposition note:
+  `docs/ss-014-research-disposition.md`.
+- Candidate normative specification:
+  `docs/ss-014-preimplementation-spec.md`.
+- Self-contained Claude QA planning handoff:
+  `docs/ss-014-claude-qa-planning-prompt.md`.
+- The Claude QA planning prompt embeds the exact current contents of
+  `docs/ss-014-research-disposition.md`,
+  `docs/ss-014-preimplementation-spec.md`, and the `SS-TC-017` Notion test
+  case, plus a source-sensitive summary of the existing mannequin fixture
+  provenance, so it can be pasted into Claude Chat without filesystem access.
+- Source checks were recorded for Creative Commons license constraints, SPDX
+  identifiers, GitHub large-file guidance, OpenAI output terms for the existing
+  generated-fixture precedent, and current repo privacy/licensing/model/safety
+  policies.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with eight blockers:
+  unenumerated fixture classes lacked a default-deny rule; maintainer approval
+  was only a free-text field; fixture classes risked prose/code drift; size
+  thresholds were ambiguous; three validator error codes lacked explicit
+  tests; AI-generation terms review was not a distinct provenance field; the
+  validation contract did not restate zero-new-dependency implementation; and
+  validator wiring used non-committal `likely` language.
+- Claude QA response:
+  `docs/ss-014-claude-qa-response.md`.
+- Codex accepted B1-B8 as valid and revised
+  `docs/ss-014-preimplementation-spec.md` with a canonical
+  `scripts/fixture-policy-data.mjs` source, `FIXTURE_CLASS_UNKNOWN`
+  default-deny behavior, explicit PR-review/CODEOWNERS approval semantics,
+  exact size threshold/error-code mapping, `FIXTURE_AI_TERMS_MISSING`,
+  mandatory zero-new-dependency `npm run fixture:verify` wired into
+  `npm run compliance:verify`, and explicit tests for every error code plus
+  boundary/dependency/canonical-source drift checks.
+- The original Claude QA planning prompt is superseded for paste use. Focused
+  B1-B8 re-review prompt: `docs/ss-014-claude-qa-rereview-prompt.md`.
+- Claude focused B1-B8 re-review confirmed B1-B8 are closed and returned FAIL
+  with three narrow new blockers: no test proving the validator reads from the
+  canonical source, no controlled mechanism to identify AI-generated fixtures,
+  and ambiguous general approval versus AI-generated output-rights approval
+  fields.
+- Codex accepted NB1-NB3 as valid and revised
+  `docs/ss-014-preimplementation-spec.md` with validator-to-canonical-source
+  test requirements, controlled `generationMethod` values from the canonical
+  source, `unknown` generation method blocked by default, and distinct
+  `maintainerApproval` versus `aiGeneratedOutputRightsApproval` fields.
+- Focused NB1-NB3 re-review prompt:
+  `docs/ss-014-claude-qa-rereview-2-prompt.md`.
+- Claude focused NB1-NB3 re-review confirmed NB1-NB3 are closed and returned
+  FAIL with one narrow new blocker: `generationMethod` lacked a value for
+  first-party real-person recordings, leaving
+  `maintainer-recorded-personal-media` unrepresentable without mislabeling it
+  as `third-party-source` or `unknown`.
+- Codex accepted NB4 as valid and revised
+  `docs/ss-014-preimplementation-spec.md` with `recorded-real-person` as a
+  controlled `generationMethod`, mapped `maintainer-recorded-personal-media` to
+  it, and stated that `recorded-real-person` remains blocked in SS-014 through
+  the `maintainer-recorded-personal-media` class until a future consent/release
+  workflow is separately approved. Codex also incorporated Claude's
+  non-blocking clarifications: prefer behavior-driving validator-to-canonical-
+  source tests, map missing `aiGeneratedOutputRightsApproval` to
+  `FIXTURE_AI_TERMS_MISSING`, and require a negative test showing non-AI
+  `generationMethod` values do not trigger AI-terms errors.
+- Focused NB4 confirmation prompt:
+  `docs/ss-014-claude-qa-rereview-3-prompt.md`.
+- Claude focused NB4 confirmation returned PASS. Claude explicitly cleared
+  Codex to move SS-014 to implementation and stated that final implementation
+  audit should include actual source for `scripts/fixture-policy-data.mjs`,
+  `scripts/verify-fixtures.js`, and executed evidence for all eleven validator
+  error codes plus validator-to-source behavior.
+- Codex moved Notion to `3. In Development (ChatGPT)` and implemented SS-014:
+  `docs/fixture-policy.md`, canonical `scripts/fixture-policy-data.mjs`,
+  zero-dependency `scripts/verify-fixtures.js`, `npm run fixture:verify` wired
+  into `npm run compliance:verify`, fixture manifests for
+  `test/fixtures/math` and existing `test/fixtures/pose-landmarker`, a
+  non-identifying synthetic math landmark fixture, fixture-policy unit
+  coverage, and a geometry metric test that loads the committed fixture.
+- Final Claude implementation audit handoff:
+  `docs/ss-014-claude-audit-prompt.md`.
+- The final audit prompt embeds the focused implementation diff for the policy,
+  canonical policy data, verifier, manifests, synthetic math fixture, package
+  scripts, fixture-policy tests, and geometry fixture-load test.
+- Verification on 2026-06-27 PDT:
+  - `npm run fixture:verify` PASS.
+  - `npm run test:unit -- fixture-policy geometry-metrics` PASS
+    (2 files, 33 tests).
+  - `npm run test:unit` PASS (12 files, 122 tests).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run safety:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+- Dependency/license exception checks (`npm run license:audit`,
+  `npm run verify:bundle-license-fixture`, `npm run sbom:generate`) were not
+  run because SS-014 added no dependency and no license exception. The new unit
+  coverage asserts dependencies/devDependencies are unchanged and that
+  `fixture:verify` is wired into `compliance:verify`.
+- Observability/runtime state: no runtime app behavior was added. No telemetry,
+  remote logging, storage, network behavior, SDK/provider/model asset, worker,
+  dependency, or remote sharing was added. Only local developer verification
+  output from `fixture:verify` is introduced, using sanitized paths and stable
+  error codes.
+- Notion was moved to `4. Final Audit (Claude)` and a comment recorded the
+  implementation summary, final audit prompt path, verification evidence, and
+  unchanged runtime/observability boundaries.
+- Claude final implementation audit returned FAIL with four blockers:
+  `recorded-real-person` generation method was documented as blocked but not
+  enforced by the validator; `aiGeneratedOutputRightsApproval` was checked only
+  for truthy presence instead of approver/date/mechanism shape; the
+  zero-dependency guard used a hardcoded current dependency array rather than a
+  pre-SS-014 baseline; and unsafe-claim detection missed several prohibited
+  phrase variants including anonymity, legal compliance, qualified privacy
+  guarantees, medical advice/diagnosis, and biomechanical correctness.
+- Codex accepted all four findings as valid and fixed them:
+  `scripts/fixture-policy-data.mjs` now exposes canonical
+  `blockedGenerationMethods` with `recorded-real-person` and `unknown`;
+  `scripts/verify-fixtures.js` enforces that canonical blocked-generation list;
+  `aiGeneratedOutputRightsApproval` now uses the same approver/date/mechanism
+  shape validation under `FIXTURE_AI_TERMS_MISSING`; unsafe-claim patterns were
+  expanded for the audited phrase variants; manifest limitation wording was
+  revised to avoid repeating prohibited phrases even in negated disclaimers;
+  and the zero-dependency guard was revised again after focused review to
+  compare current dependency sets against the branch-base `package.json`
+  retrieved from git history.
+- Focused Claude final audit re-review prompt:
+  `docs/ss-014-claude-rereview-prompt.md`. The original
+  `docs/ss-014-claude-audit-prompt.md` is now marked superseded for paste use.
+- Verification after audit fixes on 2026-06-27 PDT:
+  - `npm run fixture:verify` PASS.
+  - `npm run test:unit -- fixture-policy geometry-metrics` PASS
+    (2 files, 33 tests).
+  - `npm run test:unit` PASS (12 files, 122 tests).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run safety:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+- Claude focused final audit re-review confirmed B1, B2, and B4 are closed and
+  returned FAIL on one residual B3 issue: the checked-in dependency baseline
+  file was not itself tied to actual pre-SS-014 git history.
+- Codex accepted the residual B3 finding as valid, removed the checked-in
+  `test/baselines/package-dependencies.pre-ss-014.json`, and changed the
+  zero-dependency guard to compare current `package.json` dependency sets
+  against `git show 7399ea0403da4ad4da41f7d18cb1312e3445bcc7:package.json`.
+  That commit is the synchronized post-SS-012 main state recorded as the
+  branch base for SS-014. The existing
+  `@swing-sync-test/bundled-prohibited-package` dependency is therefore
+  verified against the base commit as pre-existing bundled-license fixture
+  tooling, not an SS-014 addition.
+- Focused B3-only Claude re-review prompt:
+  `docs/ss-014-claude-rereview-2-prompt.md`. The previous focused prompt is
+  now marked superseded for paste use.
+- Verification after the residual B3 fix on 2026-06-27 PDT:
+  - `npm run fixture:verify` PASS.
+  - `npm run test:unit -- fixture-policy geometry-metrics` PASS
+    (2 files, 33 tests).
+  - `npm run test:unit` PASS (12 files, 122 tests).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run safety:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+- Claude B3-only focused re-review returned PASS. Claude stated all
+  implementation findings are closed and explicitly cleared Codex to prepare
+  the PR. Claude's non-blocking PR notes: mention that
+  `@swing-sync-test/bundled-prohibited-package` is pre-existing local
+  bundled-license/prohibited-package fixture tooling, mention the fixture
+  unsafe-claim scanner intentionally fails closed on risky words even in
+  negated/disclaiming phrasing, and optionally add a future hardening check
+  that the pinned branch-base commit remains an ancestor of `HEAD`.
+- Claude final audit response record:
+  `docs/ss-014-claude-audit-response.md`.
+
+Next owner: Codex PR preparation. Keep SS-014 at `4. Final Audit (Claude)`
+until PR review/merge is complete, then update Notion and `CONTEXT.md` with the
+merged PR state before moving to Done.
 
 ## SS-012 Coordination
 

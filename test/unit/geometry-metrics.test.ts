@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   calculateHeadDisplacement,
   calculateHipRotationProxy,
@@ -48,6 +50,12 @@ function standardInput(): GeometryMetricInput {
   };
 }
 
+function syntheticFixtureInput(): GeometryMetricInput {
+  return JSON.parse(
+    readFileSync(resolve("test/fixtures/math/synthetic-swing-landmarks.json"), "utf8")
+  ) as GeometryMetricInput;
+}
+
 function expectMeasured(value: ReturnType<typeof calculateShoulderAngle>, expected: number): void {
   expect(value.status).toBe("measured");
   expect(value.warnings).toEqual([]);
@@ -64,6 +72,10 @@ function expectUnavailable(
 }
 
 describe("calculateShoulderAngle", () => {
+  it("uses the committed non-identifying synthetic math fixture", () => {
+    expectMeasured(calculateShoulderAngle(syntheticFixtureInput()), 0);
+  });
+
   it("returns zero for level right-handed shoulders", () => {
     expectMeasured(calculateShoulderAngle(standardInput()), 0);
   });

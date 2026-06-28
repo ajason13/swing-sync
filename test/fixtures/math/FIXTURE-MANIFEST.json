@@ -1,0 +1,22 @@
+{
+  "fixtureId": "synthetic-swing-landmarks-v1",
+  "files": [
+    {
+      "path": "synthetic-swing-landmarks.json",
+      "sizeBytes": 5137
+    }
+  ],
+  "fixtureClass": "project-authored-synthetic-landmarks",
+  "author": "Codex for Swing Sync SS-014",
+  "createdDate": "2026-06-27",
+  "source": "Project-authored synthetic numeric landmark-like coordinates.",
+  "generationMethod": "project-authored-manual",
+  "derivationNotes": "Hand-authored deterministic landmark-like coordinates based on existing geometry unit-test shapes. No raw video, frame pixels, real-person recording, face, voice, logo, background, EXIF, geolocation, account name, or device metadata is included.",
+  "license": "Apache-2.0",
+  "thirdPartyNotices": "None.",
+  "consentReleaseStatus": "Not applicable: no real person or personal media.",
+  "privacyReview": "Contains only synthetic numeric coordinates for local math tests. No known biometric identity, raw swing video, frame pixels, or personal data.",
+  "intendedTestScope": "Geometry metric and fixture-policy tests only.",
+  "limitations": "Not evidence of real swing mechanics, phase timing, model performance, coaching correctness, safety, identity protection, legal status, or deletion behavior.",
+  "maintainerApproval": null
+}
