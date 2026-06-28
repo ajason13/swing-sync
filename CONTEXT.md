@@ -6,17 +6,18 @@ Last updated: 2026-06-27
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/13
-- Latest merge commit: `befbceda9a191c94e6090abd8d9f62b35b56f8f8`
-- Current pushed `main` includes PR #13 merge commit
-  `befbceda9a191c94e6090abd8d9f62b35b56f8f8` and post-SS-012 context sync.
-  Local `main` and `origin/main` matched after the post-merge sync push.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/14
+- Latest merge commit: `5e8c0c93b165806ad4911db6a0e53d2a6041f2da`
+- Current pushed `main` includes PR #14 merge commit
+  `5e8c0c93b165806ad4911db6a0e53d2a6041f2da` and post-SS-014 context sync.
+  Local `main` and `origin/main` are synchronized after the post-merge sync
+  push.
 - Current completed task:
-  `SS-012 Design multimodal coaching prompt and response schema`
-- Active task: `SS-014 Create fixture swing dataset policy and test fixtures`
-- Active branch: `ss-014-fixtures-policy`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/14
+  `SS-014 Create fixture swing dataset policy and test fixtures`
+- Active task: none selected
+- Active branch: none
+- Active handshake: none
+- Active Pull Request: none
 
 Next-task kickoff check on 2026-06-27:
 
@@ -264,10 +265,27 @@ Kickoff/spec state on 2026-06-27:
   recorded the commit, PR URL, Claude PASS, verification evidence, unchanged
   runtime/observability boundaries, and non-blocking PR review notes.
 - PR #14 GitHub compliance check completed successfully on head
-  `e79aa8d74def2202022b37509dd0589d33fea5cd`; PR remained open and mergeable.
+  `88bf01bbd4c1d839dce13ec5ad14e4d4bdd8dc6e`; PR remained open and
+  mergeable.
+- PR #14 was merged on 2026-06-27 local time. Merge commit:
+  `5e8c0c93b165806ad4911db6a0e53d2a6041f2da`.
+- Local checkout is back on `main` at the PR #14 merge commit and matched
+  `origin/main` before this post-merge context sync. The story branch was
+  deleted on GitHub by `gh pr merge --merge --delete-branch`.
+- SS-014 completed scope:
+  - fixture consent/licensing/blocklist policy in `docs/fixture-policy.md`;
+  - canonical fixture policy data and zero-dependency validator in
+    `scripts/fixture-policy-data.mjs` and `scripts/verify-fixtures.js`;
+  - `npm run fixture:verify` wired into `npm run compliance:verify`;
+  - non-identifying synthetic math fixture plus provenance under
+    `test/fixtures/math`;
+  - provenance manifest for the existing mannequin pose-landmarker fixture;
+  - fixture-policy unit coverage and geometry metric coverage loading the
+    committed fixture.
+- SS-014 Notion was updated with PR #14 and merge state and moved to `5. Done`.
 
-Next owner: merge PR #14, then update local `main`, Notion, and `CONTEXT.md`
-with the merged PR state before moving SS-014 to Done.
+Next owner: Codex/user to select the next backlog task. No active task is
+selected in `CONTEXT.md`.
 
 ## SS-012 Coordination
 
