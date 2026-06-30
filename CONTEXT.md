@@ -1,23 +1,22 @@
 # Swing Sync Context
 
-Last updated: 2026-06-29
+Last updated: 2026-06-30
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/14
-- Latest merge commit: `5e8c0c93b165806ad4911db6a0e53d2a6041f2da`
-- Current pushed `main` includes PR #14 merge commit
-  `5e8c0c93b165806ad4911db6a0e53d2a6041f2da` and post-SS-014 context sync.
-  Local `main` and `origin/main` are synchronized after the post-merge sync
-  push.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/15
+- Latest merge commit: `ef19c5df819b37669533500fe4f86a031eb817df`
+- Current pushed `main` includes PR #15 merge commit
+  `ef19c5df819b37669533500fe4f86a031eb817df`. Local `main` and
+  `origin/main` are synchronized after the PR #15 merge.
 - Current completed task:
-  `SS-014 Create fixture swing dataset policy and test fixtures`
-- Active task: `SS-015 Add browser regression tests for MVP flow`
-- Active branch: `ss-015-browser-tests`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/15
+  `SS-015 Add browser regression tests for MVP flow`
+- Active task: none selected
+- Active branch: none
+- Active handshake: none
+- Active Pull Request: none
 
 ## SS-015 Coordination
 
@@ -153,18 +152,24 @@ Kickoff/spec state on 2026-06-29:
   https://github.com/ajason13/swing-sync/pull/15.
 - Branch commit pushed for PR #15:
   `bbe2d49b6b29f4be81f619fd7a4c7983869ae70f`.
+- PR #15 context-sync commit pushed:
+  `f2b82c7dfdb607d8a5ebd5a519e0db24e68e408f`.
+- GitHub PR #15 compliance check passed in 1m18s.
+- PR #15 merged on 2026-06-30 UTC with merge commit
+  `ef19c5df819b37669533500fe4f86a031eb817df`.
 - Notion moved to `4. Final Audit (Claude)`.
 - Notion Pull Request property was updated with PR #15, and a PR-created
   comment was added.
+- Notion moved to `5. Done` after merge, with a merge-state comment recording
+  PR #15 and merge commit `ef19c5df819b37669533500fe4f86a031eb817df`.
 - Observability decision: runtime observability should remain unchanged for
   SS-015. No runtime observability was added. Only local Playwright diagnostics
   and CI artifacts for failed browser runs were added.
 
-Next owner: GitHub PR checks and merge review. Keep SS-015 at
-`4. Final Audit (Claude)` until PR checks pass, merge readiness is confirmed,
-and the PR is merged. Branch-protection required-check configuration may be
-moot because SS-015 reuses the existing `compliance` job, but merge readiness
-should confirm the existing job remains required.
+Next owner: Codex/user to select the next backlog task. No active task is
+selected in `CONTEXT.md`. Start from synchronized `main`, inspect the Swing
+Sync Notion task database/board, and ask the user to confirm the next task if
+ordering is ambiguous.
 
 Next-task kickoff check on 2026-06-27:
 
