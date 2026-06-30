@@ -17,7 +17,7 @@ Last updated: 2026-06-29
 - Active task: `SS-015 Add browser regression tests for MVP flow`
 - Active branch: `ss-015-browser-tests`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/15
 
 ## SS-015 Coordination
 
@@ -44,7 +44,7 @@ Kickoff/spec state on 2026-06-29:
 - Notion page:
   https://app.notion.com/p/375834a0c8a6813fba47ed015c899a72
 - Branch from current `main`: `ss-015-browser-tests`.
-- Pull Request: none.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/15.
 - Task Type: `Feature`.
 - Notion moved to `1. Spec Drafting (Gemini)` for board compatibility, with
   Codex noted as research/spec owner.
@@ -149,16 +149,22 @@ Kickoff/spec state on 2026-06-29:
   - `npm run sbom:generate` PASS. The generated SBOM timestamp/serial metadata
     changed only because of regeneration and was restored because SS-015 has no
     dependency changes.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/15.
+- Branch commit pushed for PR #15:
+  `bbe2d49b6b29f4be81f619fd7a4c7983869ae70f`.
 - Notion moved to `4. Final Audit (Claude)`.
+- Notion Pull Request property was updated with PR #15, and a PR-created
+  comment was added.
 - Observability decision: runtime observability should remain unchanged for
   SS-015. No runtime observability was added. Only local Playwright diagnostics
   and CI artifacts for failed browser runs were added.
 
-Next owner: Codex PR preparation. Keep SS-015 at `4. Final Audit (Claude)`
-until PR creation/checks and merge readiness are complete. Branch-protection
-required-check configuration may be moot because SS-015 reuses the existing
-`compliance` job, but merge readiness should confirm the existing job remains
-required.
+Next owner: GitHub PR checks and merge review. Keep SS-015 at
+`4. Final Audit (Claude)` until PR checks pass, merge readiness is confirmed,
+and the PR is merged. Branch-protection required-check configuration may be
+moot because SS-015 reuses the existing `compliance` job, but merge readiness
+should confirm the existing job remains required.
 
 Next-task kickoff check on 2026-06-27:
 
