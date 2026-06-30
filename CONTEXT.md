@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-06-27
+Last updated: 2026-06-29
 
 ## Current State
 
@@ -14,10 +14,151 @@ Last updated: 2026-06-27
   push.
 - Current completed task:
   `SS-014 Create fixture swing dataset policy and test fixtures`
-- Active task: none selected
-- Active branch: none
-- Active handshake: none
+- Active task: `SS-015 Add browser regression tests for MVP flow`
+- Active branch: `ss-015-browser-tests`
+- Active handshake: `4. Final Audit (Claude)`
 - Active Pull Request: none
+
+## SS-015 Coordination
+
+SS-015 is privacy-, browser-automation-, CI-, export-, and user-facing-copy
+sensitive. It adds browser regression and CI coverage for the MVP local-first
+flow. Treat it as gated: Codex owns research/spec drafting under the
+2026-06-26 LLM-team routing update, and Claude remains the independent QA
+planning and final adversarial audit reviewer.
+
+Acceptance criteria from Notion:
+
+- Test upload/capture placeholder, processing, review, Swing Card export,
+  consent gate, and mobile layout.
+- Include no-network privacy regression where feasible.
+- Capture artifacts for failed runs.
+- Tests run in CI.
+
+Kickoff/spec state on 2026-06-29:
+
+- Local `main`, `origin/main`, and `HEAD` were confirmed at
+  `f8b9cd2724c84ffea2c3ba77ec6d1d782111feb0`, with a clean tracked worktree
+  and only intentional untracked `docs/agent-guidance/*new-codex-session-prompt.md`
+  files present.
+- Notion page:
+  https://app.notion.com/p/375834a0c8a6813fba47ed015c899a72
+- Branch from current `main`: `ss-015-browser-tests`.
+- Pull Request: none.
+- Task Type: `Feature`.
+- Notion moved to `1. Spec Drafting (Gemini)` for board compatibility, with
+  Codex noted as research/spec owner.
+- Dedicated test case `SS-TC-018` was created:
+  https://app.notion.com/p/38e834a0c8a681c3a146fae2d8c332cc
+- `SS-TC-018` covers upload/capture placeholder, processing, review, Swing
+  Card export, consent fail-closed behavior, mobile layout, no-network privacy
+  regression, failed-run artifacts, CI execution, and protected no-telemetry/
+  no-remote-sharing/no-new-dependency/no-unapproved-fixture boundaries.
+- Codex-owned research/disposition note:
+  `docs/ss-015-research-disposition.md`.
+- Candidate preimplementation spec:
+  `docs/ss-015-preimplementation-spec.md`.
+- Self-contained Claude QA planning handoff:
+  `docs/ss-015-claude-qa-planning-prompt.md`.
+- Source checks were recorded for Playwright configuration/artifact output,
+  Playwright network routing/monitoring, Playwright CI guidance, and GitHub
+  Actions artifact retention.
+- Claude QA planning returned FAIL with seven blockers: no-network hooks can
+  miss initial navigation/model-load requests; capture placeholder lacks
+  explicit test coverage; CI/browser-artifact requirements were too soft;
+  console sensitive-output assertions were incomplete and omitted hidden IDs;
+  canvas nonblank rendering was not proven by pixel sampling; mobile
+  overlap/truncation coverage was promised but underspecified; and Copy prompt
+  usability/content-minimization needed source-backed test requirements.
+- Claude QA response record:
+  `docs/ss-015-claude-qa-response.md`.
+- Codex accepted B1-B7 as valid and revised
+  `docs/ss-015-preimplementation-spec.md` with mandatory context-level
+  network hooks before navigation, explicit capture-placeholder and
+  no-camera-permission coverage, blocking CI/no-soft-fail/browser-install/
+  failure-artifact requirements, shared sensitive-output denylist coverage,
+  pixel-content canvas nonblank checks, mobile overlap/clipping assertions, and
+  clipboard Copy prompt usability plus content-minimization checks.
+- The original Claude QA planning prompt is superseded for paste use. Focused
+  B1-B7 re-review prompt:
+  `docs/ss-015-claude-qa-rereview-prompt.md`.
+- Claude focused B1-B7 re-review returned PASS and cleared SS-015 for
+  implementation start.
+- Claude QA re-review response record:
+  `docs/ss-015-claude-qa-rereview-response.md`.
+- Notion moved to `3. In Development (ChatGPT)`.
+- Codex implemented SS-015 within the approved test/CI-only scope:
+  `test/smoke/app.spec.ts` now includes early context-level request recording
+  and route blocking before `beforeEach` navigation for the no-network test,
+  suite-wide `getUserMedia` negative detection, capture-placeholder assertions,
+  shared sensitive-output checks for console and clipboard text, browser
+  storage checks, multi-point keyframe canvas pixel sampling, Copy prompt
+  clipboard success and unavailable-path coverage, no-external-network checks,
+  and mobile overlap/clipping assertions. `.github/workflows/compliance.yml`
+  now installs Playwright Chromium, runs `npm run test:smoke` as a blocking CI
+  step, and uploads `test-results/` only on failure with seven-day retention.
+- Runtime source files were not changed. No telemetry, remote logging, remote
+  sharing, camera capture, new workers, model/provider assets, new dependencies,
+  or raw personal video fixtures were added.
+- Verification on 2026-06-29 PDT under Node v22.22.3:
+  - `npm run test:smoke -- --project=desktop-chromium` PASS (16 tests).
+  - `npm run test:smoke` PASS (32 tests across desktop Chromium and mobile
+    Chromium).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+- Initial `npm run test:smoke` under Node v24.15.0 was interrupted after no
+  output for several minutes and is not used as required verification evidence.
+- Final Claude implementation audit handoff:
+  `docs/ss-015-claude-audit-prompt.md`.
+- Claude final implementation audit returned PASS and cleared SS-015 for PR
+  preparation. Claude noted no blockers. The highest-value non-blocking
+  recommendation was to strengthen hidden-ID coverage from literal phrase
+  matching to include opaque identifier shapes such as UUIDs, long hashes, and
+  long URL-safe tokens.
+- Claude audit response record:
+  `docs/ss-015-claude-audit-response.md`.
+- Codex implemented the hidden-ID recommendation as a small test-only follow-up:
+  the shared sensitive-output denylist in `test/smoke/app.spec.ts` now also
+  matches UUID-shaped identifiers, long hex tokens, and long URL-safe opaque
+  tokens.
+- Verification after the hidden-ID denylist follow-up on 2026-06-29 PDT under
+  Node v22.22.3:
+  - `npm run test:smoke` PASS (32 tests across desktop Chromium and mobile
+    Chromium).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+- Focused Claude re-review prompt for the post-PASS denylist delta:
+  `docs/ss-015-claude-rereview-prompt.md`.
+- Claude focused implementation re-review returned PASS and confirmed the
+  hidden-ID/token denylist concern is closed, with no new blockers. Claude
+  cleared SS-015 for PR preparation.
+- Focused re-review response record:
+  `docs/ss-015-claude-rereview-response.md`.
+- After the first focused PASS, the focused prompt was updated to include the
+  full current `test/smoke/app.spec.ts` file contents. Claude re-reviewed the
+  full-file prompt, confirmed the hidden-ID/token denylist concern remains
+  closed, cross-checked that 16 smoke tests across two Playwright projects
+  account for the reported 32 passing tests, found no new blockers, and again
+  cleared SS-015 for PR preparation.
+- Additional PR-template verification on 2026-06-29 PDT under Node v22.22.3:
+  - `npm run license:audit` PASS.
+  - `npm run sbom:generate` PASS. The generated SBOM timestamp/serial metadata
+    changed only because of regeneration and was restored because SS-015 has no
+    dependency changes.
+- Notion moved to `4. Final Audit (Claude)`.
+- Observability decision: runtime observability should remain unchanged for
+  SS-015. No runtime observability was added. Only local Playwright diagnostics
+  and CI artifacts for failed browser runs were added.
+
+Next owner: Codex PR preparation. Keep SS-015 at `4. Final Audit (Claude)`
+until PR creation/checks and merge readiness are complete. Branch-protection
+required-check configuration may be moot because SS-015 reuses the existing
+`compliance` job, but merge readiness should confirm the existing job remains
+required.
 
 Next-task kickoff check on 2026-06-27:
 

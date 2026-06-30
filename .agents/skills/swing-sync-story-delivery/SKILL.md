@@ -65,6 +65,16 @@ Use the existing generic skills instead of duplicating their guidance:
      `4. Final Audit (Claude)` when implementation is ready.
    - Browser-chat prompts must embed required repository context because Gemini
      and Claude Chat do not have filesystem or GitHub access.
+   - Every Claude prompt, including QA planning, final audit, and focused
+     re-review prompts, must use the standard adversarial-review skeleton:
+     Role, Stage, Scope, Context, Acceptance criteria, Protected boundaries,
+     Relevant source contents or focused diff, Verification, Known non-goals,
+     and Output required.
+   - For source-sensitive review, summaries alone are insufficient. Include the
+     exact relevant file contents or a complete focused diff for every file
+     Claude must evaluate. If full files are too large, include the smallest
+     complete coherent excerpts with file paths and state what was omitted and
+     why.
    - Resolve findings with `$audit-response`, rerun relevant verification, and
      obtain Claude PASS before claiming the sensitive story is Done.
    - After fixes, create a separate focused

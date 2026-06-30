@@ -1,3 +1,66 @@
+# SS-015 Claude Focused Implementation Re-Review Prompt
+
+Paste everything between START and END into Claude Chat for focused
+implementation re-review.
+
+## START
+
+Role: You are the independent adversarial implementation auditor for Swing Sync.
+
+Stage: Focused implementation re-review after SS-015 final audit PASS.
+
+Scope: Re-review only the post-PASS test-only hidden-ID denylist change and the
+fresh verification evidence. Do not re-litigate prior B1-B7 unless this delta
+reopens them or introduces a new blocker.
+
+Context:
+You previously returned PASS for SS-015 final implementation audit and cleared
+PR preparation. Your highest-value non-blocking recommendation was that
+hidden-ID coverage was phrase-based and would not catch opaque identifiers
+such as UUIDs, long hashes, or long URL-safe tokens. Codex chose to fix that
+small test-only gap before PR preparation. Assume you cannot read the
+repository or GitHub; relevant source and verification are included below.
+
+Acceptance criteria:
+- Test upload/capture placeholder, processing, review, Swing Card export,
+  consent gate, and mobile layout.
+- Include no-network privacy regression where feasible.
+- Capture artifacts for failed runs.
+- Tests run in CI.
+
+Protected boundaries:
+- Raw swing video and frame pixels must not be uploaded, sent to model
+  providers, or shared with remote services unless a future separately reviewed
+  feature adds explicit opt-in.
+- Derived landmarks, metrics, prompts, reports, and selected images may still
+  be sensitive.
+- Do not make absolute privacy, deletion, anonymity, legal, compliance, safety,
+  medical, injury-prevention, professional coaching, or guaranteed correctness
+  claims.
+- Do not add remote sharing, telemetry, remote logging, hosted analytics, cloud
+  storage, new workers, SDK/provider/model assets, new dependencies, camera
+  capture behavior, or raw personal video fixtures for SS-015.
+
+Relevant source contents or focused diff:
+
+File: `test/smoke/app.spec.ts` sensitive-output denylist before:
+
+```ts
+const sensitiveOutputPattern =
+  /\b(?:landmarks?|worldLandmarks|media characteristics|file\s?name|object\s?url|objectUrl|metricPayload|requestedTimestampMs|observedSeekTimestampMs|timestamp|hidden\s?(?:id|identifier)|trace\s?id|session\s?id|user\s?id|account\s?id|device\s?id|request\s?id|raw video)\b|blob:http/i;
+```
+
+File: `test/smoke/app.spec.ts` sensitive-output denylist after:
+
+```ts
+const sensitiveOutputPattern =
+  /\b(?:landmarks?|worldLandmarks|media characteristics|file\s?name|object\s?url|objectUrl|metricPayload|requestedTimestampMs|observedSeekTimestampMs|timestamp|hidden\s?(?:id|identifier)|trace\s?id|session\s?id|user\s?id|account\s?id|device\s?id|request\s?id|raw video)\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b|\b[0-9a-f]{24,}\b|\b[A-Za-z0-9_-]{32,}\b|blob:http/i;
+```
+
+File: `test/smoke/app.spec.ts` full current contents after the denylist
+follow-up:
+
+```ts
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { resolve } from "node:path";
 
@@ -609,3 +672,53 @@ test("fits the mobile viewport without horizontal page overflow", async ({ page 
   expect(layout.hasButtonOverlap).toBe(false);
   expect(layout.clippedCriticalText).toEqual([]);
 });
+```
+
+Delta summary:
+- Added UUID-shaped identifier detection.
+- Added long lowercase hex token detection for opaque IDs/hashes.
+- Added long URL-safe alphanumeric token detection for opaque IDs.
+- No runtime source files changed.
+- No CI workflow behavior changed after your PASS.
+- No dependencies, fixtures, workers, telemetry, remote logging, remote sharing,
+  camera capture, model/provider assets, or product claims were added.
+
+Verification after this delta:
+- `source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:smoke`
+  - PASS under Node v22.22.3.
+  - 32 tests passed across desktop Chromium and mobile Chromium.
+- `source "$HOME/.nvm/nvm.sh" && nvm use && npm run build && npm run compliance:verify && npm run privacy:verify && git diff --check`
+  - PASS under Node v22.22.3.
+  - Build passed.
+  - Compliance artifacts, fixture policy, pose assets, safety terms, and
+    privacy boundaries verified.
+  - `privacy:verify` passed.
+  - `git diff --check` passed.
+
+Known non-goals:
+- No camera capture implementation.
+- No remote sharing, telemetry, remote logging, hosted analytics, cloud
+  storage, model APIs, new provider SDKs, model assets, new workers, or new
+  dependencies.
+- No new raw personal video fixtures or unapproved third-party media.
+- No runtime feature behavior change.
+- No new or stronger product claims about privacy, safety, deletion, anonymity,
+  legal compliance, coaching correctness, medical use, or injury prevention.
+
+Output required:
+- PASS or FAIL verdict for PR preparation after this delta.
+- Whether the hidden-ID/token denylist concern is closed, still non-blocking,
+  or blocking.
+- Any new blockers introduced by the denylist expansion.
+- Explicit sign-off status.
+
+Adversarial focus:
+- Check whether the broader regex creates an unacceptable false-positive risk
+  for legitimate Swing Card prompt text, console messages, or expected test
+  strings.
+- Check whether the broader regex is meaningful for hidden/opaque identifier
+  coverage.
+- Check whether this test-only change broadens runtime behavior or protected
+  claims.
+
+## END
