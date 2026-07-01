@@ -45,7 +45,7 @@ Kickoff/spec state on 2026-06-30:
 - Notion page:
   https://app.notion.com/p/375834a0c8a6816491e9d73a30dbf3d2
 - Branch from current `main`: `ss-013-model-adapter`.
-- Pull Request: none.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/16.
 - Task Type: `Feature`.
 - User confirmed SS-013 over SS-016 after both backlog candidates were verified
   in Notion and ordering was ambiguous.
@@ -219,14 +219,21 @@ Kickoff/spec state on 2026-06-30:
   - `npm run sbom:generate` PASS. The generated SBOM changed only timestamp
     and serial metadata and was restored because SS-013 has no dependency
     changes.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/16.
+- Branch commit pushed for PR #16:
+  `bfc38c6f632f1caf13deace92add51680829a20e`.
+- Notion Pull Request property was updated with PR #16, and a PR-created
+  comment was added.
 - Observability decision for the candidate spec: runtime observability should
   remain intentionally limited to stable local UI status/error codes. Do not add
   telemetry, remote logging, analytics, cloud diagnostics, or console logs
   containing prompts, outputs, metrics, landmarks, media details, provider keys,
   or hidden identifiers.
 
-Next owner: Codex PR preparation for SS-013. Keep Notion at
-`4. Final Audit (Claude)` until PR is created and accurate PR state is recorded.
+Next owner: GitHub PR checks and merge review. Keep Notion at
+`4. Final Audit (Claude)` until PR #16 checks pass, merge state is known, and
+post-merge synchronization is complete.
 
 ## SS-015 Coordination
 
