@@ -606,6 +606,55 @@ button:disabled {
   display: none;
 }
 
+.remote-model-panel {
+  border-top: 1px solid #dce2dc;
+  padding-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.remote-model-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.remote-model-panel h4 {
+  margin: 0;
+  color: #17211b;
+  font-size: 1rem;
+}
+
+.remote-model-panel p {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.remote-model-disclosure {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.remote-model-disclosure div {
+  min-width: 0;
+  border-left: 2px solid #b7c5ba;
+  padding-left: 10px;
+}
+
+.remote-model-disclosure dt {
+  color: #617067;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.remote-model-disclosure dd {
+  margin: 3px 0 0;
+  color: #243b2d;
+  font-size: 0.86rem;
+}
+
 .swing-card-print {
   color: #17211b;
   background: #ffffff;

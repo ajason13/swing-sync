@@ -13,10 +13,227 @@ Last updated: 2026-06-30
   `origin/main` are synchronized after the PR #15 merge.
 - Current completed task:
   `SS-015 Add browser regression tests for MVP flow`
-- Active task: none selected
-- Active branch: none
-- Active handshake: none
+- Active task: `SS-013 Add optional model API adapter behind consent gate`
+- Active branch: `ss-013-model-adapter`
+- Active handshake: `2. QA Planning (Claude)`
 - Active Pull Request: none
+
+## SS-013 Coordination
+
+SS-013 is safety-, privacy-, AI-coaching-, model-provider-, compliance-,
+dependency/licensing-, user-facing-copy-, runtime-, and remote-API-sensitive.
+It defines an optional model API adapter behind explicit remote-sharing consent
+while preserving the local-first MVP and manual Swing Card workflow. Treat it
+as gated: Codex owns research/spec drafting under the 2026-06-26 LLM-team
+routing update, and Claude remains the independent QA planning and final
+adversarial audit reviewer.
+
+Acceptance criteria from Notion:
+
+- API mode is disabled until explicit consent.
+- Provider adapter is model-neutral.
+- User sees what data will be sent.
+- Manual Swing Card workflow remains available without keys or server config.
+
+Kickoff/spec state on 2026-06-30:
+
+- Local `main`, `origin/main`, and branch base were confirmed at
+  `f5836311bdb1f871b965bda24ad55322b89817eb` after `git fetch origin`.
+- Worktree was clean before selection except for intentional untracked
+  `docs/agent-guidance/*new-codex-session-prompt.md` files, which remain
+  preserved.
+- Notion page:
+  https://app.notion.com/p/375834a0c8a6816491e9d73a30dbf3d2
+- Branch from current `main`: `ss-013-model-adapter`.
+- Pull Request: https://github.com/ajason13/swing-sync/pull/16.
+- Task Type: `Feature`.
+- User confirmed SS-013 over SS-016 after both backlog candidates were verified
+  in Notion and ordering was ambiguous.
+- Notion was moved to `1. Spec Drafting (Gemini)` for board compatibility,
+  with Codex noted as research/spec owner under the 2026-06-26 routing update.
+- Dedicated test case `SS-TC-019` was created:
+  https://app.notion.com/p/38f834a0c8a6812db4a5e98c2b01fd4d
+- `SS-TC-019` covers API mode disabled until explicit remote-sharing consent,
+  model-neutral adapter contract, pre-send data-class/destination disclosure,
+  no raw video/frame pixel send by default, revocation/missing-configuration
+  fail-closed behavior, manual Swing Card workflow without keys/server config/
+  network, provider terms/licensing/privacy review, and protected no-telemetry/
+  no-remote-logging/no-cloud-storage/no-unapproved-SDK/no-unsafe-claim
+  boundaries.
+- Codex-owned research/disposition note:
+  `docs/ss-013-research-disposition.md`.
+- Candidate preimplementation spec:
+  `docs/ss-013-preimplementation-spec.md`.
+- Self-contained Claude QA planning handoff:
+  `docs/ss-013-claude-qa-planning-prompt.md`.
+- Source checks were recorded for OpenAI enterprise/API privacy handling,
+  OpenAI consumer privacy/business-data boundary, Anthropic commercial terms,
+  Anthropic privacy/retention materials, Gemini API unpaid-service data review
+  warning, MDN Fetch API behavior, and MDN AbortController behavior, all
+  checked on 2026-06-30.
+- Codex dispositions defer real provider integration, reject provider SDKs/new
+  dependencies by default, reject raw video/frame-pixel send, reject generic
+  provider data-use equivalence, adopt provider-neutral adapter design, adopt
+  fail-closed remote consent gating, adopt exact outbound data-class
+  disclosure, and preserve manual Swing Card export/copy as the fallback.
+- Notion moved to `2. QA Planning (Claude)`.
+- Claude QA planning returned FAIL with eight blockers:
+  - B1 consent persistence was conditional instead of deterministic.
+  - B2 reviewed-provider gating lacked an operational definition and zero-
+    provider default.
+  - B3 fail-closed checks lacked a single canonical enforcement point.
+  - B4 per-error-code negative tests were not required.
+  - B5 `UNSAFE_RESPONSE_CONTENT` and safe model-output rendering were
+    undefined.
+  - B6 `blockedDataClasses` was typed as an open `string[]`.
+  - B7 mid-flight consent revocation was unaddressed.
+  - B8 prohibited prompt checking had no named validation mechanism.
+- Claude QA response record:
+  `docs/ss-013-claude-qa-response.md`.
+- Codex accepted B1-B8 as valid and revised
+  `docs/ss-013-preimplementation-spec.md` to require in-memory-only remote
+  consent with default-off reload behavior, no remote-consent storage key, an
+  empty production provider registry and unavailable remote UI by default, a
+  shared `canSendRemoteRequest` guard for UI and adapter send paths, a closed
+  canonical remote-data-class union with typed blocked data classes, text-only
+  model-output rendering, concrete `UNSAFE_RESPONSE_CONTENT` criteria,
+  mid-flight revocation via `AbortController.abort()`, a named runtime
+  `validateRemotePromptPreview`-style validator, explicit
+  `observedSeekTimestampMs` exclusion, and required negative coverage for every
+  `ModelAdapterErrorCode`.
+- Codex revised `docs/ss-013-research-disposition.md` to explicitly reject
+  shipping any `ModelProviderDescriptor` entries in production for SS-013.
+- `SS-TC-019` was revised in Notion with itemized sub-cases for every adapter
+  error code, empty production provider registry, typed blocked data classes,
+  prompt-preview validation, mid-flight abort-on-revoke, text-only output
+  rendering, and manual workflow regression coverage.
+- The initial Claude QA planning prompt is superseded for paste use. Focused
+  B1-B8 re-review prompt:
+  `docs/ss-013-claude-qa-rereview-prompt.md`.
+- Claude focused QA re-review returned PASS for implementation start and
+  closed B1-B8. Claude noted two non-blocking recommendations: clarify
+  `PROVIDER_NOT_REVIEWED` versus `PROVIDER_NOT_CONFIGURED`, and add an
+  outbound prompt size bound.
+- Focused re-review response record:
+  `docs/ss-013-claude-qa-rereview-response.md`.
+- Codex folded both non-blocking recommendations into the spec and
+  implementation before coding: `PROVIDER_NOT_REVIEWED` means no descriptor is
+  present in the reviewed provider registry; `PROVIDER_NOT_CONFIGURED` means a
+  reviewed descriptor exists but runtime send configuration is absent; and
+  `UNSAFE_REQUEST_CONTENT` plus `maxRemotePromptCharacters` cover outbound
+  prompt size/content failures.
+- Notion moved to `3. In Development (ChatGPT)`.
+- Codex implemented SS-013 within the approved empty-registry/fail-closed
+  scope:
+  - `src/model-adapter-contract.ts` defines the provider-neutral data classes,
+    provider descriptor, request preview, adapter request/result, and typed
+    blocked outbound data class contract.
+  - `src/model-consent.ts` ships an empty production `reviewedModelProviders`
+    registry, shared `canSendRemoteRequest` guard, prompt/output validators,
+    text-only model-output rendering helper, guarded adapter factory, and
+    abort-on-consent-revoke helper.
+  - `test/unit/model-consent.test.ts` covers empty registry, derived blocked
+    data classes, every adapter error code including `UNSAFE_REQUEST_CONTENT`,
+    prompt validator pattern families, unsafe output validation, transport
+    failure/cancellation, and mid-flight abort-on-revoke.
+  - `src/main.ts` and `src/styles.css` add a passive Remote model review panel
+    to the Swing Card export surface. Because the production provider registry
+    is empty, the panel remains unavailable/configuration-required and does not
+    add a network-capable path.
+  - `test/smoke/app.spec.ts` extends the Swing Card export regression to
+    assert the unavailable remote panel, canonical send/blocked data-class
+    disclosures, disabled remote-review button, absence of extra local storage,
+    and unchanged manual Download PNG / Print / Copy prompt workflow.
+- Runtime source files changed, but runtime observability remains intentionally
+  limited to local UI status/error states. No telemetry, remote logging,
+  analytics, cloud diagnostics, provider SDKs, provider descriptors, API routes,
+  keys, remote calls, new workers, new dependencies, raw video/frame upload,
+  camera capture, cloud storage, or model/provider assets were added.
+- Verification on 2026-06-30 under Node v22.22.3:
+  - `npm run test:unit` PASS (145 tests).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `npm run safety:verify` PASS.
+  - `git diff --check` PASS.
+  - `npm run test:smoke -- --project=desktop-chromium -g "downloads a local Swing Card PNG"` PASS (1 test).
+  - `npm run test:smoke` PASS (32 tests across desktop Chromium and mobile
+    Chromium).
+  - After the remote data-class label cleanup, `npm run build` PASS,
+    `git diff --check` PASS, and
+    `npm run test:smoke -- --project=desktop-chromium -g "downloads a local Swing Card PNG"` PASS (1 test).
+- Browser smoke attempts under Node v24.15.0 were interrupted after hanging
+  with no output, matching the known Node-version issue already recorded for
+  SS-011/SS-015. Required browser verification was rerun under Node v22.22.3
+  from `.nvmrc`.
+- Final Claude implementation audit handoff:
+  `docs/ss-013-claude-audit-prompt.md`.
+- Notion moved to `4. Final Audit (Claude)`.
+- Claude final implementation audit returned FAIL pending additional evidence,
+  while confirming the structural implementation is correct and prior B1-B8 are
+  closed. New blockers:
+  - B9: audit prompt excerpt omitted full test evidence for
+    `REMOTE_REQUEST_FAILED` and `UNSAFE_RESPONSE_CONTENT`, including text-only
+    rendering coverage.
+  - B10: `REMOTE_REQUEST_CANCELLED` evidence covered the standalone helper but
+    not the mid-flight `send()` integration path.
+  - B11: Claude needed confirmation that `SS-TC-019` accepts
+    `UNSAFE_REQUEST_CONTENT` as the eighth adapter error code.
+- Claude audit response record:
+  `docs/ss-013-claude-audit-response.md`.
+- Codex response:
+  - `SS-TC-019` already included `UNSAFE_REQUEST_CONTENT` as a required
+    negative sub-case and provider error-code semantics; the test-case current
+    gate text was updated to final-audit state.
+  - `test/unit/model-consent.test.ts` now includes a mid-flight send-path
+    cancellation test where consent revocation aborts the request signal and
+    `send()` returns `REMOTE_REQUEST_CANCELLED`.
+  - `test/unit/model-consent.test.ts` now includes explicit
+    `renderModelOutputText` text-only assignment coverage.
+  - `src/model-adapter-contract.ts` now derives runtime blocked outbound data
+    classes from `modelOutboundDataClasses`, matching the type-level canonical
+    source.
+  - The initial final audit prompt is superseded for paste use. Focused B9-B11
+    re-review prompt:
+    `docs/ss-013-claude-rereview-prompt.md`.
+- Verification after B9-B11 response under Node v22.22.3:
+  - `npm run test:unit -- model-consent` PASS (25 tests).
+  - `npm run build` PASS.
+- Claude focused implementation re-review returned PASS for SS-013 PR
+  preparation and closed B9-B11. No new blocking findings were introduced.
+- Focused implementation re-review response record:
+  `docs/ss-013-claude-rereview-response.md`.
+- Claude noted non-blocking follow-ups: post-transport
+  `abortSignal.aborted` branch is not explicitly tested; full unit suite and
+  `git diff --check` should be re-confirmed at PR preparation close; and
+  `manualContentAvailable: false` remains bundled under
+  `PROVIDER_NOT_CONFIGURED` for SS-013.
+- PR-prep verification on 2026-07-01 under Node v22.22.3:
+  - `npm run test:unit` PASS (147 tests).
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `npm run safety:verify` PASS.
+  - `git diff --check` PASS.
+  - `npm run license:audit` PASS.
+  - `npm run sbom:generate` PASS. The generated SBOM changed only timestamp
+    and serial metadata and was restored because SS-013 has no dependency
+    changes.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/16.
+- Branch commit pushed for PR #16:
+  `bfc38c6f632f1caf13deace92add51680829a20e`.
+- Notion Pull Request property was updated with PR #16, and a PR-created
+  comment was added.
+- Observability decision for the candidate spec: runtime observability should
+  remain intentionally limited to stable local UI status/error codes. Do not add
+  telemetry, remote logging, analytics, cloud diagnostics, or console logs
+  containing prompts, outputs, metrics, landmarks, media details, provider keys,
+  or hidden identifiers.
+
+Next owner: GitHub PR checks and merge review. Keep Notion at
+`4. Final Audit (Claude)` until PR #16 checks pass, merge state is known, and
+post-merge synchronization is complete.
 
 ## SS-015 Coordination
 
@@ -170,6 +387,55 @@ Next owner: Codex/user to select the next backlog task. No active task is
 selected in `CONTEXT.md`. Start from synchronized `main`, inspect the Swing
 Sync Notion task database/board, and ask the user to confirm the next task if
 ordering is ambiguous.
+
+Next-task kickoff check on 2026-06-30:
+
+- Local `main`, `origin/main`, and `HEAD` were confirmed at
+  `f5836311bdb1f871b965bda24ad55322b89817eb` after `git fetch origin`.
+- Worktree is clean except for intentional untracked
+  `docs/agent-guidance/*new-codex-session-prompt.md` files, which remain
+  preserved.
+- Swing Sync Tasks database still uses handshake values:
+  `0. Backlog`, `1. Spec Drafting (Gemini)`,
+  `2. QA Planning (Claude)`, `3. In Development (ChatGPT)`,
+  `4. Final Audit (Claude)`, and `5. Done`. For board compatibility, use the
+  literal `1. Spec Drafting (Gemini)` value after selection while treating
+  Codex as research/spec owner under the 2026-06-26 routing update.
+- Visible non-Done backlog candidates verified in Notion:
+  - `SS-013 Add optional model API adapter behind consent gate`
+    (https://app.notion.com/p/375834a0c8a6816491e9d73a30dbf3d2):
+    branch `ss-013-model-adapter`, status `0. Backlog`, empty Pull Request,
+    Task Type `Feature`. Acceptance: API mode disabled until explicit consent;
+    provider adapter is model-neutral; user sees what data will be sent; manual
+    Swing Card workflow remains available without keys or server config.
+  - `SS-016 Publish README, limitations, and contributor guide`
+    (https://app.notion.com/p/375834a0c8a68152bee5f2842be6c6e0):
+    branch `ss-016-docs`, status `0. Backlog`, empty Pull Request,
+    Task Type `Feature`. Acceptance: README explains purpose, local-first
+    design, safety limits, and setup; limitations page covers pose accuracy,
+    camera setup, and non-medical scope; contributor guide explains task
+    workflow, testing, licenses, and SBOM expectations; trademark/
+    non-affiliation disclaimer is visible.
+- Sensitivity classification:
+  - SS-013 is safety-, privacy-, AI-coaching-, model-provider-, compliance-,
+    dependency/licensing-, user-facing-copy-, runtime-, and remote-API-
+    sensitive. It requires Codex-owned research/spec drafting, primary-source
+    checks for any provider/API facts, Adopt / Revise / Defer / Reject
+    dispositions, a self-contained Claude QA planning handoff, and Claude gate
+    clearance before implementation.
+  - SS-016 is safety-, privacy-, legal/trademark-, medical-scope-,
+    compliance-, licensing/SBOM-, and user-facing-copy-sensitive. It requires
+    Codex-owned docs-claim research/spec drafting, protected-boundary language
+    review, a self-contained Claude QA planning handoff, and Claude gate
+    clearance before implementation.
+- Notion search found prior `SS-TC-009` through `SS-TC-018` records and the
+  Swing Sync Test Cases database, but no obvious dedicated SS-013 or SS-016
+  test case. After task selection, create or reconcile a dedicated
+  acceptance-aligned test case before implementation.
+- User confirmed SS-013 as the next task. Branch `ss-013-model-adapter` was
+  created from current `main`; Notion was moved through spec drafting to
+  `2. QA Planning (Claude)` after Codex created `SS-TC-019` and the
+  research/spec/Claude QA planning artifacts.
 
 Next-task kickoff check on 2026-06-27:
 

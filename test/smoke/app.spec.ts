@@ -325,6 +325,11 @@ test("downloads a local Swing Card PNG and exposes print and prompt controls", a
   await page.getByRole("button", { name: "Open Swing Card export" }).click();
 
   await expect(page.getByRole("heading", { name: "Downloadable summary" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Remote model review unavailable" })).toBeVisible();
+  await expect(page.getByText("No reviewed provider is configured for this story.")).toBeVisible();
+  await expect(page.getByText("Metrics, Warnings and Limitations, Manual Swing Card Prompt")).toBeVisible();
+  await expect(page.getByText("Raw Video, Frame Pixels, Selected Keyframe Images, Pose Landmarks")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remote review unavailable" })).toBeDisabled();
   const controlLayout = await page.evaluate(() => {
     const buttons = [
       ...document.querySelectorAll("[data-download-swing-card], [data-print-swing-card], [data-copy-swing-card-prompt]")
@@ -394,6 +399,8 @@ test("downloads a local Swing Card PNG and exposes print and prompt controls", a
   expect(externalRequests(requests)).toEqual([]);
 
   await expectNoBrowserStorage(page);
+  const localStorageKeys = await page.evaluate(() => Object.keys(localStorage));
+  expect(localStorageKeys).toEqual(["swing-sync:safety-consent:v1"]);
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
 });
 
