@@ -1,22 +1,25 @@
 # Swing Sync Context
 
-Last updated: 2026-06-30
+Last updated: 2026-07-01
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/15
-- Latest merge commit: `ef19c5df819b37669533500fe4f86a031eb817df`
-- Current pushed `main` includes PR #15 merge commit
-  `ef19c5df819b37669533500fe4f86a031eb817df`. Local `main` and
-  `origin/main` are synchronized after the PR #15 merge.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/16
+- Latest merge commit: `a53203788e2cd3f65c25e95a271944b4fb677653`
+- Current `main` includes PR #16 merge commit
+  `a53203788e2cd3f65c25e95a271944b4fb677653`. Local `main` and
+  `origin/main` were synchronized after the PR #16 merge before this
+  post-merge context update.
 - Current completed task:
-  `SS-015 Add browser regression tests for MVP flow`
-- Active task: `SS-013 Add optional model API adapter behind consent gate`
-- Active branch: `ss-013-model-adapter`
-- Active handshake: `2. QA Planning (Claude)`
+  `SS-013 Add optional model API adapter behind consent gate`
+- Active task: none
+- Active branch: none
+- Active handshake: none
 - Active Pull Request: none
+- Remaining visible non-Done backlog task: `SS-016 Publish README,
+  limitations, and contributor guide`.
 
 ## SS-013 Coordination
 
@@ -231,9 +234,21 @@ Kickoff/spec state on 2026-06-30:
   containing prompts, outputs, metrics, landmarks, media details, provider keys,
   or hidden identifiers.
 
-Next owner: GitHub PR checks and merge review. Keep Notion at
-`4. Final Audit (Claude)` until PR #16 checks pass, merge state is known, and
-post-merge synchronization is complete.
+- GitHub PR #16 compliance check passed, and PR #16 merged on 2026-07-01 UTC
+  with merge commit `a53203788e2cd3f65c25e95a271944b4fb677653`.
+- Notion moved to `5. Done` after merge, with a merge-state comment recording
+  PR #16 and merge commit `a53203788e2cd3f65c25e95a271944b4fb677653`.
+- Observability decision: runtime observability remains intentionally limited
+  to local UI status/error states. No telemetry, remote logging, analytics,
+  cloud diagnostics, provider SDKs, provider descriptors, API routes, keys,
+  remote calls, new workers, new dependencies, raw video/frame upload, camera
+  capture, cloud storage, or model/provider assets were added.
+
+Next owner: Codex/user to select the next backlog task. No active task is
+selected in `CONTEXT.md`. Start from synchronized `main`, inspect the Swing
+Sync Notion task database/board, and ask the user to confirm the next task if
+ordering is ambiguous. Current visible remaining non-Done backlog task is
+`SS-016 Publish README, limitations, and contributor guide`.
 
 ## SS-015 Coordination
 
