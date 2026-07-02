@@ -1,27 +1,25 @@
 # Swing Sync Context
 
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/16
-- Latest merge commit: `a53203788e2cd3f65c25e95a271944b4fb677653`
-- Current `main` includes PR #16 merge commit
-  `a53203788e2cd3f65c25e95a271944b4fb677653`. Local `main` and
-  `origin/main` were synchronized after the PR #16 merge before this
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/17
+- Latest merge commit: `60bda6967d34cdf619c3b3e58ba02e64497645f3`
+- Current `main` includes PR #17 merge commit
+  `60bda6967d34cdf619c3b3e58ba02e64497645f3`. Local `main` was
+  fast-forwarded to `origin/main` after the PR #17 merge before this
   post-merge context update.
 - Current completed task:
-  `SS-013 Add optional model API adapter behind consent gate`
-- Active task:
   `SS-016 Publish README, limitations, and contributor guide`
-- Active branch: `ss-016-docs`
-- Active handshake: `4. Final Audit (Claude)` complete; Claude PASS received
-  and PR preparation is next.
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/17
-- Remaining visible non-Done backlog task: none confirmed after SS-016
-  selection.
+- Active task: none selected.
+- Active branch: none.
+- Active handshake: none.
+- Active Pull Request: none.
+- Remaining visible non-Done backlog task: none found in the Notion query
+  after SS-016 was moved to Done.
 
 ## SS-016 Coordination
 
@@ -259,11 +257,18 @@ Kickoff/spec state on 2026-07-01:
 - PR body records that `npm run license:audit` and `npm run sbom:generate`
   were not run because SS-016 has no dependency, bundle, license-policy,
   notice, or SBOM changes.
+- GitHub PR #17 merged on 2026-07-02 UTC with merge commit
+  `60bda6967d34cdf619c3b3e58ba02e64497645f3`.
+- Local `main` was fast-forwarded to `origin/main` at
+  `60bda6967d34cdf619c3b3e58ba02e64497645f3`.
+- Notion moved to `5. Done` after merge, with a merge-state comment recording
+  PR #17, the merge timestamp, the merge commit, and the local `main`
+  fast-forward.
+- Post-merge Notion query found no visible remaining non-Done tasks.
 
-Next owner: GitHub PR checks and merge review for PR #17. Keep SS-016 at
-`4. Final Audit (Claude)` until PR checks pass and the PR is merged. Do not mark
-the story Done until post-merge repository/Notion/CONTEXT state is
-synchronized.
+Next owner: Codex/user to create or select the next backlog task. No active
+task is selected in `CONTEXT.md`; start from synchronized `main` and inspect
+the Swing Sync Notion task database/board before any next implementation.
 
 ## SS-013 Coordination
 
