@@ -15,9 +15,10 @@
     "sbom:generate": "npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file docs/sbom.json --omit dev --validate && node scripts/filter-sbom.js",
     "safety:verify": "node scripts/verify-safety-terms.js",
     "privacy:verify": "node scripts/verify-privacy-boundaries.js",
+    "docs:verify": "node scripts/verify-docs-claims.js",
     "pose-assets:verify": "node scripts/verify-pose-assets.js",
     "fixture:verify": "node scripts/verify-fixtures.js",
-    "compliance:verify": "node scripts/verify-compliance.js && npm run fixture:verify && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify",
+    "compliance:verify": "node scripts/verify-compliance.js && npm run fixture:verify && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify && npm run docs:verify",
     "test:unit": "vitest run",
     "test:smoke": "playwright test"
   },
