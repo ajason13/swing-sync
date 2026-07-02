@@ -1,80 +1,104 @@
 # Swing Sync
 
-Swing Sync is a local-first, open-source AI golf swing analysis coach. The first
-project milestone establishes licensing, dependency governance, SBOM generation,
-and third-party notice handling before analysis features are implemented.
+Swing Sync is a local-first browser app for educational golf swing review. It
+helps users inspect selected swing videos in the browser, review pose-derived
+movement signals, and export a Swing Card for their own practice notes.
 
-## Project Status
+Swing Sync is not medical advice, pain diagnosis, rehabilitation guidance,
+physical therapy, or a substitute for qualified medical care or professional
+golf coaching.
 
-SS-001 is complete and merged in
-[PR #1](https://github.com/ajason13/swing-sync/pull/1). The repository now has
-the Apache-2.0 license, dependency license policy, SBOM workflow, third-party
-notice handling, synthetic license fixtures, and CI compliance gates.
+## Current Capabilities
 
-Current project context and next-task handoff live in [CONTEXT.md](./CONTEXT.md).
+The current app runs local video selection, local Pose Landmarker inference on
+sampled frames, swing phase detection, geometry and tempo metrics, visual
+review surfaces, and local Swing Card export/copy workflows.
 
-## Compliance Commands
+SS-012 added local-only educational coaching prompt and response contracts, but
+no model call is made from those contracts. SS-013 added a provider-neutral
+remote model adapter scaffold behind explicit consent, but the production
+provider registry is empty. There are no configured remote model providers,
+provider SDKs, API keys, server routes, or active hosted-model calls in the
+current production app.
 
-Use Node 22, matching CI:
+## Local-First Design
+
+Raw swing video is not uploaded by default. Any future feature that sends raw
+video, frame pixels, landmarks, metrics, prompts, reports, or model outputs
+outside the browser must use a separate, explicit opt-in flow.
+
+Derived landmarks, metrics, selected images, prompts, reports, and model
+outputs may still be sensitive or identifying. Downloaded exports are controlled
+by the user after they leave the app.
+
+The safety and privacy documents are engineering and product drafts pending
+human/legal review; they are not legal advice and do not guarantee privacy,
+safety, deletion, anonymity, or regulatory compliance.
+
+## Setup
+
+Use Node 22 from `.nvmrc`, matching CI:
 
 ```bash
 nvm use
 npm ci
+npm run dev
 ```
 
+Install the Playwright browser once per development environment when running
+browser smoke tests:
+
 ```bash
-npm run license:audit
-npm run sbom:generate
+npx playwright install chromium
+```
+
+## Verification
+
+Baseline docs or runtime changes should run:
+
+```bash
 npm run build
 npm run compliance:verify
 ```
 
-The project is licensed under Apache-2.0. Raw swing video handling, model terms,
-and sports safety UX are tracked separately from this initial compliance setup.
-
-## Safety Drafts
-
-SS-002 safety and educational-use draft language lives in
-[docs/safety-terms.md](./docs/safety-terms.md). The draft is product-compliance
-language for human/legal review, not legal advice. The current app scaffold
-blocks first analysis behind a local-only educational-use and assumption-of-risk
-acknowledgement.
-
-Gemini Deep Research disposition for SS-002 is tracked in
-[docs/ss-002-research-disposition.md](./docs/ss-002-research-disposition.md)
-so research recommendations stay separate from approved implementation scope.
-
-## Privacy Architecture
-
-SS-003 privacy architecture and video data lifecycle draft guidance lives in
-[docs/privacy-architecture.md](./docs/privacy-architecture.md). It defines
-local-first data classes, default no-upload behavior for raw swing video,
-export and optional remote-sharing boundaries, and deletion-copy limits before
-video analysis features are implemented.
-
-Gemini Deep Research disposition for SS-003 is tracked in
-[docs/ss-003-research-disposition.md](./docs/ss-003-research-disposition.md).
-
-## Local Application Shell
-
-SS-004 provides a mobile-first PWA shell that opens directly to capture/upload,
-processing, review, and export placeholder states. These states do not access,
-store, analyze, export, or remotely share video. The existing local safety
-acknowledgement still blocks the first analysis action path.
-
-Use Node 22 and start the local app:
-
-```bash
-nvm use
-npm run dev
-```
-
-Run the shell's unit and browser smoke tests:
+Useful targeted checks:
 
 ```bash
 npm run test:unit
 npm run test:smoke
+npm run safety:verify
+npm run privacy:verify
+npm run docs:verify
 ```
 
-Install the smoke-test browser once per development environment with
-`npx playwright install chromium`.
+Dependency, bundle, license-policy, or SBOM changes also require:
+
+```bash
+npm run license:audit
+npm run verify:bundle-license-fixture
+npm run sbom:generate
+```
+
+## Documentation
+
+- [Limitations](./docs/limitations.md)
+- [Contributor guide](./CONTRIBUTING.md)
+- [Privacy architecture](./docs/privacy-architecture.md)
+- [Safety terms draft](./docs/safety-terms.md)
+- [Licensing and dependency policy](./docs/licensing.md)
+- [Model licensing policy](./docs/models-licensing.md)
+- [Fixture policy](./docs/fixture-policy.md)
+- [Current project context](./CONTEXT.md)
+
+## License
+
+Swing Sync source code is licensed under Apache-2.0. Dependency, model asset,
+fixture, and reference-reuse rules are documented in the project policy files
+linked above.
+
+## Non-Affiliation
+
+Swing Sync is an independent open-source project. It is not affiliated with,
+endorsed by, sponsored by, or approved by any golf equipment maker, tour,
+league, training organization, model provider, or platform vendor. Third-party
+names, if referenced, belong to their respective owners.

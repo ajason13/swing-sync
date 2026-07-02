@@ -14,12 +14,246 @@ Last updated: 2026-07-01
   post-merge context update.
 - Current completed task:
   `SS-013 Add optional model API adapter behind consent gate`
-- Active task: none
-- Active branch: none
-- Active handshake: none
+- Active task:
+  `SS-016 Publish README, limitations, and contributor guide`
+- Active branch: `ss-016-docs`
+- Active handshake: `4. Final Audit (Claude)` complete; Claude PASS received
+  and PR preparation is next.
 - Active Pull Request: none
-- Remaining visible non-Done backlog task: `SS-016 Publish README,
-  limitations, and contributor guide`.
+- Remaining visible non-Done backlog task: none confirmed after SS-016
+  selection.
+
+## SS-016 Coordination
+
+SS-016 is safety-, privacy-, legal/trademark-, medical-scope-, compliance-,
+licensing/SBOM-, docs-claim-, and user-facing-copy-sensitive. It is a
+documentation-only story to publish README, limitations, and contributor
+guidance while preserving Swing Sync's local-first, no-default-upload posture.
+Treat it as gated: Codex owns research/spec drafting under the current
+LLM-team routing update, and Claude remains the independent QA planning and
+final adversarial audit reviewer.
+
+Acceptance criteria from Notion:
+
+- README explains purpose, local-first design, safety limits, and setup.
+- Limitations page covers pose accuracy, camera setup, and non-medical scope.
+- Contributor guide explains task workflow, testing, licenses, and SBOM
+  expectations.
+- Trademark/non-affiliation disclaimer is visible.
+
+Kickoff/spec state on 2026-07-01:
+
+- Local `main` and `origin/main` were confirmed at
+  `b03efbb46578c19119b4b7d286ebc8be97d6749f` after `git fetch origin`.
+- Worktree was clean before selection except for intentional untracked
+  `docs/agent-guidance/*new-codex-session-prompt.md` files, which remain
+  preserved.
+- Notion page:
+  https://app.notion.com/p/375834a0c8a68152bee5f2842be6c6e0
+- Branch from current `main`: `ss-016-docs`.
+- Pull Request: none.
+- Task Type: `Feature`.
+- Notion task fields were verified before branching: Name
+  `SS-016 Publish README, limitations, and contributor guide`, Branch
+  `ss-016-docs`, Handshake Status `0. Backlog`, Pull Request empty, Task Type
+  `Feature`, and the acceptance criteria above.
+- Notion was moved to `1. Spec Drafting (Gemini)` for board compatibility,
+  with Codex noted as research/spec owner under current routing.
+- Existing `SS-TC-016` was inspected and found to belong to SS-012 coaching
+  prompt/schema coverage, not SS-016 docs coverage.
+- Dedicated test case `SS-TC-020` was created:
+  https://app.notion.com/p/390834a0c8a6810e85ccd2ffeff645bb
+- `SS-TC-020` covers README purpose/local-first/setup/safety limits, limitations
+  page pose/camera/non-medical scope, contributor workflow/testing/license/SBOM
+  expectations, visible trademark/non-affiliation disclaimer, and protected
+  no-runtime-change/no-telemetry/no-remote-sharing/no-new-dependency/no-unsafe-
+  claim boundaries.
+- Codex-owned research/disposition note:
+  `docs/ss-016-research-disposition.md`.
+- Candidate preimplementation spec:
+  `docs/ss-016-preimplementation-spec.md`.
+- Self-contained Claude QA planning handoff:
+  `docs/ss-016-claude-qa-planning-prompt.md`.
+- Source checks were recorded against `README.md`,
+  `docs/privacy-architecture.md`, `docs/safety-terms.md`,
+  `docs/licensing.md`, `docs/models-licensing.md`,
+  `docs/fixture-policy.md`, `package.json`, and
+  `.github/pull_request_template.md`.
+- Codex dispositions adopt current-MVP README updates, local-first/no-default-
+  upload wording, a limitations page, contributor workflow/testing/license/SBOM
+  documentation, and visible non-affiliation language; revise unqualified "AI
+  coach" wording into educational/local-first copy; reject absolute privacy,
+  deletion, anonymity, safety, medical, professional-coaching, correctness,
+  legal, compliance, or trademark-clearance claims; reject telemetry, hosted
+  analytics, remote logging, cloud diagnostics, cloud storage, hidden
+  identifiers, new dependencies, camera capture, SDK/provider/model assets,
+  workers, and remote-sharing changes for SS-016.
+- Observability decision: SS-016 is docs-only. Do not implement new runtime
+  logging. Document the existing debugging model only: local test output,
+  browser devtools, sanitized UI status/error codes, and CI/browser failure
+  artifacts. Do not claim hidden logging, remote diagnostics, telemetry, or
+  persistent debug artifacts exist.
+- Notion moved to `2. QA Planning (Claude)` after Codex completed the
+  research/spec artifacts and Claude QA planning prompt.
+- Claude QA planning returned FAIL with five blockers:
+  - B1: no draft copy existed for required sections except the trademark
+    paragraph.
+  - B2: no structural/automated prohibited-claim enforcement existed; manual
+    review alone was fail-open for the sensitive docs story.
+  - B3: capability-summary wording risked overclaiming active AI coaching
+    because SS-013's remote model adapter remains an inactive scaffold with an
+    empty production provider registry.
+  - B4: contributor guide placement was unresolved.
+  - B5: `SS-TC-020` was a single opaque test case instead of decomposed
+    required-disclosure and prohibited-claim-category coverage.
+- Claude QA response record:
+  `docs/ss-016-claude-qa-response.md`.
+- Codex accepted B1-B5 as valid and revised
+  `docs/ss-016-preimplementation-spec.md` to include exact draft README,
+  `docs/limitations.md`, and root-level `CONTRIBUTING.md` prose; lock the
+  contributor path to root `CONTRIBUTING.md`; require dependency-free
+  `scripts/verify-docs-claims.js`; add `npm run docs:verify`; wire
+  `docs:verify` into `compliance:verify`; enforce required headings, canonical
+  required strings, draft safety/privacy banners, required links, and
+  prohibited-claim categories; and decompose `SS-TC-020` sub-cases.
+- Codex revised `docs/ss-016-research-disposition.md` to reject manual-only
+  claim enforcement, unresolved contributor-guide placement, a single opaque
+  docs test case, and active-remote-AI-coach wording.
+- `SS-TC-020` was revised in Notion with named sub-cases for required README,
+  limitations, and `CONTRIBUTING.md` sections; canonical trademark,
+  local-first, non-medical, and draft-review strings; negative
+  privacy/anonymity, deletion/security, medical/injury, correctness/performance,
+  legal/compliance/trademark-clearance, telemetry/analytics, and absolute
+  remote-boundary claim checks; and `docs:verify` compliance wiring.
+- The initial Claude QA planning prompt is superseded for paste use. Focused
+  B1-B5 re-review prompt:
+  `docs/ss-016-claude-qa-rereview-prompt.md`.
+- Claude focused B1-B5 re-review returned FAIL. B1, B3, and B4 are closed; B5
+  is substantially closed but needed one addition; B2 remains blocking as B6.
+  New blockers:
+  - B6: the proposed `docs:verify` banned-pattern list would false-positive
+    against three draft sentences (`anonymous`, `diagnosis`, and
+    `hidden identifiers`) and the safety/privacy link rule was ambiguous.
+  - B7: `SS-TC-020` needed a golden regression sub-case proving
+    `docs:verify` exits zero against exact final approved public docs.
+- Codex accepted B6-B7 as valid and revised
+  `docs/ss-016-preimplementation-spec.md`: the three colliding draft sentences
+  were reworded instead of adding bespoke exceptions; safety/privacy links are
+  now required in all three public docs with explicit path forms for README,
+  limitations, and `CONTRIBUTING.md`; and `SS-TC-020` now requires a golden
+  `docs:verify` zero-exit regression against exact final approved README,
+  limitations, and `CONTRIBUTING.md` content.
+- `docs/ss-016-research-disposition.md` and
+  `docs/ss-016-claude-qa-response.md` were updated with the B6-B7 disposition.
+- The focused B1-B5 re-review prompt is superseded for paste use. Second
+  focused B6-B7 re-review prompt:
+  `docs/ss-016-claude-qa-second-rereview-prompt.md`.
+- B6/B7 planning verification on 2026-07-01:
+  - Targeted text check confirms the old B6 collision phrases are absent from
+    `docs/ss-016-preimplementation-spec.md`. They remain only in the second
+    re-review prompt as quoted previous-draft evidence.
+  - Manual dry-run of the complete banned-pattern list against the exact
+    revised final draft public docs text found zero unresolved matches. Allowed
+    matches are limited to the canonical non-medical and draft-review exception
+    sentences plus the future checker's own banned-term fixture strings.
+  - `git diff --check` PASS.
+- Claude second focused B6-B7 re-review returned FAIL with one new blocker:
+  - B8: the `docs/limitations.md` intro paragraph still contained `diagnose`,
+    colliding with the medical/injury banned-term list outside the canonical
+    non-medical exception.
+- Codex accepted B8 as valid and revised
+  `docs/ss-016-preimplementation-spec.md` to trim the limitations intro instead
+  of adding another exception or near-miss phrase. The revised intro says the
+  page supports practice notes and visual inspection, then points to the
+  detailed educational, safety, privacy, and fixture limits below.
+- `docs/ss-016-research-disposition.md` and
+  `docs/ss-016-claude-qa-response.md` were updated with the B8 disposition.
+- The second focused B6-B7 re-review prompt is superseded for paste use. Final
+  focused B8 re-review prompt:
+  `docs/ss-016-claude-qa-b8-rereview-prompt.md`.
+- B8 planning verification on 2026-07-01:
+  - A full extracted-draft dry-run of the complete banned-pattern list against
+    the exact revised final draft public docs text reported zero unresolved
+    matches.
+  - Allowed matches are limited to the exact canonical non-medical exception
+    sentence variants, the exact canonical draft-review exception sentence
+    variants, and future checker fixture strings.
+  - `git diff --check` PASS.
+- Claude focused B8 re-review returned PASS, closed B8, and cleared SS-016 for
+  implementation.
+- Codex implemented the approved docs-only scope:
+  - `README.md` now explains current purpose, local-first design, setup,
+    verification, safety/non-medical boundaries, current local capabilities,
+    inactive SS-013 remote model scaffold state, documentation links, license,
+    and visible trademark/non-affiliation disclaimer.
+  - `docs/limitations.md` covers pose and metric limits, camera setup,
+    educational/non-medical scope, privacy/export limits, remote-review limits,
+    fixture/test limits, and draft-review status.
+  - Root `CONTRIBUTING.md` covers environment setup, task workflow, Notion and
+    `CONTEXT.md` sync, sensitive-story gates, Claude audit/re-review,
+    testing, licensing/reference/fixture/model/SBOM expectations, safety/privacy
+    claim boundaries, observability wording, and PR requirements.
+  - `scripts/verify-docs-claims.js` enforces required docs, headings, canonical
+    strings, safety/privacy links, safety/privacy draft banners, prohibited
+    claim patterns, and negative fixture coverage.
+  - `package.json` adds `npm run docs:verify` and wires it into
+    `npm run compliance:verify`.
+- Runtime observability decision: SS-016 is docs-only. No runtime
+  observability, telemetry, remote logging, analytics, cloud diagnostics,
+  persistent debug artifacts, or console logging was added. Public docs describe
+  only existing local test output, browser devtools, sanitized UI status/error
+  codes, and CI/browser failure artifacts.
+- No runtime behavior, dependencies, SDK/provider/model assets, workers, camera
+  capture, service workers, API routes, secrets, raw media fixtures, cloud
+  storage, telemetry, hosted analytics, remote logging, cloud diagnostics,
+  hidden identifiers, or remote-sharing behavior were added.
+- Implementation verification on 2026-07-01:
+  - `npm run docs:verify` PASS (`docs:verify passed`).
+  - `npm run safety:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS, including `docs:verify` through the
+    compliance path.
+- Final Claude implementation audit handoff:
+  `docs/ss-016-claude-audit-prompt.md`.
+- Notion moved to `4. Final Audit (Claude)`.
+- Claude final implementation audit returned FAIL after confirming B1-B8 are
+  correctly implemented. New blocker:
+  - B9: `docs:verify` lacked negative-path test evidence for missing required
+    public docs, missing headings, missing canonical strings, missing required
+    links, and missing draft banners.
+- Codex accepted B9 as valid and responded:
+  - `scripts/verify-docs-claims.js` now exports pure `verifyDocsClaims` for
+    injected file-reader tests while preserving CLI disk-read and exit-code
+    behavior.
+  - Missing safety/privacy draft banners now return structured errors instead
+    of relying on unhandled `readFileSync` exceptions.
+  - `test/unit/docs-claims.test.ts` covers current approved docs success,
+    missing required public file, missing required heading, missing canonical
+    string, missing required link, and missing draft banner negative paths.
+- B9 verification on 2026-07-01:
+  - `npm run test:unit -- docs-claims` PASS (6 tests).
+  - `npm run docs:verify` PASS.
+  - `npm run test:unit` PASS (153 tests across 14 test files).
+  - `npm run safety:verify` PASS.
+  - `npm run privacy:verify` PASS.
+  - `git diff --check` PASS.
+  - `npm run build` PASS.
+  - `npm run compliance:verify` PASS, including `docs:verify`.
+- The initial final audit prompt is superseded for paste use. Focused B9
+  re-review prompt:
+  `docs/ss-016-claude-rereview-prompt.md`.
+- Claude focused B9 implementation re-review returned PASS. B1-B9 are closed,
+  and SS-016 is cleared for PR preparation.
+- Claude confirmed the `verifyDocsClaims(fileReader)` refactor preserves CLI
+  behavior, the negative-path tests genuinely exercise the missing file,
+  heading, canonical string, required link, and draft-banner branches, and no
+  new protected-boundary regressions were introduced.
+
+Next owner: Codex PR preparation for SS-016. Do not mark the story Done until
+the PR is created, merged, and post-merge repository/Notion/CONTEXT state is
+synchronized.
 
 ## SS-013 Coordination
 
