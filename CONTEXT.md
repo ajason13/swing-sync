@@ -19,7 +19,7 @@ Last updated: 2026-07-01
 - Active branch: `ss-016-docs`
 - Active handshake: `4. Final Audit (Claude)` complete; Claude PASS received
   and PR preparation is next.
-- Active Pull Request: none
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/17
 - Remaining visible non-Done backlog task: none confirmed after SS-016
   selection.
 
@@ -250,9 +250,19 @@ Kickoff/spec state on 2026-07-01:
   behavior, the negative-path tests genuinely exercise the missing file,
   heading, canonical string, required link, and draft-banner branches, and no
   new protected-boundary regressions were introduced.
+- Pull Request opened:
+  https://github.com/ajason13/swing-sync/pull/17.
+- Branch commit pushed for PR #17:
+  `b5f7ea3f06674ae67170b7969afc909136da069f`.
+- Notion Pull Request property was updated with PR #17, and a PR-created
+  comment was added.
+- PR body records that `npm run license:audit` and `npm run sbom:generate`
+  were not run because SS-016 has no dependency, bundle, license-policy,
+  notice, or SBOM changes.
 
-Next owner: Codex PR preparation for SS-016. Do not mark the story Done until
-the PR is created, merged, and post-merge repository/Notion/CONTEXT state is
+Next owner: GitHub PR checks and merge review for PR #17. Keep SS-016 at
+`4. Final Audit (Claude)` until PR checks pass and the PR is merged. Do not mark
+the story Done until post-merge repository/Notion/CONTEXT state is
 synchronized.
 
 ## SS-013 Coordination
