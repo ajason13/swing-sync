@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-07-02
+Last updated: 2026-07-03
 
 ## Current State
 
@@ -18,8 +18,54 @@ Last updated: 2026-07-02
 - Active branch: none.
 - Active handshake: none.
 - Active Pull Request: none.
-- Remaining visible non-Done backlog task: none found in the Notion query
-  after SS-016 was moved to Done.
+- Remaining visible non-Done backlog tasks: SS-017 through SS-022, created
+  from the manual app-readiness gap review on 2026-07-03.
+
+## Current Backlog Snapshot
+
+Created from the post-SS-016 manual readiness review on 2026-07-03. All are in
+Notion with `Handshake Status` `0. Backlog`, empty Pull Request, and the listed
+branch names:
+
+- `SS-017 Document production deployment, backend boundary, and security-header
+  posture`
+  - Notion: https://app.notion.com/p/392834a0c8a68182a201f7b30fa45954
+  - Branch: `ss-017-production-deployment-boundary`
+  - Task Type: `Feature`
+  - Scope: document frontend-only/no-backend production posture, deployer-owned
+    security headers, and future backend architecture gates.
+- `SS-018 Refactor frontend app shell into maintainable UI/state modules`
+  - Notion: https://app.notion.com/p/392834a0c8a68115b23bda9510e07958
+  - Branch: `ss-018-frontend-architecture`
+  - Task Type: `Refactor`
+  - Scope: split `src/main.ts` orchestration pressure while preserving current
+    consent, local processing, phase review, Swing Card, and remote-unavailable
+    behavior.
+- `SS-019 Perform accessibility and responsive design hardening`
+  - Notion: https://app.notion.com/p/392834a0c8a6814db2f6ea28ae195f75
+  - Branch: `ss-019-accessibility-design-hardening`
+  - Task Type: `Feature`
+  - Scope: keyboard, focus, screen-reader semantics, contrast, mobile layout,
+    long text, and error-state review/hardening.
+- `SS-020 Prepare human legal/privacy/safety release review gate`
+  - Notion: https://app.notion.com/p/392834a0c8a6818b9f8cecd0debacbf6
+  - Branch: `ss-020-release-review-gate`
+  - Task Type: `Research`
+  - Scope: human review package for public safety, privacy, medical-scope,
+    non-affiliation, limitation, and SS-002 legal-review gates.
+- `SS-021 Add clear-local-data UX and storage lifecycle controls`
+  - Notion: https://app.notion.com/p/392834a0c8a6812a9e4af6cd4eeb8358
+  - Branch: `ss-021-clear-local-data`
+  - Task Type: `Feature`
+  - Scope: clear Swing Sync app-level local state with accurate browser/device
+    storage-limit copy and fail-closed storage-error handling.
+- `SS-022 Define real-world pose, phase, and metric accuracy validation
+  protocol`
+  - Notion: https://app.notion.com/p/392834a0c8a681f798eafe66945041d6
+  - Branch: `ss-022-accuracy-validation-protocol`
+  - Task Type: `Research`
+  - Scope: validation protocol and evidence language for real-world pose,
+    phase, and metric review without overclaiming fixture coverage.
 
 ## SS-016 Coordination
 
