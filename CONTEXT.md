@@ -6,21 +6,20 @@ Last updated: 2026-07-04
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/17
-- Latest merge commit: `60bda6967d34cdf619c3b3e58ba02e64497645f3`
-- Current `main` includes PR #17 merge commit
-  `60bda6967d34cdf619c3b3e58ba02e64497645f3`. Local `main` was
-  fast-forwarded to `origin/main` after the PR #17 merge before this
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/18
+- Latest merge commit: `b59842940b7188c7b325a98e2b857e19b6eeadc3`
+- Current `main` includes PR #18 merge commit
+  `b59842940b7188c7b325a98e2b857e19b6eeadc3`. Local `main` was
+  fast-forwarded to `origin/main` by the PR #18 merge flow before this
   post-merge context update.
 - Current completed task:
-  `SS-016 Publish README, limitations, and contributor guide`
-- Active task:
   `SS-017 Document production deployment, backend boundary, and security-header
   posture`
-- Active branch: `ss-017-production-deployment-boundary`
-- Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: https://github.com/ajason13/swing-sync/pull/18
-- Remaining visible non-Done backlog tasks: SS-017 through SS-022, created
+- Active task: none selected.
+- Active branch: none.
+- Active handshake: none.
+- Active Pull Request: none.
+- Remaining visible non-Done backlog tasks: SS-018 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
 ## SS-017 Coordination
@@ -275,28 +274,28 @@ Kickoff/spec state on 2026-07-03:
 - Notion Pull Request property was updated with PR #18 and a PR-created
   status comment was added. SS-017 remains in `4. Final Audit (Claude)` until
   the PR is merged and post-merge Notion/CONTEXT synchronization is complete.
+- PR #18 merged on 2026-07-04:
+  https://github.com/ajason13/swing-sync/pull/18
+- Merge commit: `b59842940b7188c7b325a98e2b857e19b6eeadc3`.
+- GitHub `compliance` check passed before merge.
+- Local `main` was fast-forwarded to the merged `origin/main` state.
+- Notion SS-017 Pull Request property points to PR #18, a merge-complete
+  comment was added, and Handshake Status was moved to `5. Done`.
 - Non-blocking Claude recommendations after sign-off: consider adding
   individual coverage for all production-header-overclaim phrases and future
   word-boundary anchoring for `terms`/`bannedPatterns`; neither is required
   for SS-017 sign-off.
 
-Next owner: Codex merge and post-merge synchronization. Keep SS-017 at
-`4. Final Audit (Claude)` until PR #18 is merged and merge state is accurately
-recorded.
+SS-017 is complete. Next owner: Codex/user task selection from the remaining
+backlog. Default next candidate is SS-018 unless the user selects a different
+story.
 
 ## Current Backlog Snapshot
 
-Created from the post-SS-016 manual readiness review on 2026-07-03. All are in
-Notion with `Handshake Status` `0. Backlog`, empty Pull Request, and the listed
-branch names:
+Created from the post-SS-016 manual readiness review on 2026-07-03. SS-017 is
+Done via PR #18. The remaining items are in Notion with `Handshake Status`
+`0. Backlog`, empty Pull Request, and the listed branch names:
 
-- `SS-017 Document production deployment, backend boundary, and security-header
-  posture`
-  - Notion: https://app.notion.com/p/392834a0c8a68182a201f7b30fa45954
-  - Branch: `ss-017-production-deployment-boundary`
-  - Task Type: `Feature`
-  - Scope: document frontend-only/no-backend production posture, deployer-owned
-    security headers, and future backend architecture gates.
 - `SS-018 Refactor frontend app shell into maintainable UI/state modules`
   - Notion: https://app.notion.com/p/392834a0c8a68115b23bda9510e07958
   - Branch: `ss-018-frontend-architecture`
