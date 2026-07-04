@@ -28,6 +28,19 @@ relevant current context, verification, and a focused diff.
 Browser-chat prompts must embed all required repository context; Gemini and
 Claude Chat do not have filesystem or GitHub access.
 
+After Claude or implementation feedback, convert repeatable lessons into
+durable process updates. Prefer this loop: classify each finding as blocker,
+non-blocking recommendation, or future work; update the spec and tests before
+implementation when the finding changes acceptance or verification; get a
+focused re-review for sensitive stories; then capture reusable rules in
+`CONTEXT.md` and, when they affect future delivery, this file or the relevant
+`.agents/skills/*/SKILL.md`. Do not rely on chat memory alone.
+
+For sensitive verifier or documentation changes, audit packets should include
+every changed tracked file or an explicit rationale for omission. Test evidence
+should include named tests mapped to acceptance criteria or audit blockers when
+coverage is part of the sign-off decision.
+
 ## Product And Compliance Boundaries
 
 Preserve the local-first rules in

@@ -81,6 +81,22 @@ Use the existing generic skills instead of duplicating their guidance:
      `docs/ss-###-claude-rereview-prompt.md` containing prior findings, applied
      fixes, relevant current snippets, verification, and a focused diff. Mark
      superseded prompt files with a clear do-not-paste redirect.
+   - When Claude flags a gap that is likely to recur, update the story spec,
+     test plan, and durable guidance before implementation resumes. Do not
+     depend on the current chat thread as the only memory of the rule.
+   - For source-sensitive audits, enumerate every changed tracked file in the
+     prompt. Include the full focused diff for coordination files such as
+     `CONTEXT.md` when they changed, or state exactly why a changed file is
+     outside the audit scope.
+   - For verifier changes, specify the shared registration/config mechanism
+     before implementation. Prefer extending existing declarative config and
+     injected file-reader paths over one-off checks. If cross-file assertions
+     are needed, name them in the config and test source-read, target-read,
+     failure, and positive paths.
+   - For parser or extractor logic in verification scripts, add adversarial
+     unit tests for source formatting, missing inputs, empty values, embedded
+     delimiters, and fail-closed behavior. Named verbose test output should be
+     available when the audit depends on coverage evidence.
 
 6. **Prepare PR and synchronize**
    - Use `$pr-prep`; include scope, verification, risk, deferred work, audit
@@ -91,6 +107,27 @@ Use the existing generic skills instead of duplicating their guidance:
      state are accurately recorded.
    - After merge, update local `main`, synchronize `CONTEXT.md` and Notion, mark
      the task Done, and identify the next task and branch.
+   - Treat PR creation, merge, and post-merge context synchronization as
+     separate state changes. Record the PR URL before merge, then record the
+     merge commit and final Notion `5. Done` state after merge.
+
+## Learn From Feedback
+
+Use audit and reviewer feedback as process input:
+
+- Convert one-off findings into the smallest durable rule that would have
+  prevented the issue.
+- Put behavior-specific protection in tests or verification scripts when
+  possible; put workflow-specific protection in `AGENTS.md`, this skill, or
+  `CONTEXT.md`.
+- Keep blocker fixes separate from non-blocking recommendations and future
+  hardening so current acceptance criteria do not silently expand.
+- When a new helper, verifier category, parser, or checklist is introduced
+  during implementation, either add it to the reviewed spec and test evidence
+  or defer it. Unreviewed "helpful" mechanisms create avoidable audit churn.
+- For sensitive documentation stories, prefer a single source of truth plus
+  automated non-duplication checks over duplicating security, privacy, or
+  deployment values in prose.
 
 ## Enforce Swing Sync Gates
 

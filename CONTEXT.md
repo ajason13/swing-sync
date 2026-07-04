@@ -290,6 +290,37 @@ SS-017 is complete. Next owner: Codex/user task selection from the remaining
 backlog. Default next candidate is SS-018 unless the user selects a different
 story.
 
+## Delivery Learnings
+
+SS-017 feedback-retention note, added 2026-07-04:
+
+- Sensitive docs/verifier stories should specify verifier architecture before
+  implementation. Name the shared config registration points, fixture paths,
+  and injected file-reader behavior instead of leaving Codex to invent a
+  bespoke check path during implementation.
+- Cross-file documentation claims should prefer one canonical source plus an
+  automated non-duplication check. SS-017 used `index.html` as the CSP source
+  and verified that `docs/deployment.md` does not copy the literal policy.
+- Parser or extractor logic in verification scripts needs adversarial tests
+  for formatting variation, missing inputs, empty values, embedded delimiters,
+  and fail-closed behavior. Named verbose test output should be captured when
+  the audit depends on exact scenario coverage.
+- Claude audit prompts for sensitive work must include every changed tracked
+  file or explicitly justify omissions. Coordination files such as
+  `CONTEXT.md` can contain scope-sensitive claims and should be included when
+  they changed.
+- New verifier helpers, banned-claim categories, or checklist mechanisms added
+  during implementation should be added to the reviewed spec and backed by
+  explicit tests, or deferred. Unreviewed helpful mechanisms create audit
+  friction even when they are technically correct.
+- PR creation, merge, and post-merge context synchronization are separate
+  state transitions. Record the PR URL before merge, then record the merge
+  commit, Notion `5. Done`, and post-merge `main` state after merge.
+- Recommended self-improvement loop: classify feedback, fix the spec or tests
+  before code when acceptance changes, implement the focused change, rerun
+  relevant verification, get focused re-review for sensitive work, and capture
+  the repeatable lesson in durable guidance instead of relying on chat memory.
+
 ## Current Backlog Snapshot
 
 Created from the post-SS-016 manual readiness review on 2026-07-03. SS-017 is
