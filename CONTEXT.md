@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 ## Current State
 
@@ -14,10 +14,12 @@ Last updated: 2026-07-03
   post-merge context update.
 - Current completed task:
   `SS-016 Publish README, limitations, and contributor guide`
-- Active task: none selected.
-- Active branch: none.
-- Active handshake: none.
-- Active Pull Request: none.
+- Active task:
+  `SS-017 Document production deployment, backend boundary, and security-header
+  posture`
+- Active branch: `ss-017-production-deployment-boundary`
+- Active handshake: `4. Final Audit (Claude)`
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/18
 - Remaining visible non-Done backlog tasks: SS-017 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
@@ -266,13 +268,21 @@ Kickoff/spec state on 2026-07-03:
 - Claude focused B9-B11 re-review returned PASS. B1-B11 are closed, no
   remaining blockers or B1-B8 regressions were identified, and SS-017 is
   cleared for PR preparation.
+- SS-017 PR created on 2026-07-04:
+  https://github.com/ajason13/swing-sync/pull/18
+- Branch pushed at commit `d503a6f11b50df36f2952a5eed04686f7bef64e3`
+  (`SS-017 document deployment boundary`).
+- Notion Pull Request property was updated with PR #18 and a PR-created
+  status comment was added. SS-017 remains in `4. Final Audit (Claude)` until
+  the PR is merged and post-merge Notion/CONTEXT synchronization is complete.
 - Non-blocking Claude recommendations after sign-off: consider adding
   individual coverage for all production-header-overclaim phrases and future
   word-boundary anchoring for `terms`/`bannedPatterns`; neither is required
   for SS-017 sign-off.
 
-Next owner: Codex PR preparation. Keep SS-017 at `4. Final Audit (Claude)`
-until PR preparation, PR review, and merge state are accurately recorded.
+Next owner: Codex merge and post-merge synchronization. Keep SS-017 at
+`4. Final Audit (Claude)` until PR #18 is merged and merge state is accurately
+recorded.
 
 ## Current Backlog Snapshot
 
