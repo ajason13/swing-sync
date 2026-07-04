@@ -37,7 +37,8 @@ safety, deletion, anonymity, or regulatory compliance.
 
 ## Setup
 
-Use Node 22 from `.nvmrc`, matching CI:
+Use Node 22 from `.nvmrc`, matching CI. These commands are for local
+development, not production hosting configuration:
 
 ```bash
 nvm use
@@ -82,6 +83,7 @@ npm run sbom:generate
 ## Documentation
 
 - [Limitations](./docs/limitations.md)
+- [Deployment](./docs/deployment.md)
 - [Contributor guide](./CONTRIBUTING.md)
 - [Privacy architecture](./docs/privacy-architecture.md)
 - [Safety terms draft](./docs/safety-terms.md)
