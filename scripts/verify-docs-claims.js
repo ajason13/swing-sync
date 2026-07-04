@@ -19,6 +19,12 @@ const requiredStrings = {
     "The safety and privacy documents are engineering and product drafts pending\n" +
     "human/legal review; they are not legal advice and do not guarantee privacy,\n" +
     "safety, deletion, anonymity, or regulatory compliance.",
+  deploymentDraft:
+    "**DRAFT - pending human security/privacy review before public production hosting.**",
+  deploymentNoGuarantee:
+    "This deployment guidance is product and engineering documentation, not legal,\n" +
+    "security, privacy, deletion, anonymity, medical, trademark-clearance, or\n" +
+    "regulatory-compliance advice or a guarantee.",
 };
 
 const files = {
@@ -39,7 +45,17 @@ const files = {
       "draftReview",
       "readmeNonMedical",
     ],
-    links: ["./docs/safety-terms.md", "./docs/privacy-architecture.md"],
+    links: [
+      "./docs/safety-terms.md",
+      "./docs/privacy-architecture.md",
+      "./docs/deployment.md",
+    ],
+    placement: [
+      {
+        heading: "## Documentation",
+        text: "- [Deployment](./docs/deployment.md)",
+      },
+    ],
   },
   "docs/limitations.md": {
     headings: [
@@ -67,6 +83,53 @@ const files = {
     ],
     requiredStrings: ["localFirst", "nonMedical"],
     links: ["docs/safety-terms.md", "docs/privacy-architecture.md"],
+  },
+  "docs/deployment.md": {
+    headings: [
+      "# Deployment",
+      "## Draft Review Status",
+      "## Current Production Posture",
+      "## No-Backend Implications",
+      "## Local Development",
+      "## Production Hosting Requirements",
+      "## Security Headers",
+      "## Local-First Data Boundary",
+      "## Backend Architecture Review Gates",
+      "## Non-Goals For SS-017",
+      "## Verification",
+    ],
+    requiredStrings: ["deploymentDraft", "deploymentNoGuarantee", "localFirst"],
+    links: ["./privacy-architecture.md", "./safety-terms.md"],
+    terms: [
+      "auth",
+      "accounts",
+      "secrets",
+      "rate limiting",
+      "server logs",
+      "data-retention",
+      "Content-Security-Policy",
+      "Strict-Transport-Security",
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "Permissions-Policy",
+      "APIs",
+      "remote model providers",
+      "cloud storage",
+      "telemetry",
+      "analytics",
+      "remote logging",
+      "CSP report collection",
+      "retention",
+      "deletion",
+      "raw swing video",
+    ],
+    placement: [
+      {
+        heading: "## Draft Review Status",
+        text: requiredStrings.deploymentDraft,
+        firstParagraph: true,
+      },
+    ],
   },
 };
 
@@ -131,6 +194,27 @@ const bannedPatterns = {
     "impossible to send",
     "no data ever leaves",
   ],
+  "security guarantee": [
+    "secures your data",
+    "prevents attacks",
+    "hack-proof",
+    "hack proof",
+    "breach-proof",
+    "breach proof",
+    "protected against breaches",
+    "stops attackers",
+    "guaranteed protection",
+  ],
+  "production header overclaim": [
+    "swing sync is deployed with hsts",
+    "swing sync is protected by production http security headers",
+    "swing sync ships with csp enforced in production",
+    "production headers are already configured",
+    "production security headers are configured",
+    "hsts is enabled in production",
+    "csp is enforced in production",
+    "content-security-policy is enforced in production",
+  ],
 };
 
 const allowedMatchUnits = new Set(
@@ -140,6 +224,14 @@ const allowedMatchUnits = new Set(
     "Swing Sync is for educational golf swing review. It is not medical advice, pain diagnosis, rehabilitation guidance, physical therapy, or a substitute for qualified medical care or professional golf coaching.",
     "The safety and privacy documents are engineering and product drafts pending human/legal review; they are not legal advice and do not guarantee privacy, safety, deletion, anonymity, or regulatory compliance.",
     "The safety and privacy documents are engineering and product drafts pending human/legal review; they are not legal advice and do not guarantee privacy, safety, deletion, anonymity, or regulatory compliance. SS-002 legal/human review remains a pre-release gate for assumption-of-risk and release-of-liability language.",
+    "This deployment guidance is product and engineering documentation, not legal, security, privacy, deletion, anonymity, medical, trademark-clearance, or regulatory-compliance advice or a guarantee.",
+    "Swing Sync is currently a static frontend browser app for deployment purposes. SS-017 does not add an application backend, server routes, hosted functions, accounts, authentication, server-side secrets, telemetry, analytics, remote logging, cloud storage, model providers, provider SDKs, or remote sharing.",
+    "SS-017 does not add an application backend, server routes, hosted functions, accounts, authentication, server-side secrets, telemetry, analytics, remote logging, cloud storage, model providers, provider SDKs, or remote sharing.",
+    "Do not place app secrets, provider keys, model-provider credentials, account tokens, telemetry endpoints, analytics collectors, remote logging sinks, cloud storage buckets, or remote sharing destinations into production hosting as part of SS-017.",
+    "A separate backend architecture review is required before any future feature adds or changes: - auth, accounts, roles, sessions, identity providers, or account recovery; - server APIs, hosted functions, queues, jobs, webhooks, or server middleware; - server-side secrets, API keys, signing keys, tokens, credential storage, or key rotation; - app-owned rate limiting, abuse controls, quotas, or enforcement logs; - application server logs, CSP report collection, Network Error Logging, telemetry, analytics, cloud diagnostics, or remote error reporting; - cloud storage, sync, backups, retention, deletion, export, or account data workflows; - remote model providers, provider SDKs, model assets, hosted inference, or provider-specific terms; - raw-video, frame-pixel, landmark, metric, prompt, report, or model-output remote sharing; or - production host changes that alter security headers, origins, redirects, caching, service workers, or data flow.",
+    "- auth, accounts, roles, sessions, identity providers, or account recovery; - server APIs, hosted functions, queues, jobs, webhooks, or server middleware; - server-side secrets, API keys, signing keys, tokens, credential storage, or key rotation; - app-owned rate limiting, abuse controls, quotas, or enforcement logs; - application server logs, CSP report collection, Network Error Logging, telemetry, analytics, cloud diagnostics, or remote error reporting; - cloud storage, sync, backups, retention, deletion, export, or account data workflows; - remote model providers, provider SDKs, model assets, hosted inference, or provider-specific terms; - raw-video, frame-pixel, landmark, metric, prompt, report, or model-output remote sharing; or - production host changes that alter security headers, origins, redirects, caching, service workers, or data flow.",
+    "application server logs, CSP report collection, Network Error Logging, telemetry, analytics, cloud diagnostics, or remote error reporting;",
+    "SS-017 does not add backend services, auth, accounts, secrets, telemetry, analytics, remote logging, cloud storage, provider SDKs, model providers, remote sharing, CSP reporting endpoints, Network Error Logging, or production hosting provider configuration files.",
   ].map(normalizeText),
 );
 
@@ -153,7 +245,19 @@ const negativeFixtures = {
   "telemetry/analytics":
     "Swing Sync uses telemetry and remote logging with a hidden identifier.",
   "absolute remote boundary": "Raw video cannot be uploaded by the app.",
+  "security guarantee": "Swing Sync is hack-proof and secures your data.",
+  "production header overclaim":
+    "Swing Sync ships with CSP enforced in production and production headers are already configured.",
 };
+
+const crossFileChecks = [
+  {
+    sourcePath: "index.html",
+    targetPath: "docs/deployment.md",
+    extract: extractCspMetaContent,
+    description: "CSP meta directive string",
+  },
+];
 
 export function verifyDocsClaims(fileReader = readFileFromDisk) {
   const errors = [];
@@ -190,6 +294,16 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
       if (!content.includes(link)) {
         errors.push(`${filePath}: missing required link ${link}`);
       }
+    }
+
+    for (const term of config.terms ?? []) {
+      if (!content.toLowerCase().includes(term.toLowerCase())) {
+        errors.push(`${filePath}: missing required term ${term}`);
+      }
+    }
+
+    for (const placement of config.placement ?? []) {
+      assertPlacement(filePath, content, placement, errors);
     }
 
     for (const unit of scanUnits(content)) {
@@ -232,6 +346,31 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
     }
   }
 
+  for (const check of crossFileChecks) {
+    const source = fileReader(check.sourcePath);
+    const target = fileReader(check.targetPath);
+    if (source === null) {
+      errors.push(`${check.sourcePath}: required file is missing`);
+      continue;
+    }
+    if (target === null) {
+      errors.push(`${check.targetPath}: required file is missing`);
+      continue;
+    }
+    const extracted = check.extract(source);
+    if (!extracted) {
+      errors.push(
+        `${check.sourcePath}: could not extract non-empty ${check.description}`,
+      );
+      continue;
+    }
+    if (target.includes(extracted)) {
+      errors.push(
+        `${check.targetPath}: duplicates ${check.description} from ${check.sourcePath}`,
+      );
+    }
+  }
+
   return errors;
 }
 
@@ -265,6 +404,58 @@ function assertDraftBanner(filePath, requiredBanner, fileReader, errors) {
   if (!content.includes(requiredBanner)) {
     errors.push(`${filePath}: missing required draft banner`);
   }
+}
+
+function assertPlacement(filePath, content, placement, errors) {
+  const headingIndex = content.indexOf(placement.heading);
+  if (headingIndex === -1) {
+    return;
+  }
+
+  const afterHeading = content.slice(headingIndex + placement.heading.length);
+  const nextHeadingIndex = afterHeading.search(/\n##?\s+/);
+  const section =
+    nextHeadingIndex === -1 ? afterHeading : afterHeading.slice(0, nextHeadingIndex);
+
+  if (!section.includes(placement.text)) {
+    errors.push(
+      `${filePath}: missing required placement for "${placement.text}" under "${placement.heading}"`,
+    );
+    return;
+  }
+
+  if (placement.firstParagraph) {
+    const firstParagraph = section.trimStart().split(/\n\s*\n/)[0]?.trim();
+    if (firstParagraph !== placement.text) {
+      errors.push(
+        `${filePath}: "${placement.text}" must be the first paragraph under "${placement.heading}"`,
+      );
+    }
+  }
+}
+
+function extractCspMetaContent(html) {
+  const metaTags = html.match(/<meta\b[^>]*>/gis) ?? [];
+  for (const tag of metaTags) {
+    const attributes = parseAttributes(tag);
+    if (
+      attributes["http-equiv"]?.toLowerCase() === "content-security-policy" &&
+      Object.hasOwn(attributes, "content")
+    ) {
+      return attributes.content.trim() || null;
+    }
+  }
+  return null;
+}
+
+function parseAttributes(tag) {
+  const attributes = {};
+  const attributePattern = /([^\s=<>"'\/]+)\s*=\s*(["'])([\s\S]*?)\2/g;
+  let match;
+  while ((match = attributePattern.exec(tag)) !== null) {
+    attributes[match[1].toLowerCase()] = match[3];
+  }
+  return attributes;
 }
 
 function scanUnits(markdown) {
