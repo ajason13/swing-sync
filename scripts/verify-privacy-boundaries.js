@@ -58,14 +58,14 @@ function listScannableFiles(root) {
 
 const privacyDocPath = "docs/privacy-architecture.md";
 const dispositionPath = "docs/ss-003-research-disposition.md";
-const appPath = "src/main.ts";
+const appSourcePaths = listScannableFiles("src");
 const packagePath = "package.json";
 const indexPath = "index.html";
 const privacyVerifierPath = "scripts/verify-privacy-boundaries.js";
 
 const privacyDoc = readRequired(privacyDocPath);
 const disposition = readRequired(dispositionPath);
-const appSource = readRequired(appPath);
+const appSource = appSourcePaths.map((path) => readRequired(path)).join("\n");
 const packageJson = JSON.parse(readRequired(packagePath));
 const packageText = JSON.stringify(packageJson, null, 2);
 
@@ -101,15 +101,13 @@ for (const phrase of [
   assertIncludes(disposition, phrase, dispositionPath);
 }
 
-// Cross-check the current SS-002 consent scaffold while SS-003 is still a
-// docs-only privacy story. TODO: migrate these checks when the consent gate
-// becomes a component or a dedicated privacy/consent module.
+// Cross-check the current consent scaffold across its extracted runtime modules.
 for (const phrase of [
   "explicit opt-in step you initiate",
   "Raw swing video stays on your",
   "Consent recorded locally"
 ]) {
-  assertIncludes(appSource, phrase, appPath);
+  assertIncludes(appSource, phrase, appSourcePaths.join(", "));
 }
 
 const prohibitedClaims = [

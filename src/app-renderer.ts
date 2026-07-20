@@ -1,0 +1,223 @@
+import type { AppState } from "./app-state";
+import { selectCanBeginAnalysis } from "./app-state";
+import type { FrameProcessingState } from "./frame-processing";
+import { phaseDefinitions } from "./phase-review";
+import { renderPhaseReview } from "./phase-review-renderer";
+import { renderRemoteModelReviewPanel } from "./remote-model-renderer";
+import { escapeHtml, formatSwingCardWarning } from "./render-utils";
+import { deriveSwingCardContentWarnings } from "./swing-card-generator";
+import { getWorkflowStep, workflowSteps } from "./workflow";
+
+export function renderApp(root: HTMLElement, state: AppState, consentAccepted: boolean, statusMessage?: string): void {
+  const step = getWorkflowStep(state.activeStep);
+  const currentStatus =
+    statusMessage ??
+    (consentAccepted
+      ? "Consent recorded locally. Choose a local video to begin analysis."
+      : "First analysis is blocked until this acknowledgement is checked.");
+
+  root.innerHTML = `
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="Swing Sync home">Swing Sync</a>
+        <span class="local-badge">Local-first analysis</span>
+      </header>
+      <main class="workspace">
+        <section class="workflow" aria-labelledby="workflow-heading">
+          <div class="workflow-intro">
+            <div><p class="eyebrow">New analysis</p><h1 id="workflow-heading">Capture or choose your swing</h1></div>
+            <p>Raw swing video stays on your device. No feature will send it elsewhere without a separate, explicit opt-in step you initiate.</p>
+          </div>
+          <nav class="step-nav" aria-label="Analysis workflow">
+            ${workflowSteps
+              .map(
+                (item, index) => `
+                  <button class="step-button ${item.id === state.activeStep ? "is-active" : ""}" type="button"
+                    data-step="${item.id}" aria-current="${item.id === state.activeStep ? "step" : "false"}">
+                    <span class="step-number">${index + 1}</span><span>${item.shortLabel}</span>
+                  </button>`
+              )
+              .join("")}
+          </nav>
+          <section class="stage" aria-labelledby="stage-heading">
+            <div class="stage-heading">
+              <div><p class="placeholder-kicker">Local workflow</p><h2 id="stage-heading">${step.label}</h2></div>
+              <span class="stage-status">${step.status}</span>
+            </div>
+            <p class="stage-description">${step.description}</p>
+            ${renderWorkflowPanel(state, consentAccepted)}
+          </section>
+        </section>
+        <aside class="consent-panel" aria-labelledby="consent-heading">
+          <p class="eyebrow">Required before first analysis</p>
+          <h2 id="consent-heading">Safety acknowledgement</h2>
+          <p>Swing Sync is for educational use only. It is not medical advice, pain diagnosis, rehabilitation guidance, or professional athletic instruction.</p>
+          <ul>
+            <li>Golf practice and swing changes involve injury risk.</li>
+            <li>Stop if you feel pain, dizziness, numbness, weakness, or unusual discomfort.</li>
+            <li>Consult qualified medical or coaching professionals for personal concerns.</li>
+          </ul>
+          <label class="consent-check">
+            <input id="safety-consent" type="checkbox" ${consentAccepted ? "checked" : ""} />
+            <span>I understand Swing Sync is educational only and that golf practice involves physical risk I accept responsibility for.</span>
+          </label>
+          <p class="privacy-note">Only this acknowledgement is stored locally. It is not a durable or legally audited consent record.</p>
+          <p class="status" role="status">${currentStatus}</p>
+        </aside>
+      </main>
+    </div>
+  `;
+}
+
+export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): string {
+  if (state.activeStep === "capture") {
+    return `
+      <div class="capture-options" aria-label="Local video source">
+        <button class="source-option" type="button" data-placeholder-action="camera">
+          <span class="source-option__title">Use camera</span>
+          <span>Camera capture is not part of this story</span>
+        </button>
+        <button class="source-option" type="button" data-video-picker>
+          <span class="source-option__title">Choose a video</span>
+          <span>${state.selectedVideo ? escapeHtml(state.selectedVideo.name) : "Select a local video file"}</span>
+        </button>
+        <input id="video-file" class="visually-hidden" type="file" accept="video/*" />
+      </div>
+      <div class="action-row">
+        <button id="analysis-button" class="primary-action" type="button" ${
+          selectCanBeginAnalysis(state, consentAccepted) ? "" : "disabled"
+        }>
+          Begin analysis
+        </button>
+        <p class="action-note">The selected video and decoded frames remain volatile and local.</p>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "processing") {
+    return `
+      <div class="processing-placeholder" aria-label="Local pose processing">
+        <div class="processing-mark" aria-hidden="true"></div>
+        <div>
+          <strong>${processingStatusText(state.processingState, state.poseStatusCode)}</strong>
+          <p data-pose-summary>${processingSummaryText(state)}</p>
+        </div>
+      </div>
+      <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
+      <div class="action-row">
+        <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
+        <button class="secondary-action" type="button" data-retry-analysis hidden>Retry local analysis</button>
+        <button class="primary-action" type="button" data-review-phases ${
+          state.processingState === "completed" ? "" : "hidden"
+        }>Review phase labels</button>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "review") {
+    if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
+    return `
+      <div class="review-placeholder" aria-label="Review placeholder">
+        <div class="swing-frame"><span>Video and pose preview</span></div>
+        <dl class="metric-list">
+          <div><dt>Tempo</dt><dd>--</dd></div>
+          <div><dt>Balance</dt><dd>--</dd></div>
+          <div><dt>Rotation</dt><dd>--</dd></div>
+        </dl>
+      </div>
+      <button class="secondary-action" type="button" data-next-step>Preview export state</button>
+    `;
+  }
+
+  if (state.phaseOutputs.length === 0) {
+    return `
+      <div class="export-placeholder" aria-label="Export placeholder">
+        <p class="placeholder-kicker">Local Swing Card</p>
+        <h3>Swing Card unavailable</h3>
+        <p>Complete local analysis before creating a Swing Card. Raw swing video is not included in Swing Card exports.</p>
+      </div>
+      <button class="secondary-action" type="button" disabled>Export is not available yet</button>
+    `;
+  }
+
+  return renderSwingCardExport(state);
+}
+
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {
+  const status = root.querySelector<HTMLElement>(".processing-placeholder strong");
+  const summary = root.querySelector<HTMLElement>("[data-pose-summary]");
+  const retry = root.querySelector<HTMLButtonElement>("[data-retry-analysis]");
+  const review = root.querySelector<HTMLButtonElement>("[data-review-phases]");
+
+  if (status) status.textContent = processingStatusText(state.processingState, state.poseStatusCode);
+  if (summary) summary.textContent = processingSummaryText(state);
+  if (retry) retry.hidden = state.processingState !== "failed";
+  if (review) review.hidden = state.processingState !== "completed";
+}
+
+function renderSwingCardExport(state: AppState): string {
+  const phaseReady = state.phaseReviewState?.readyForFutureMetrics ?? false;
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes: phaseDefinitions.map((phase) => ({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: undefined,
+      overlay: undefined
+    })),
+    metricPayload: undefined,
+    phaseReviewConfirmed: phaseReady
+  });
+
+  return `
+    <section class="swing-card-panel" aria-labelledby="swing-card-heading">
+      <div class="swing-card-panel__header">
+        <div>
+          <p class="placeholder-kicker">Local Swing Card</p>
+          <h3 id="swing-card-heading">Downloadable summary</h3>
+        </div>
+        <span class="stage-status">Manual sharing</span>
+      </div>
+      <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included.</p>
+      <div class="swing-card-summary" aria-label="Swing Card contents">
+        <div><strong>${state.phaseOutputs.length}</strong><span>local keyframes</span></div>
+        <div><strong>PNG</strong><span>download</span></div>
+        <div><strong>Print</strong><span>save as PDF where supported</span></div>
+      </div>
+      <ul class="swing-card-warning-list" aria-label="Swing Card warnings">
+        ${warnings.map((warning) => `<li>${escapeHtml(formatSwingCardWarning(warning))}</li>`).join("")}
+      </ul>
+      <div class="action-row swing-card-actions">
+        <button class="primary-action" type="button" data-download-swing-card ${state.swingCardBusy ? "disabled" : ""}>Download PNG</button>
+        <button class="secondary-action" type="button" data-print-swing-card ${state.swingCardBusy ? "disabled" : ""}>Print / Save as PDF</button>
+        <button class="secondary-action" type="button" data-copy-swing-card-prompt ${state.swingCardBusy ? "disabled" : ""}>Copy prompt</button>
+        <p class="action-note" data-swing-card-status role="status">${escapeHtml(state.swingCardStatus)}</p>
+      </div>
+      <div class="swing-card-print-host" data-swing-card-print-host aria-hidden="true"></div>
+      ${renderRemoteModelReviewPanel()}
+    </section>
+  `;
+}
+
+function processingStatusText(state: FrameProcessingState, code?: string): string {
+  return state === "loading"
+    ? "Loading the local pose model in a background worker."
+    : state === "processing"
+      ? "Processing a local video frame."
+      : state === "completed"
+        ? "Local frame processing completed."
+        : state === "failed"
+          ? `Local pose analysis stopped (${code ?? "UNKNOWN_ERROR"}).`
+          : state === "cancelled"
+            ? "Local frame processing cancelled."
+            : state === "closed"
+              ? "Local pose session closed."
+              : "Preparing local pose analysis.";
+}
+
+function processingSummaryText(state: AppState): string {
+  return `${state.extractedFrameCount} of ${state.totalFrameCount} video frames processed.${
+    state.latestLandmarkCount > 0
+      ? ` ${state.latestLandmarkCount} normalized landmarks retained in the latest result.`
+      : ""
+  }`;
+}

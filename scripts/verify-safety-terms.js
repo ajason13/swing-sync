@@ -25,10 +25,18 @@ function assertNotMatches(text, pattern, source, label) {
 
 const safetyTermsPath = "docs/safety-terms.md";
 const researchDispositionPath = "docs/ss-002-research-disposition.md";
-const appPath = "src/main.ts";
+const appSourcePaths = [
+  "src/main.ts",
+  "src/app-renderer.ts",
+  "src/app-events.ts",
+  "src/consent-state.ts",
+  "src/phase-review-renderer.ts",
+  "src/remote-model-renderer.ts",
+  "src/swing-card-actions.ts"
+];
 const safetyTerms = readFileSync(safetyTermsPath, "utf8");
 const researchDisposition = readFileSync(researchDispositionPath, "utf8");
-const appSource = readFileSync(appPath, "utf8");
+const appSource = appSourcePaths.map((path) => readFileSync(path, "utf8")).join("\n");
 const combined = `${safetyTerms}\n${researchDisposition}\n${appSource}`;
 
 for (const phrase of [
@@ -71,7 +79,7 @@ for (const phrase of [
   "qualified medical or coaching professionals",
   "Please acknowledge the safety terms before starting analysis"
 ]) {
-  assertIncludes(appSource, phrase, appPath);
+  assertIncludes(appSource, phrase, appSourcePaths.join(", "));
 }
 
 for (const phrase of [

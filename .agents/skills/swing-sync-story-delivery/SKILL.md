@@ -75,6 +75,10 @@ Use the existing generic skills instead of duplicating their guidance:
      Claude must evaluate. If full files are too large, include the smallest
      complete coherent excerpts with file paths and state what was omitted and
      why.
+   - For browser-chat audits, create the source packet as a durable artifact
+     before handoff when the prompt cannot inline the full diff. Do not mark the
+     audit handoff ready if the prompt only instructs the user to paste source
+     later but no packet exists.
    - Resolve findings with `$audit-response`, rerun relevant verification, and
      obtain Claude PASS before claiming the sensitive story is Done.
    - After fixes, create a separate focused
