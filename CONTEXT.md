@@ -21,7 +21,7 @@ Last updated: 2026-07-19
   `SS-018 Refactor frontend app shell into maintainable UI/state modules`
 - Active branch: `ss-018-frontend-architecture`
 - Active handshake: `4. Final Audit (Claude)`
-- Active Pull Request: none.
+- Active Pull Request: https://github.com/ajason13/swing-sync/pull/19.
 - Remaining visible non-Done backlog tasks: SS-018 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
@@ -366,9 +366,12 @@ Kickoff/spec state on 2026-07-04:
   `render-utils.ts` and `analysis-lifecycle.ts` to safety verifier scope if
   they grow user-facing safety/status copy, and consider splitting
   `app-renderer.test.ts` branch coverage into per-module renderer tests.
-- Next owner: Codex PR preparation. SS-018 must not move to `5. Done` until PR
-  creation, merge, local `main` sync, Notion sync, and post-merge context
-  updates are complete.
+- Branch commit pushed for PR #19:
+  `a60a7ff388aaeda7a147562e533f2b8e141edfd7`.
+- Pull Request created: https://github.com/ajason13/swing-sync/pull/19.
+- Next owner: GitHub PR review/CI and merge readiness. SS-018 must not move to
+  `5. Done` until PR merge, local `main` sync, Notion sync, and post-merge
+  context updates are complete.
 
 ## SS-017 Coordination
 
