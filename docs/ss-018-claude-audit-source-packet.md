@@ -1,6 +1,4201 @@
+# SS-018 Claude Implementation Audit Source Packet
+
+Superseded for paste use after Claude's SS-018 implementation audit returned
+FAIL with B9-B12. Use `docs/ss-018-claude-audit-rereview-prompt.md` for the
+focused re-review instead.
+
+This file fixes the first Claude audit handoff defect: the original prompt required source contents but did not include them in the pasted packet. Paste `docs/ss-018-claude-audit-prompt.md` first, then paste this source packet.
+
+Generated from local branch `ss-018-frontend-architecture` on 2026-07-06. Intentional untracked `docs/agent-guidance/*new-codex-session-prompt.md` files are excluded because they predate SS-018 and are not part of this audit.
+
+## Claude First Audit Response
+
+Claude did not issue PASS/FAIL because only the prompt summary was pasted, not the complete branch diff or changed file contents. This packet provides the missing source evidence.
+
+## Files Included
+
+- `src/main.ts`
+- `src/analysis-lifecycle.ts`
+- `src/app-events.ts`
+- `src/app-renderer.ts`
+- `src/app-state.ts`
+- `src/consent-state.ts`
+- `src/keyframe-overlay-renderer.ts`
+- `src/phase-review-renderer.ts`
+- `src/remote-model-renderer.ts`
+- `src/render-utils.ts`
+- `src/swing-card-actions.ts`
+- `scripts/verify-privacy-boundaries.js`
+- `scripts/verify-safety-terms.js`
+- `test/unit/analysis-lifecycle.test.ts`
+- `test/unit/app-events.test.ts`
+- `test/unit/app-renderer.test.ts`
+- `test/unit/app-state.test.ts`
+- `test/unit/consent-state.test.ts`
+- `test/unit/render-utils.test.ts`
+- `test/unit/swing-card-actions.test.ts`
+- `.agents/skills/swing-sync-story-delivery/SKILL.md`
+- `docs/ss-018-research-disposition.md`
+- `docs/ss-018-preimplementation-spec.md`
+- `docs/ss-018-claude-qa-planning-prompt.md`
+- `docs/ss-018-claude-qa-response.md`
+- `docs/ss-018-claude-qa-rereview-prompt.md`
+- `docs/ss-018-claude-qa-rereview-response.md`
+- `docs/ss-018-claude-qa-b7-b8-rereview-prompt.md`
+- `docs/ss-018-claude-qa-b7-rereview-response.md`
+- `docs/ss-018-claude-qa-b7-rereview-prompt.md`
+- `docs/ss-018-claude-qa-b7-pass-response.md`
+- `docs/ss-018-claude-audit-prompt.md`
+- `CONTEXT.md`
+
+## Complete File Contents
+
+
+### src/main.ts
+
+``````text
+import "./styles.css";
+import { AnalysisLifecycle } from "./analysis-lifecycle";
+import { bindAppEvents } from "./app-events";
+import { renderApp } from "./app-renderer";
+import { createInitialAppState } from "./app-state";
+import { createSafetyConsentStore } from "./consent-state";
+import { renderSelectedKeyframeCanvas } from "./keyframe-overlay-renderer";
+
+const app = document.querySelector<HTMLDivElement>("#app");
+const state = createInitialAppState();
+const consent = createSafetyConsentStore();
+
+function requestRender(statusMessage?: string): void {
+  if (!app) return;
+  renderApp(app, state, consent.hasSafetyConsent(), statusMessage);
+  bindAppEvents(app, {
+    state,
+    consent,
+    lifecycle,
+    requestRender
+  });
+  renderSelectedKeyframeCanvas(app, state);
+}
+
+const lifecycle = new AnalysisLifecycle({
+  root: app ?? document,
+  state,
+  requestRender
+});
+
+requestRender();
+
+window.addEventListener("beforeunload", () => {
+  void lifecycle.closeActive();
+});
+document.addEventListener("securitypolicyviolation", () => {
+  lifecycle.abortWithNetworkBlocked();
+});
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register("/sw.js");
+  });
+}
+
+``````
+
+### src/analysis-lifecycle.ts
+
+``````text
+import { updateProcessingProgressUi } from "./app-renderer";
+import type { AppState } from "./app-state";
+import {
+  completeProcessingWithOutputs,
+  recordProcessingOutput,
+  resetPhaseReview,
+  resetProcessingCounters,
+  selectWorkflowStep,
+  setProcessingProgress,
+  setProcessingState
+} from "./app-state";
+import { createBrowserFrameController } from "./browser-frame-processing";
+import type {
+  FrameProcessingController,
+  FrameProcessingState,
+  SampledFrameOutput
+} from "./frame-processing";
+
+export interface AnalysisLifecycleOptions {
+  root: ParentNode;
+  state: AppState;
+  requestRender(statusMessage?: string): void;
+}
+
+export class AnalysisLifecycle {
+  private frameController: FrameProcessingController | undefined;
+  private abortFrameController: ((code: string) => void) | undefined;
+
+  constructor(private readonly options: AnalysisLifecycleOptions) {}
+
+  hasActiveController(): boolean {
+    return !!this.frameController;
+  }
+
+  async startActive(): Promise<void> {
+    const video = this.options.root.querySelector<HTMLVideoElement>("#analysis-video");
+    const selectedVideo = this.options.state.selectedVideo;
+    if (!video || !selectedVideo) return;
+
+    resetProcessingCounters(this.options.state);
+    resetPhaseReview(this.options.state);
+    const browserController = createBrowserFrameController(video, selectedVideo, {
+      onState: (state, code) => this.handleProcessingState(state, code),
+      onProgress: (completed, total) => this.handleProcessingProgress(completed, total),
+      onOutput: (output) => this.handleProcessingOutput(output)
+    });
+    this.frameController = browserController.controller;
+    this.abortFrameController = browserController.abort;
+    await this.frameController.start();
+  }
+
+  async stopActive(): Promise<void> {
+    const controller = this.frameController;
+    resetPhaseReview(this.options.state);
+    await controller?.cancel();
+    if (this.frameController === controller) this.clearControllerHandles();
+    setProcessingState(this.options.state, "idle");
+    selectWorkflowStep(this.options.state, "capture");
+    this.options.requestRender("Local analysis stopped and volatile resources were released.");
+  }
+
+  async closeActive(): Promise<void> {
+    const controller = this.frameController;
+    resetPhaseReview(this.options.state);
+    await controller?.close();
+    if (this.frameController === controller) this.clearControllerHandles();
+    setProcessingState(this.options.state, "idle");
+  }
+
+  async retryActive(): Promise<void> {
+    resetPhaseReview(this.options.state);
+    await this.frameController?.retry();
+  }
+
+  abortWithNetworkBlocked(): void {
+    if (["loading", "processing"].includes(this.options.state.processingState)) {
+      this.abortFrameController?.("UNEXPECTED_NETWORK_BLOCKED");
+    }
+  }
+
+  private handleProcessingState(state: FrameProcessingState, code?: string): void {
+    setProcessingState(this.options.state, state, code);
+    if (state === "completed" && this.frameController) {
+      completeProcessingWithOutputs(this.options.state, this.frameController);
+    }
+    updateProcessingProgressUi(this.options.root, this.options.state);
+  }
+
+  private handleProcessingProgress(completed: number, total: number): void {
+    setProcessingProgress(this.options.state, completed, total);
+    updateProcessingProgressUi(this.options.root, this.options.state);
+  }
+
+  private handleProcessingOutput(output: SampledFrameOutput): void {
+    recordProcessingOutput(this.options.state, output);
+    updateProcessingProgressUi(this.options.root, this.options.state);
+  }
+
+  private clearControllerHandles(): void {
+    this.frameController = undefined;
+    this.abortFrameController = undefined;
+  }
+}
+
+``````
+
+### src/app-events.ts
+
+``````text
+import type { AnalysisLifecycle } from "./analysis-lifecycle";
+import {
+  confirmPhaseReview,
+  rebuildPhaseReviewState,
+  selectKeyframe,
+  selectLocalVideo,
+  selectWorkflowStep,
+  setPhaseConfirmation,
+  setPhaseDeclaration,
+  setPhaseDraftAssignment,
+  type AppState
+} from "./app-state";
+import type { SafetyConsentStore } from "./consent-state";
+import { declarationValue } from "./phase-review-renderer";
+import { copySwingCardPrompt, downloadSwingCard, printSwingCard } from "./swing-card-actions";
+import { getNextWorkflowStep, getWorkflowStep, type WorkflowStepId } from "./workflow";
+
+export interface AppEventsDependencies {
+  state: AppState;
+  consent: SafetyConsentStore;
+  lifecycle: AnalysisLifecycle;
+  requestRender(statusMessage?: string): void;
+}
+
+export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependencies): void {
+  const { state, consent, lifecycle, requestRender } = dependencies;
+
+  root.querySelector<HTMLInputElement>("#safety-consent")?.addEventListener("change", (event) => {
+    consent.setSafetyConsent((event.currentTarget as HTMLInputElement).checked);
+    requestRender();
+  });
+
+  root.querySelector<HTMLButtonElement>("#analysis-button")?.addEventListener("click", () => {
+    if (!consent.hasSafetyConsent()) {
+      requestRender("Please acknowledge the safety terms before starting analysis.");
+      root.querySelector<HTMLInputElement>("#safety-consent")?.focus();
+      return;
+    }
+    if (!state.selectedVideo) {
+      requestRender("Choose a local video before starting analysis.");
+      return;
+    }
+    selectWorkflowStep(state, "processing");
+    requestRender("Loading approved local pose assets. No video data leaves this device.");
+    void lifecycle.startActive();
+  });
+
+  root.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextStep = button.dataset.step as WorkflowStepId;
+      const opensCompletedReview =
+        state.activeStep === "processing" && state.processingState === "completed" && nextStep === "review";
+      const preservesReviewData =
+        ["review", "export"].includes(state.activeStep) && ["review", "export"].includes(nextStep);
+      if (
+        ["processing", "review", "export"].includes(state.activeStep) &&
+        nextStep !== state.activeStep &&
+        !opensCompletedReview &&
+        !preservesReviewData
+      ) {
+        void lifecycle.closeActive();
+      }
+      selectWorkflowStep(state, nextStep);
+      requestRender(`${getWorkflowStep(state.activeStep).label} opened.`);
+    });
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-next-step]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, getNextWorkflowStep(state.activeStep).id);
+    requestRender(`${getWorkflowStep(state.activeStep).label} opened.`);
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-video-picker]")?.addEventListener("click", () => {
+    root.querySelector<HTMLInputElement>("#video-file")?.click();
+  });
+
+  root.querySelector<HTMLInputElement>("#video-file")?.addEventListener("change", (event) => {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    void lifecycle.closeActive();
+    selectLocalVideo(state, file);
+    requestRender("Local video selected. It has not been analyzed or persisted.");
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-placeholder-action='camera']")?.addEventListener("click", () => {
+    requestRender("Camera capture remains out of scope. Choose a local video file.");
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-cancel-analysis]")?.addEventListener("click", () => {
+    void lifecycle.stopActive();
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-retry-analysis]")?.addEventListener("click", () => {
+    void lifecycle.retryActive();
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-review-phases]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, "review");
+    requestRender("Review the provisional phase labels before future measurements become available.");
+  });
+
+  root.querySelector<HTMLSelectElement>("#phase-view")?.addEventListener("change", (event) => {
+    setPhaseDeclaration(state, "view", declarationValue((event.currentTarget as HTMLSelectElement).value, "view"));
+    rebuildPhaseReviewState(state);
+    requestRender();
+  });
+  root.querySelector<HTMLSelectElement>("#phase-handedness")?.addEventListener("change", (event) => {
+    setPhaseDeclaration(
+      state,
+      "handedness",
+      declarationValue((event.currentTarget as HTMLSelectElement).value, "handedness")
+    );
+    rebuildPhaseReviewState(state);
+    requestRender();
+  });
+  root.querySelector<HTMLSelectElement>("#phase-mirrored")?.addEventListener("change", (event) => {
+    setPhaseDeclaration(state, "mirrored", declarationValue((event.currentTarget as HTMLSelectElement).value, "mirrored"));
+    rebuildPhaseReviewState(state);
+    requestRender();
+  });
+  root.querySelector<HTMLInputElement>("#phase-setup")?.addEventListener("change", (event) => {
+    setPhaseDeclaration(state, "setup", (event.currentTarget as HTMLInputElement).checked ? "confirmed" : "undeclared");
+    rebuildPhaseReviewState(state);
+    requestRender();
+  });
+  root.querySelectorAll<HTMLSelectElement>("[data-phase-index]").forEach((select) => {
+    select.addEventListener("change", () => {
+      setPhaseDraftAssignment(state, Number(select.dataset.phaseIndex), Number(select.value));
+      requestRender();
+    });
+  });
+  root.querySelector<HTMLInputElement>("#phase-confirmation")?.addEventListener("change", (event) => {
+    setPhaseConfirmation(state, (event.currentTarget as HTMLInputElement).checked);
+    requestRender();
+  });
+  root.querySelector<HTMLButtonElement>("[data-confirm-phase-review]")?.addEventListener("click", () => {
+    confirmPhaseReview(state);
+    requestRender();
+  });
+  root.querySelector<HTMLButtonElement>("[data-open-export]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, "export");
+    requestRender("Swing Card export opened.");
+  });
+  root.querySelectorAll<HTMLButtonElement>("[data-keyframe-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectKeyframe(state, Number(button.dataset.keyframeIndex));
+      requestRender();
+    });
+  });
+  root.querySelector<HTMLButtonElement>("[data-download-swing-card]")?.addEventListener("click", () => {
+    void downloadSwingCard(state, requestRender);
+  });
+  root.querySelector<HTMLButtonElement>("[data-print-swing-card]")?.addEventListener("click", () => {
+    void printSwingCard(root, state, requestRender);
+  });
+  root.querySelector<HTMLButtonElement>("[data-copy-swing-card-prompt]")?.addEventListener("click", () => {
+    void copySwingCardPrompt(state, requestRender);
+  });
+}
+
+``````
+
+### src/app-renderer.ts
+
+``````text
+import type { AppState } from "./app-state";
+import { selectCanBeginAnalysis } from "./app-state";
+import type { FrameProcessingState } from "./frame-processing";
+import { phaseDefinitions } from "./phase-review";
+import { renderPhaseReview } from "./phase-review-renderer";
+import { renderRemoteModelReviewPanel } from "./remote-model-renderer";
+import { escapeHtml, formatSwingCardWarning } from "./render-utils";
+import { deriveSwingCardContentWarnings } from "./swing-card-generator";
+import { getWorkflowStep, workflowSteps } from "./workflow";
+
+export function renderApp(root: HTMLElement, state: AppState, consentAccepted: boolean, statusMessage?: string): void {
+  const step = getWorkflowStep(state.activeStep);
+  const currentStatus =
+    statusMessage ??
+    (consentAccepted
+      ? "Consent recorded locally. Choose a local video to begin analysis."
+      : "First analysis is blocked until this acknowledgement is checked.");
+
+  root.innerHTML = `
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="Swing Sync home">Swing Sync</a>
+        <span class="local-badge">Local-first analysis</span>
+      </header>
+      <main class="workspace">
+        <section class="workflow" aria-labelledby="workflow-heading">
+          <div class="workflow-intro">
+            <div><p class="eyebrow">New analysis</p><h1 id="workflow-heading">Capture or choose your swing</h1></div>
+            <p>Raw swing video stays on your device. No feature will send it elsewhere without a separate, explicit opt-in step you initiate.</p>
+          </div>
+          <nav class="step-nav" aria-label="Analysis workflow">
+            ${workflowSteps
+              .map(
+                (item, index) => `
+                  <button class="step-button ${item.id === state.activeStep ? "is-active" : ""}" type="button"
+                    data-step="${item.id}" aria-current="${item.id === state.activeStep ? "step" : "false"}">
+                    <span class="step-number">${index + 1}</span><span>${item.shortLabel}</span>
+                  </button>`
+              )
+              .join("")}
+          </nav>
+          <section class="stage" aria-labelledby="stage-heading">
+            <div class="stage-heading">
+              <div><p class="placeholder-kicker">Local workflow</p><h2 id="stage-heading">${step.label}</h2></div>
+              <span class="stage-status">${step.status}</span>
+            </div>
+            <p class="stage-description">${step.description}</p>
+            ${renderWorkflowPanel(state, consentAccepted)}
+          </section>
+        </section>
+        <aside class="consent-panel" aria-labelledby="consent-heading">
+          <p class="eyebrow">Required before first analysis</p>
+          <h2 id="consent-heading">Safety acknowledgement</h2>
+          <p>Swing Sync is for educational use only. It is not medical advice, pain diagnosis, rehabilitation guidance, or professional athletic instruction.</p>
+          <ul>
+            <li>Golf practice and swing changes involve injury risk.</li>
+            <li>Stop if you feel pain, dizziness, numbness, weakness, or unusual discomfort.</li>
+            <li>Consult qualified medical or coaching professionals for personal concerns.</li>
+          </ul>
+          <label class="consent-check">
+            <input id="safety-consent" type="checkbox" ${consentAccepted ? "checked" : ""} />
+            <span>I understand Swing Sync is educational only and that golf practice involves physical risk I accept responsibility for.</span>
+          </label>
+          <p class="privacy-note">Only this acknowledgement is stored locally. It is not a durable or legally audited consent record.</p>
+          <p class="status" role="status">${currentStatus}</p>
+        </aside>
+      </main>
+    </div>
+  `;
+}
+
+export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): string {
+  if (state.activeStep === "capture") {
+    return `
+      <div class="capture-options" aria-label="Local video source">
+        <button class="source-option" type="button" data-placeholder-action="camera">
+          <span class="source-option__title">Use camera</span>
+          <span>Camera capture is not part of this story</span>
+        </button>
+        <button class="source-option" type="button" data-video-picker>
+          <span class="source-option__title">Choose a video</span>
+          <span>${state.selectedVideo ? escapeHtml(state.selectedVideo.name) : "Select a local video file"}</span>
+        </button>
+        <input id="video-file" class="visually-hidden" type="file" accept="video/*" />
+      </div>
+      <div class="action-row">
+        <button id="analysis-button" class="primary-action" type="button" ${
+          selectCanBeginAnalysis(state, consentAccepted) ? "" : "disabled"
+        }>
+          Begin analysis
+        </button>
+        <p class="action-note">The selected video and decoded frames remain volatile and local.</p>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "processing") {
+    return `
+      <div class="processing-placeholder" aria-label="Local pose processing">
+        <div class="processing-mark" aria-hidden="true"></div>
+        <div>
+          <strong>${processingStatusText(state.processingState, state.poseStatusCode)}</strong>
+          <p data-pose-summary>${processingSummaryText(state)}</p>
+        </div>
+      </div>
+      <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
+      <div class="action-row">
+        <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
+        <button class="secondary-action" type="button" data-retry-analysis hidden>Retry local analysis</button>
+        <button class="primary-action" type="button" data-review-phases ${
+          state.processingState === "completed" ? "" : "hidden"
+        }>Review phase labels</button>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "review") {
+    if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
+    return `
+      <div class="review-placeholder" aria-label="Review placeholder">
+        <div class="swing-frame"><span>Video and pose preview</span></div>
+        <dl class="metric-list">
+          <div><dt>Tempo</dt><dd>--</dd></div>
+          <div><dt>Balance</dt><dd>--</dd></div>
+          <div><dt>Rotation</dt><dd>--</dd></div>
+        </dl>
+      </div>
+      <button class="secondary-action" type="button" data-next-step>Preview export state</button>
+    `;
+  }
+
+  if (state.phaseOutputs.length === 0) {
+    return `
+      <div class="export-placeholder" aria-label="Export placeholder">
+        <p class="placeholder-kicker">Local Swing Card</p>
+        <h3>Swing Card unavailable</h3>
+        <p>Complete local analysis before creating a Swing Card. Raw swing video is not included in Swing Card exports.</p>
+      </div>
+      <button class="secondary-action" type="button" disabled>Export is not available yet</button>
+    `;
+  }
+
+  return renderSwingCardExport(state);
+}
+
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {
+  const status = root.querySelector<HTMLElement>(".processing-placeholder strong");
+  const summary = root.querySelector<HTMLElement>("[data-pose-summary]");
+  const retry = root.querySelector<HTMLButtonElement>("[data-retry-analysis]");
+  const review = root.querySelector<HTMLButtonElement>("[data-review-phases]");
+
+  if (status) status.textContent = processingStatusText(state.processingState, state.poseStatusCode);
+  if (summary) summary.textContent = processingSummaryText(state);
+  if (retry) retry.hidden = state.processingState !== "failed";
+  if (review) review.hidden = state.processingState !== "completed";
+}
+
+function renderSwingCardExport(state: AppState): string {
+  const phaseReady = state.phaseReviewState?.readyForFutureMetrics ?? false;
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes: phaseDefinitions.map((phase) => ({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: undefined,
+      overlay: undefined
+    })),
+    metricPayload: undefined,
+    phaseReviewConfirmed: phaseReady
+  });
+
+  return `
+    <section class="swing-card-panel" aria-labelledby="swing-card-heading">
+      <div class="swing-card-panel__header">
+        <div>
+          <p class="placeholder-kicker">Local Swing Card</p>
+          <h3 id="swing-card-heading">Downloadable summary</h3>
+        </div>
+        <span class="stage-status">Manual sharing</span>
+      </div>
+      <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included.</p>
+      <div class="swing-card-summary" aria-label="Swing Card contents">
+        <div><strong>${state.phaseOutputs.length}</strong><span>local keyframes</span></div>
+        <div><strong>PNG</strong><span>download</span></div>
+        <div><strong>Print</strong><span>save as PDF where supported</span></div>
+      </div>
+      <ul class="swing-card-warning-list" aria-label="Swing Card warnings">
+        ${warnings.map((warning) => `<li>${escapeHtml(formatSwingCardWarning(warning))}</li>`).join("")}
+      </ul>
+      <div class="action-row swing-card-actions">
+        <button class="primary-action" type="button" data-download-swing-card ${state.swingCardBusy ? "disabled" : ""}>Download PNG</button>
+        <button class="secondary-action" type="button" data-print-swing-card ${state.swingCardBusy ? "disabled" : ""}>Print / Save as PDF</button>
+        <button class="secondary-action" type="button" data-copy-swing-card-prompt ${state.swingCardBusy ? "disabled" : ""}>Copy prompt</button>
+        <p class="action-note" data-swing-card-status role="status">${escapeHtml(state.swingCardStatus)}</p>
+      </div>
+      <div class="swing-card-print-host" data-swing-card-print-host aria-hidden="true"></div>
+      ${renderRemoteModelReviewPanel()}
+    </section>
+  `;
+}
+
+function processingStatusText(state: FrameProcessingState, code?: string): string {
+  return state === "loading"
+    ? "Loading the local pose model in a background worker."
+    : state === "processing"
+      ? "Processing a local video frame."
+      : state === "completed"
+        ? "Local frame processing completed."
+        : state === "failed"
+          ? `Local pose analysis stopped (${code ?? "UNKNOWN_ERROR"}).`
+          : state === "cancelled"
+            ? "Local frame processing cancelled."
+            : state === "closed"
+              ? "Local pose session closed."
+              : "Preparing local pose analysis.";
+}
+
+function processingSummaryText(state: AppState): string {
+  return `${state.extractedFrameCount} of ${state.totalFrameCount} video frames processed.${
+    state.latestLandmarkCount > 0
+      ? ` ${state.latestLandmarkCount} normalized landmarks retained in the latest result.`
+      : ""
+  }`;
+}
+
+``````
+
+### src/app-state.ts
+
+``````text
+import type { FrameProcessingController, FrameProcessingState, SampledFrameOutput } from "./frame-processing";
+import {
+  applyPhaseCorrection,
+  createPhaseProposal,
+  createPhaseReviewState,
+  isValidCorrection,
+  phaseDefinitions,
+  type PhaseAssignment,
+  type PhaseDeclarations,
+  type PhaseReviewState
+} from "./phase-review";
+import type { PoseOverlayRenderResult } from "./pose-renderer";
+import type { WorkflowStepId } from "./workflow";
+
+export const initialSwingCardStatus = "Swing Card export is generated locally after review data exists.";
+
+export interface AppState {
+  activeStep: WorkflowStepId;
+  selectedVideo: File | undefined;
+  processingState: FrameProcessingState;
+  poseStatusCode: string | undefined;
+  extractedFrameCount: number;
+  totalFrameCount: number;
+  latestLandmarkCount: number;
+  phaseOutputs: readonly SampledFrameOutput[];
+  phaseDeclarations: PhaseDeclarations;
+  phaseReviewState: PhaseReviewState | undefined;
+  phaseDraft: PhaseAssignment[];
+  phaseConfirmation: boolean;
+  selectedKeyframeIndex: number;
+  latestOverlayResult: PoseOverlayRenderResult | undefined;
+  swingCardBusy: boolean;
+  swingCardStatus: string;
+}
+
+export function createInitialAppState(): AppState {
+  return {
+    activeStep: "capture",
+    selectedVideo: undefined,
+    processingState: "idle",
+    poseStatusCode: undefined,
+    extractedFrameCount: 0,
+    totalFrameCount: 0,
+    latestLandmarkCount: 0,
+    phaseOutputs: [],
+    phaseDeclarations: undeclaredPhaseDeclarations(),
+    phaseReviewState: undefined,
+    phaseDraft: [],
+    phaseConfirmation: false,
+    selectedKeyframeIndex: 0,
+    latestOverlayResult: undefined,
+    swingCardBusy: false,
+    swingCardStatus: initialSwingCardStatus
+  };
+}
+
+export function undeclaredPhaseDeclarations(): PhaseDeclarations {
+  return {
+    view: "undeclared",
+    handedness: "undeclared",
+    mirrored: "undeclared",
+    setup: "undeclared"
+  };
+}
+
+export function selectCanBeginAnalysis(state: AppState, consentAccepted: boolean): boolean {
+  return (
+    state.activeStep === "capture" &&
+    consentAccepted &&
+    !!state.selectedVideo &&
+    !["loading", "processing"].includes(state.processingState)
+  );
+}
+
+export function selectWorkflowStep(state: AppState, step: WorkflowStepId): void {
+  state.activeStep = step;
+}
+
+export function selectLocalVideo(state: AppState, video: File): void {
+  state.selectedVideo = video;
+}
+
+export function setProcessingState(state: AppState, processingState: FrameProcessingState, code?: string): void {
+  state.processingState = processingState;
+  state.poseStatusCode = code;
+}
+
+export function setProcessingProgress(state: AppState, completed: number, total: number): void {
+  state.extractedFrameCount = completed;
+  state.totalFrameCount = total;
+}
+
+export function recordProcessingOutput(state: AppState, output: SampledFrameOutput): void {
+  state.latestLandmarkCount = output.pose.landmarks[0]?.length ?? 0;
+}
+
+export function completeProcessingWithOutputs(
+  state: AppState,
+  controller: Pick<FrameProcessingController, "getOutputs">
+): void {
+  state.phaseOutputs = controller.getOutputs();
+  state.selectedKeyframeIndex = 0;
+  state.phaseDeclarations = undeclaredPhaseDeclarations();
+  rebuildPhaseReviewState(state);
+}
+
+export function resetProcessingCounters(state: AppState): void {
+  state.extractedFrameCount = 0;
+  state.totalFrameCount = 0;
+  state.latestLandmarkCount = 0;
+}
+
+export function resetPhaseReview(state: AppState): void {
+  state.phaseOutputs = [];
+  state.phaseDeclarations = undeclaredPhaseDeclarations();
+  state.phaseReviewState = undefined;
+  state.phaseDraft = [];
+  state.phaseConfirmation = false;
+  state.selectedKeyframeIndex = 0;
+  state.latestOverlayResult = undefined;
+  state.swingCardBusy = false;
+  state.swingCardStatus = initialSwingCardStatus;
+}
+
+export function rebuildPhaseReviewState(state: AppState): void {
+  const proposal = createPhaseProposal(state.phaseOutputs, state.phaseDeclarations);
+  state.phaseReviewState = createPhaseReviewState(proposal);
+  state.phaseDraft = proposal.assignments.map((assignment) => ({ ...assignment }));
+  state.phaseConfirmation = false;
+}
+
+export function setPhaseDeclaration<K extends keyof PhaseDeclarations>(
+  state: AppState,
+  key: K,
+  value: PhaseDeclarations[K]
+): void {
+  state.phaseDeclarations[key] = value;
+}
+
+export function setPhaseDraftAssignment(state: AppState, phaseIndex: number, sampleIndex: number): void {
+  state.phaseDraft[phaseIndex] = {
+    phaseId: phaseDefinitions[phaseIndex].id,
+    sampleIndex
+  };
+  state.phaseConfirmation = false;
+}
+
+export function setPhaseConfirmation(state: AppState, confirmed: boolean): void {
+  state.phaseConfirmation = confirmed;
+}
+
+export function confirmPhaseReview(state: AppState): void {
+  if (!state.phaseReviewState) return;
+  state.phaseReviewState = applyPhaseCorrection(
+    state.phaseReviewState,
+    state.phaseDraft,
+    state.phaseConfirmation,
+    state.phaseOutputs[0]?.runGeneration ?? -1
+  );
+}
+
+export function selectKeyframe(state: AppState, keyframeIndex: number): void {
+  state.selectedKeyframeIndex = keyframeIndex;
+  state.latestOverlayResult = undefined;
+}
+
+export function setOverlayResult(state: AppState, overlayResult: PoseOverlayRenderResult): void {
+  state.latestOverlayResult = overlayResult;
+}
+
+export function setSwingCardBusy(state: AppState, busy: boolean): void {
+  state.swingCardBusy = busy;
+}
+
+export function setSwingCardStatus(state: AppState, status: string): void {
+  state.swingCardStatus = status;
+}
+
+export function getCompleteSwingCardAssignments(state: AppState): readonly PhaseAssignment[] | undefined {
+  const assignments = state.phaseReviewState?.correction?.assignments ?? state.phaseReviewState?.automaticProposal.assignments;
+  return assignments && isValidCorrection(assignments) ? assignments : undefined;
+}
+
+``````
+
+### src/consent-state.ts
+
+``````text
+export interface ConsentStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+export interface SafetyConsentStore {
+  hasSafetyConsent(): boolean;
+  setSafetyConsent(accepted: boolean): void;
+}
+
+export const consentStorageKey = "swing-sync:safety-consent:v1";
+
+export function createSafetyConsentStore(storage: ConsentStorage = window.localStorage): SafetyConsentStore {
+  let storageFailed = false;
+
+  return {
+    hasSafetyConsent: () => {
+      if (storageFailed) return false;
+
+      try {
+        return storage.getItem(consentStorageKey) === "accepted";
+      } catch {
+        storageFailed = true;
+        return false;
+      }
+    },
+    setSafetyConsent: (accepted: boolean) => {
+      try {
+        if (accepted) {
+          storage.setItem(consentStorageKey, "accepted");
+          return;
+        }
+        storage.removeItem(consentStorageKey);
+      } catch {
+        storageFailed = true;
+      }
+    }
+  };
+}
+
+``````
+
+### src/keyframe-overlay-renderer.ts
+
+``````text
+import type { AppState } from "./app-state";
+import { setOverlayResult } from "./app-state";
+import type { SampledFrameOutput } from "./frame-processing";
+import { renderPoseOverlayFrame, type PoseOverlayRenderResult } from "./pose-renderer";
+
+export function renderSelectedKeyframeCanvas(root: ParentNode, state: AppState): void {
+  const canvas = root.querySelector<HTMLCanvasElement>("[data-keyframe-canvas]");
+  if (!canvas || state.phaseOutputs.length === 0) return;
+  const output = state.phaseOutputs[state.selectedKeyframeIndex] ?? state.phaseOutputs[0];
+  const status = root.querySelector<HTMLElement>("[data-overlay-status]");
+  const result = renderPoseOverlayFrame(canvas, {
+    preview: output.preview,
+    landmarks: output.pose.landmarks[0]
+  });
+  setOverlayResult(state, result);
+  if (status) {
+    status.textContent =
+      result.status === "unavailable"
+        ? "Skeleton overlay unavailable for this keyframe."
+        : result.status === "partial"
+          ? "Skeleton overlay partially available for this keyframe."
+          : "Skeleton overlay rendered for this keyframe.";
+  }
+}
+
+export async function renderAnnotatedKeyframe(
+  output: SampledFrameOutput
+): Promise<{ preview?: ImageBitmap; overlay: PoseOverlayRenderResult } | undefined> {
+  const canvas = document.createElement("canvas");
+  const overlay = renderPoseOverlayFrame(canvas, {
+    preview: output.preview,
+    landmarks: output.pose.landmarks[0]
+  });
+  if (overlay.status === "unavailable") return { overlay };
+  try {
+    return { preview: await createImageBitmap(canvas), overlay };
+  } catch {
+    return { overlay };
+  }
+}
+
+``````
+
+### src/phase-review-renderer.ts
+
+``````text
+import type { AppState } from "./app-state";
+import { isValidCorrection, phaseDefinitions, type PhaseDeclarations } from "./phase-review";
+
+export function renderPhaseReview(state: AppState): string {
+  const proposal = state.phaseReviewState?.automaticProposal;
+  const reviewRequired = proposal?.evidenceStatus === "review-required";
+  const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
+  const warning =
+    proposal?.evidenceStatus === "unsupported-input"
+      ? "Select every required declaration and provide a supported active eight-sample run."
+      : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
+
+  return `
+    <section class="phase-review" aria-labelledby="phase-review-heading">
+      ${renderKeyframeOverlayReview(state)}
+      <div class="phase-warning" role="status" aria-live="polite">
+        <strong id="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</strong>
+        <p>${warning}</p>
+      </div>
+      <fieldset class="phase-declarations">
+        <legend>Required video declarations</legend>
+        ${renderDeclarationSelect("phase-view", "View", state.phaseDeclarations.view, [
+          ["undeclared", "Select view"],
+          ["face-on", "Face-on side view"]
+        ])}
+        ${renderDeclarationSelect("phase-handedness", "Handedness", state.phaseDeclarations.handedness, [
+          ["undeclared", "Select handedness"],
+          ["right", "Right-handed"],
+          ["left", "Left-handed"]
+        ])}
+        ${renderDeclarationSelect("phase-mirrored", "Horizontally mirrored", state.phaseDeclarations.mirrored, [
+          ["undeclared", "Select mirrored status"],
+          ["no", "No"],
+          ["yes", "Yes"]
+        ])}
+        <label class="phase-setup-confirmation">
+          <input id="phase-setup" type="checkbox" ${state.phaseDeclarations.setup === "confirmed" ? "checked" : ""} />
+          <span>I confirm this is one trimmed, complete swing with the golfer substantially full-body visible and the camera reasonably stable.</span>
+        </label>
+      </fieldset>
+      <div class="phase-assignment-list" aria-label="Swing phase assignments">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const selected = state.phaseDraft[index]?.sampleIndex ?? index;
+            return `
+              <label class="phase-assignment">
+                <span><strong>${phase.label}</strong><small>Ordered phase ${index + 1}</small></span>
+                <select aria-label="${phase.label} sample" data-phase-index="${index}" ${reviewRequired && !ready ? "" : "disabled"}>
+                  ${phaseDefinitions
+                    .map(
+                      (_, sampleIndex) =>
+                        `<option value="${sampleIndex}" ${sampleIndex === selected ? "selected" : ""}>Sample ${sampleIndex + 1}</option>`
+                    )
+                    .join("")}
+                </select>
+              </label>`;
+          })
+          .join("")}
+      </div>
+      <label class="phase-confirmation">
+        <input id="phase-confirmation" type="checkbox" ${state.phaseConfirmation ? "checked" : ""} ${
+          reviewRequired && !ready ? "" : "disabled"
+        } />
+        <span>I reviewed these provisional labels. They may not represent each exact swing event.</span>
+      </label>
+      <div class="action-row">
+        <button class="primary-action" type="button" data-confirm-phase-review ${
+          reviewRequired && state.phaseConfirmation && isValidCorrection(state.phaseDraft) && !ready ? "" : "disabled"
+        }>Confirm phase review</button>
+        <button class="secondary-action" type="button" data-open-export>Open Swing Card export</button>
+        <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderKeyframeOverlayReview(state: AppState): string {
+  const selectedOutput = state.phaseOutputs[state.selectedKeyframeIndex] ?? state.phaseOutputs[0];
+  const selectedPhase = phaseDefinitions[selectedOutput?.index ?? 0] ?? phaseDefinitions[0];
+  const overlayStatus =
+    state.latestOverlayResult?.status === "unavailable"
+      ? "Skeleton overlay unavailable for this keyframe."
+      : state.latestOverlayResult?.status === "partial"
+        ? "Skeleton overlay partially available for this keyframe."
+        : "Skeleton overlay rendered for this keyframe.";
+
+  return `
+    <section class="keyframe-review" aria-labelledby="keyframe-review-heading">
+      <div class="keyframe-review__heading">
+        <div>
+          <p class="placeholder-kicker">Annotated keyframes</p>
+          <h3 id="keyframe-review-heading">${selectedPhase.label}</h3>
+        </div>
+        <span class="stage-status">Annotated still</span>
+      </div>
+      <div class="keyframe-canvas-wrap">
+        <canvas class="keyframe-canvas" data-keyframe-canvas aria-label="Annotated keyframe: ${selectedPhase.label}"></canvas>
+      </div>
+      <p class="action-note" data-overlay-status>${overlayStatus}</p>
+      <div class="keyframe-strip" aria-label="Select keyframe">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const isSelected = state.selectedKeyframeIndex === index;
+            return `<button class="keyframe-button ${isSelected ? "is-selected" : ""}" type="button" data-keyframe-index="${index}" aria-pressed="${isSelected ? "true" : "false"}">
+              <span>${index + 1}</span>
+              <strong>${phase.label}</strong>
+            </button>`;
+          })
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderDeclarationSelect(
+  id: string,
+  label: string,
+  selected: string,
+  options: readonly (readonly [string, string])[]
+): string {
+  return `<label for="${id}">${label}<select id="${id}" aria-label="${label}">${options
+    .map(([value, text]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${text}</option>`)
+    .join("")}</select></label>`;
+}
+
+export function declarationValue<K extends keyof PhaseDeclarations>(
+  value: string,
+  _key: K
+): PhaseDeclarations[K] {
+  return value as PhaseDeclarations[K];
+}
+
+``````
+
+### src/remote-model-renderer.ts
+
+``````text
+import {
+  modelBlockedOutboundDataClasses,
+  modelOutboundDataClasses
+} from "./model-adapter-contract";
+import { reviewedModelProviders } from "./model-consent";
+import { formatRemoteDataClass } from "./render-utils";
+
+export function renderRemoteModelReviewPanel(): string {
+  const providerAvailable = reviewedModelProviders.length > 0;
+  return `
+    <section class="remote-model-panel" aria-labelledby="remote-model-heading">
+      <div class="remote-model-panel__header">
+        <div>
+          <p class="placeholder-kicker">Optional remote review</p>
+          <h4 id="remote-model-heading">Remote model review unavailable</h4>
+        </div>
+        <span class="stage-status">Off by default</span>
+      </div>
+      <p>Remote model review is optional and requires a separately reviewed provider before any data can leave this device. Manual Swing Card export and Copy prompt do not require provider configuration.</p>
+      <dl class="remote-model-disclosure" aria-label="Remote model data disclosure">
+        <div>
+          <dt>Provider registry</dt>
+          <dd>${providerAvailable ? "Reviewed provider configured." : "No reviewed provider is configured for this story."}</dd>
+        </div>
+        <div>
+          <dt>Would send after future consent</dt>
+          <dd>${modelOutboundDataClasses.map(formatRemoteDataClass).join(", ")}</dd>
+        </div>
+        <div>
+          <dt>Will not send in SS-013</dt>
+          <dd>${modelBlockedOutboundDataClasses.map(formatRemoteDataClass).join(", ")}</dd>
+        </div>
+      </dl>
+      <button class="secondary-action" type="button" disabled data-remote-model-send>Remote review unavailable</button>
+      <p class="action-note" data-remote-model-status role="status">Remote model review is unavailable until a provider is separately reviewed and configured.</p>
+    </section>
+  `;
+}
+
+``````
+
+### src/render-utils.ts
+
+``````text
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const replacements: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return replacements[character] ?? character;
+  });
+}
+
+export function formatRemoteDataClass(dataClass: string): string {
+  return dataClass
+    .split("-")
+    .map((part, index) => (index > 0 && part === "and" ? part : part[0].toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
+export function formatSwingCardWarning(warning: string): string {
+  const labels: Record<string, string> = {
+    NO_KEYFRAMES_SELECTED: "No keyframes were selected.",
+    KEYFRAME_UNAVAILABLE: "One or more keyframes are unavailable.",
+    METRICS_UNAVAILABLE: "Metrics are unavailable.",
+    PHASE_REVIEW_REQUIRED: "Phase review is required before metrics should be interpreted.",
+    PROMPT_LIMITED_EVIDENCE: "Evidence is limited; do not infer missing values."
+  };
+  return labels[warning] ?? warning;
+}
+
+``````
+
+### src/swing-card-actions.ts
+
+``````text
+import type { AppState } from "./app-state";
+import {
+  getCompleteSwingCardAssignments,
+  setSwingCardBusy,
+  setSwingCardStatus
+} from "./app-state";
+import type { PhaseAssignment } from "./phase-review";
+import { phaseDefinitions } from "./phase-review";
+import type { SwingCardContent, SwingCardKeyframe } from "./swing-card-contract";
+import {
+  buildSwingCardPrompt,
+  composeSwingCardPng,
+  deriveSwingCardContentWarnings,
+  renderSwingCardPrintSurface,
+  triggerSwingCardDownload
+} from "./swing-card-generator";
+import type { SampledFrameOutput } from "./frame-processing";
+import { renderAnnotatedKeyframe } from "./keyframe-overlay-renderer";
+
+export interface PreparedSwingCardContent {
+  content: SwingCardContent;
+  release(): void;
+}
+
+export async function downloadSwingCard(state: AppState, requestRender: (statusMessage?: string) => void): Promise<void> {
+  if (state.swingCardBusy) return;
+  setSwingCardBusy(state, true);
+  setSwingCardStatus(state, "Preparing local Swing Card PNG.");
+  requestRender();
+  const prepared = await prepareSwingCardContent(state);
+  try {
+    const result = await composeSwingCardPng(prepared.content);
+    if (result.status === "ok") {
+      triggerSwingCardDownload(result.blob, result.filename);
+      setSwingCardStatus(state, "Swing Card PNG download started.");
+    } else {
+      setSwingCardStatus(state, `Swing Card PNG export stopped (${result.reason}).`);
+    }
+  } finally {
+    prepared.release();
+    setSwingCardBusy(state, false);
+    requestRender();
+  }
+}
+
+export async function printSwingCard(
+  root: ParentNode,
+  state: AppState,
+  requestRender: (statusMessage?: string) => void
+): Promise<void> {
+  if (state.swingCardBusy) return;
+  setSwingCardBusy(state, true);
+  setSwingCardStatus(state, "Preparing browser print view.");
+  requestRender();
+  const prepared = await prepareSwingCardContent(state);
+  try {
+    const host = root.querySelector<HTMLElement>("[data-swing-card-print-host]");
+    host?.replaceChildren(renderSwingCardPrintSurface(prepared.content));
+    setSwingCardStatus(state, "Browser print dialog opened. Save as PDF if your browser supports it.");
+    window.print();
+  } finally {
+    prepared.release();
+    setSwingCardBusy(state, false);
+    requestRender();
+  }
+}
+
+export async function copySwingCardPrompt(state: AppState, requestRender: (statusMessage?: string) => void): Promise<void> {
+  if (state.swingCardBusy) return;
+  setSwingCardBusy(state, true);
+  setSwingCardStatus(state, "Preparing prompt text.");
+  requestRender();
+  const prepared = await prepareSwingCardContent(state);
+  try {
+    await navigator.clipboard.writeText(prepared.content.analysisPrompt);
+    setSwingCardStatus(state, "Prompt copied for manual use.");
+  } catch {
+    setSwingCardStatus(state, "Prompt copy unavailable in this browser.");
+  } finally {
+    prepared.release();
+    setSwingCardBusy(state, false);
+    requestRender();
+  }
+}
+
+export async function prepareSwingCardContent(state: AppState): Promise<PreparedSwingCardContent> {
+  const createdBitmaps: ImageBitmap[] = [];
+  const keyframes: SwingCardKeyframe[] = [];
+  const assignments = getCompleteSwingCardAssignments(state);
+
+  for (const phase of phaseDefinitions) {
+    const assignment = assignments?.find((item) => item.phaseId === phase.id);
+    const output = assignment ? state.phaseOutputs[assignment.sampleIndex] : undefined;
+    const rendered = output ? await renderAnnotatedKeyframeWithoutTiming(output) : undefined;
+    if (rendered?.preview) createdBitmaps.push(rendered.preview);
+    keyframes.push({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: rendered?.preview,
+      overlay: rendered?.overlay
+    });
+  }
+
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes,
+    metricPayload: undefined,
+    phaseReviewConfirmed: (state.phaseReviewState?.readyForFutureMetrics ?? false) && hasCompleteAssignments(assignments)
+  });
+  const base: SwingCardContent = {
+    keyframes,
+    metricPayload: undefined,
+    warnings,
+    analysisPrompt: ""
+  };
+  const content = { ...base, analysisPrompt: buildSwingCardPrompt(base) };
+  return {
+    content,
+    release: () => {
+      for (const bitmap of createdBitmaps) bitmap.close();
+    }
+  };
+}
+
+async function renderAnnotatedKeyframeWithoutTiming(output: SampledFrameOutput) {
+  return renderAnnotatedKeyframe(output);
+}
+
+function hasCompleteAssignments(assignments: readonly PhaseAssignment[] | undefined): boolean {
+  return !!assignments;
+}
+
+``````
+
+### scripts/verify-privacy-boundaries.js
+
+``````text
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function readRequired(path) {
+  if (!existsSync(path)) {
+    fail(`${path} is missing.`);
+  }
+  return readFileSync(path, "utf8");
+}
+
+function assertIncludes(text, phrase, source) {
+  if (!text.toLowerCase().includes(phrase.toLowerCase())) {
+    fail(`${source} must include: ${phrase}`);
+  }
+}
+
+function assertHasTerms(text, terms, source, label) {
+  const lower = text.toLowerCase();
+  for (const term of terms) {
+    if (!lower.includes(term.toLowerCase())) {
+      fail(`${source} must include ${label}: ${term}`);
+    }
+  }
+}
+
+function assertNotMatches(text, pattern, source, label) {
+  if (pattern.test(text)) {
+    fail(`${source} must not match prohibited privacy pattern: ${label}`);
+  }
+}
+
+function listScannableFiles(root) {
+  if (!existsSync(root)) {
+    return [];
+  }
+
+  const files = [];
+  for (const entry of readdirSync(root)) {
+    const path = join(root, entry);
+    const stat = statSync(path);
+
+    if (stat.isDirectory()) {
+      files.push(...listScannableFiles(path));
+      continue;
+    }
+
+    if (/\.(html|js|jsx|ts|tsx|mjs|cjs)$/.test(path)) {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
+const privacyDocPath = "docs/privacy-architecture.md";
+const dispositionPath = "docs/ss-003-research-disposition.md";
+const appSourcePaths = ["src/main.ts", "src/app-renderer.ts", "src/consent-state.ts"];
+const packagePath = "package.json";
+const indexPath = "index.html";
+const privacyVerifierPath = "scripts/verify-privacy-boundaries.js";
+
+const privacyDoc = readRequired(privacyDocPath);
+const disposition = readRequired(dispositionPath);
+const appSource = appSourcePaths.map((path) => readRequired(path)).join("\n");
+const packageJson = JSON.parse(readRequired(packagePath));
+const packageText = JSON.stringify(packageJson, null, 2);
+
+for (const phrase of [
+  "DRAFT - pending human/privacy review",
+  "not legal advice",
+  "separate, explicit opt-in",
+  "Derived landmarks and metrics should be treated as sensitive user data",
+  "must not promise",
+  "Default analytical exports must not include raw swing video",
+  "Exports must not be described as anonymous",
+  "Optional remote sharing is not approved yet",
+  "not device-level erasure"
+]) {
+  assertIncludes(privacyDoc, phrase, privacyDocPath);
+}
+
+assertHasTerms(
+  privacyDoc,
+  ["Raw swing video", "frame pixels", "must not be uploaded"],
+  privacyDocPath,
+  "raw media no-upload boundary"
+);
+
+for (const phrase of [
+  "Adopt",
+  "Revise Before Adoption",
+  "Defer",
+  "Reject For Current Scope",
+  "Source Checks",
+  "Claude Review Checklist"
+]) {
+  assertIncludes(disposition, phrase, dispositionPath);
+}
+
+// Cross-check the current consent scaffold across its extracted runtime modules.
+for (const phrase of [
+  "explicit opt-in step you initiate",
+  "Raw swing video stays on your",
+  "Consent recorded locally"
+]) {
+  assertIncludes(appSource, phrase, appSourcePaths.join(", "));
+}
+
+const prohibitedClaims = [
+  ["absolute privacy guarantee", /\b(guarantee[sd]?|ensure[sd]?)\s+(absolute|complete|total)\s+privacy\b/i],
+  ["guaranteed local-only transit", /\bguarantee[sd]?\s+that\s+data\s+never\s+leaves\b/i],
+  ["anonymous export claim", /\b(exports?|downloads?|swing cards?)\s+(are|is)\s+anonymous\b/i],
+  ["forensic deletion guarantee", /\bguarantee[sd]?\s+.*\b(forensic|physical|permanent)\s+erasure\b/i],
+  ["zero retention provider claim", /\bzero[- ]data[- ]retention\b/i],
+  ["training-use provider guarantee", /\b(prohibited|forbidden)\s+from\s+.*\b(model\s+training|training)\b/i],
+  ["secure storage absolute", /\b(secure|encrypted)\s+browser\s+storage\b/i]
+];
+
+for (const [label, pattern] of prohibitedClaims) {
+  assertNotMatches(privacyDoc, pattern, privacyDocPath, label);
+}
+
+const prohibitedEndpointPatterns = [
+  ["Google Analytics", /google-analytics\.com|googletagmanager\.com|gtag\(/i],
+  ["DoubleClick", /doubleclick\.net/i],
+  ["Amplitude", /amplitude\.com|amplitude-js|@amplitude\//i],
+  ["Mixpanel", /mixpanel\.com|mixpanel-browser/i],
+  ["Hotjar", /hotjar\.com|hotjar/i],
+  ["Segment", /segment\.io|analytics-node|@segment\//i],
+  // Blocked pending privacy review; not a permanent categorical ban.
+  ["Sentry", /sentry\.io|@sentry\//i],
+  ["FullStory", /fullstory\.com|@fullstory\//i]
+];
+
+const sourceFiles = [
+  indexPath,
+  ...listScannableFiles("src"),
+  ...listScannableFiles("scripts").filter((path) => path !== privacyVerifierPath)
+];
+
+for (const [label, pattern] of prohibitedEndpointPatterns) {
+  for (const sourcePath of sourceFiles) {
+    assertNotMatches(readRequired(sourcePath), pattern, sourcePath, label);
+  }
+  assertNotMatches(packageText, pattern, packagePath, label);
+}
+
+console.log("Privacy architecture and boundary constraints verified.");
+
+``````
+
+### scripts/verify-safety-terms.js
+
+``````text
+import { readFileSync } from "node:fs";
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function assertIncludes(text, phrase, source) {
+  if (!text.toLowerCase().includes(phrase.toLowerCase())) {
+    fail(`${source} must include: ${phrase}`);
+  }
+}
+
+function assertNotIncludes(text, phrase, source) {
+  if (text.toLowerCase().includes(phrase.toLowerCase())) {
+    fail(`${source} must not include unsafe phrasing: ${phrase}`);
+  }
+}
+
+function assertNotMatches(text, pattern, source, label) {
+  if (pattern.test(text)) {
+    fail(`${source} must not match unsafe pattern: ${label}`);
+  }
+}
+
+const safetyTermsPath = "docs/safety-terms.md";
+const researchDispositionPath = "docs/ss-002-research-disposition.md";
+const appSourcePaths = ["src/main.ts", "src/app-renderer.ts", "src/app-events.ts", "src/consent-state.ts"];
+const safetyTerms = readFileSync(safetyTermsPath, "utf8");
+const researchDisposition = readFileSync(researchDispositionPath, "utf8");
+const appSource = appSourcePaths.map((path) => readFileSync(path, "utf8")).join("\n");
+const combined = `${safetyTerms}\n${researchDisposition}\n${appSource}`;
+
+for (const phrase of [
+  "not legal advice",
+  "educational",
+  "not medical advice",
+  "professional athletic instruction",
+  "raw swing video must remain on the user's device by default",
+  "consent gate",
+  "assumption of risk",
+  "release of liability",
+  "prohibit diagnosing pain",
+  "prohibit medical triage",
+  "rehabilitation",
+  "aggressive mechanical prescriptions",
+  "defense-in-depth"
+]) {
+  assertIncludes(safetyTerms, phrase, safetyTermsPath);
+}
+
+for (const phrase of [
+  "Adopt",
+  "Revise Before Adoption",
+  "Reject For Current Draft",
+  "Claude QA Handoff Checklist",
+  "not legal advice",
+  "approved implementation mandate"
+]) {
+  assertIncludes(researchDisposition, phrase, researchDispositionPath);
+}
+
+for (const phrase of [
+  "localStorage",
+  "swing-sync:safety-consent:v1",
+  "not a durable or legally audited consent record",
+  "explicit opt-in step you initiate",
+  "physical risk I accept responsibility for",
+  "Begin analysis",
+  "stop if you feel pain",
+  "qualified medical or coaching professionals",
+  "Please acknowledge the safety terms before starting analysis"
+]) {
+  assertIncludes(appSource, phrase, appSourcePaths.join(", "));
+}
+
+for (const phrase of [
+  "train through pain",
+  "ignore pain",
+  "diagnose your pain",
+  "can diagnose",
+  "provides medical advice",
+  "guaranteed to prevent injury",
+  "guaranteed improvement",
+  "absolute ownership",
+  "100% block rate",
+  "rehab drill",
+  "rotator cuff",
+  "physical therapy exercises",
+  "medical clearance",
+  "medically cleared",
+  "stretch to fix"
+]) {
+  assertNotIncludes(combined, phrase, "SS-002 safety content");
+}
+
+for (const [label, pattern] of [
+  ["positive medical advice claim", /\b(provides?|offers?|gives?)\s+(medical|clinical)\s+advice\b/i],
+  ["diagnosis capability claim", /\b(can|will|does)\s+diagnos(e|is)\b/i],
+  ["injury prevention guarantee", /\bguarantee[sd]?\s+(to\s+)?(prevent|avoid)\s+injur/i],
+  ["performance guarantee", /\bguarantee[sd]?\s+(performance|improvement|results?)\b/i],
+  ["rehabilitation instruction", /\b(prescribes?|recommends?|gives?)\s+.*\b(rehab|rehabilitation|therapy)\b/i],
+  ["unsafe pain compensation", /\b(swing|train|practice|move)\s+.*\b(through|despite|around)\s+pain\b/i]
+]) {
+  assertNotMatches(combined, pattern, "SS-002 safety content", label);
+}
+
+console.log("Safety terms and consent-gate constraints verified.");
+
+``````
+
+### test/unit/analysis-lifecycle.test.ts
+
+``````text
+import { describe, expect, it, vi } from "vitest";
+import { AnalysisLifecycle } from "../../src/analysis-lifecycle";
+import { createInitialAppState, selectWorkflowStep, setProcessingState } from "../../src/app-state";
+
+describe("analysis lifecycle ownership", () => {
+  it("keeps network-blocked abort scoped to active local processing", () => {
+    const state = createInitialAppState();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender: () => undefined
+    });
+    const abort = vi.fn();
+    Object.assign(lifecycle as unknown as { abortFrameController?: (code: string) => void }, {
+      abortFrameController: abort
+    });
+
+    setProcessingState(state, "idle");
+    lifecycle.abortWithNetworkBlocked();
+    expect(abort).not.toHaveBeenCalled();
+
+    setProcessingState(state, "loading");
+    lifecycle.abortWithNetworkBlocked();
+    expect(abort).toHaveBeenCalledWith("UNEXPECTED_NETWORK_BLOCKED");
+  });
+
+  it("clears lifecycle-owned controller handles and syncs app-state idle on close", async () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const close = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender
+    });
+    Object.assign(
+      lifecycle as unknown as {
+        frameController?: { close: () => Promise<void> };
+        abortFrameController?: (code: string) => void;
+      },
+      {
+        frameController: { close },
+        abortFrameController: vi.fn()
+      }
+    );
+    setProcessingState(state, "processing");
+
+    await lifecycle.closeActive();
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(lifecycle.hasActiveController()).toBe(false);
+    expect(state.processingState).toBe("idle");
+  });
+
+  it("stops active processing and requests an idle capture render", async () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const cancel = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender
+    });
+    Object.assign(lifecycle as unknown as { frameController?: { cancel: () => Promise<void> } }, {
+      frameController: { cancel }
+    });
+    selectWorkflowStep(state, "processing");
+    setProcessingState(state, "processing");
+
+    await lifecycle.stopActive();
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(lifecycle.hasActiveController()).toBe(false);
+    expect(state.activeStep).toBe("capture");
+    expect(state.processingState).toBe("idle");
+    expect(requestRender).toHaveBeenCalledWith("Local analysis stopped and volatile resources were released.");
+  });
+});
+
+``````
+
+### test/unit/app-events.test.ts
+
+``````text
+import { describe, expect, it, vi } from "vitest";
+import { bindAppEvents } from "../../src/app-events";
+import { createInitialAppState } from "../../src/app-state";
+import type { SafetyConsentStore } from "../../src/consent-state";
+
+class FakeButton {
+  private listeners: (() => void)[] = [];
+
+  addEventListener(_event: "click", listener: () => void): void {
+    this.listeners.push(listener);
+  }
+
+  click(): void {
+    for (const listener of this.listeners) listener();
+  }
+}
+
+class FakeRoot {
+  constructor(private readonly button: FakeButton) {}
+
+  querySelector(selector: string) {
+    return selector === "[data-placeholder-action='camera']" ? this.button : null;
+  }
+
+  querySelectorAll() {
+    return [];
+  }
+}
+
+describe("app event binding", () => {
+  it("binds fresh DOM after repeated renders without duplicate effects", () => {
+    const requestRender = vi.fn();
+    const consent: SafetyConsentStore = {
+      hasSafetyConsent: () => false,
+      setSafetyConsent: () => undefined
+    };
+    const dependencies = {
+      state: createInitialAppState(),
+      consent,
+      lifecycle: {} as never,
+      requestRender
+    };
+
+    const firstButton = new FakeButton();
+    bindAppEvents(new FakeRoot(firstButton) as unknown as ParentNode, dependencies);
+    firstButton.click();
+    expect(requestRender).toHaveBeenCalledTimes(1);
+
+    const secondButton = new FakeButton();
+    bindAppEvents(new FakeRoot(secondButton) as unknown as ParentNode, dependencies);
+    secondButton.click();
+    expect(requestRender).toHaveBeenCalledTimes(2);
+  });
+});
+
+``````
+
+### test/unit/app-renderer.test.ts
+
+``````text
+import { describe, expect, it } from "vitest";
+import { renderApp, updateProcessingProgressUi } from "../../src/app-renderer";
+import {
+  createInitialAppState,
+  selectLocalVideo,
+  selectWorkflowStep,
+  setProcessingProgress,
+  setProcessingState
+} from "../../src/app-state";
+
+class FakeElement {
+  innerHTML = "";
+  textContent = "";
+  hidden = false;
+  private readonly selectors = new Map<string, FakeElement>();
+
+  querySelector<T>(_selector: string): T | null {
+    return (this.selectors.get(_selector) ?? null) as T | null;
+  }
+
+  set(selector: string, element: FakeElement): void {
+    this.selectors.set(selector, element);
+  }
+}
+
+describe("app renderer contracts", () => {
+  it("preserves protected capture selectors and escapes selected file names", () => {
+    const root = new FakeElement() as unknown as HTMLElement;
+    const state = createInitialAppState();
+    selectLocalVideo(state, new File(["video"], `<bad "name">.mp4`, { type: "video/mp4" }));
+
+    renderApp(root, state, true);
+
+    expect(root.innerHTML).toContain('id="analysis-button"');
+    expect(root.innerHTML).toContain('id="video-file"');
+    expect(root.innerHTML).toContain("Local video source");
+    expect(root.innerHTML).toContain("&lt;bad &quot;name&quot;&gt;.mp4");
+    expect(root.innerHTML).not.toContain(`<bad "name">.mp4`);
+  });
+
+  it("updates current processing DOM by re-querying targets and no-ops when absent", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "processing");
+    setProcessingState(state, "processing");
+    setProcessingProgress(state, 1, 8);
+
+    const detachedSummary = new FakeElement();
+    const oldRoot = new FakeElement();
+    oldRoot.set("[data-pose-summary]", detachedSummary);
+    updateProcessingProgressUi(oldRoot as unknown as ParentNode, state);
+    expect(detachedSummary.textContent).toContain("1 of 8");
+
+    setProcessingProgress(state, 2, 8);
+    const visibleSummary = new FakeElement();
+    const nextRoot = new FakeElement();
+    nextRoot.set("[data-pose-summary]", visibleSummary);
+    updateProcessingProgressUi(nextRoot as unknown as ParentNode, state);
+
+    expect(visibleSummary.textContent).toContain("2 of 8");
+    expect(detachedSummary.textContent).toContain("1 of 8");
+    expect(() => updateProcessingProgressUi(new FakeElement() as unknown as ParentNode, state)).not.toThrow();
+  });
+});
+
+``````
+
+### test/unit/app-state.test.ts
+
+``````text
+import { describe, expect, it } from "vitest";
+import {
+  createInitialAppState,
+  resetPhaseReview,
+  selectCanBeginAnalysis,
+  selectLocalVideo,
+  selectWorkflowStep,
+  setProcessingState,
+  setSwingCardBusy,
+  setSwingCardStatus
+} from "../../src/app-state";
+
+function file(): File {
+  return new File(["video"], "swing.mp4", { type: "video/mp4" });
+}
+
+describe("app state transitions", () => {
+  it("keeps Begin analysis gating in one selector", () => {
+    const state = createInitialAppState();
+
+    expect(selectCanBeginAnalysis(state, false)).toBe(false);
+    expect(selectCanBeginAnalysis(state, true)).toBe(false);
+
+    selectLocalVideo(state, file());
+    expect(selectCanBeginAnalysis(state, false)).toBe(false);
+    expect(selectCanBeginAnalysis(state, true)).toBe(true);
+
+    setProcessingState(state, "processing");
+    expect(selectCanBeginAnalysis(state, true)).toBe(false);
+
+    setProcessingState(state, "idle");
+    selectWorkflowStep(state, "review");
+    expect(selectCanBeginAnalysis(state, true)).toBe(false);
+  });
+
+  it("resets phase and Swing Card volatile state without clearing selected video", () => {
+    const state = createInitialAppState();
+    const selected = file();
+    selectLocalVideo(state, selected);
+    setSwingCardBusy(state, true);
+    setSwingCardStatus(state, "Preparing prompt text.");
+    state.phaseConfirmation = true;
+    state.selectedKeyframeIndex = 3;
+
+    resetPhaseReview(state);
+
+    expect(state.selectedVideo).toBe(selected);
+    expect(state.phaseConfirmation).toBe(false);
+    expect(state.selectedKeyframeIndex).toBe(0);
+    expect(state.swingCardBusy).toBe(false);
+    expect(state.swingCardStatus).toBe("Swing Card export is generated locally after review data exists.");
+  });
+});
+
+``````
+
+### test/unit/consent-state.test.ts
+
+``````text
+import { describe, expect, it } from "vitest";
+import { consentStorageKey, createSafetyConsentStore, type ConsentStorage } from "../../src/consent-state";
+
+function storage(initial?: string): ConsentStorage & { values: Map<string, string> } {
+  const values = new Map<string, string>();
+  if (initial) values.set(consentStorageKey, initial);
+  return {
+    values,
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
+    removeItem: (key) => {
+      values.delete(key);
+    }
+  };
+}
+
+describe("safety consent storage", () => {
+  it("reads accepted and missing local acknowledgement state", () => {
+    expect(createSafetyConsentStore(storage("accepted")).hasSafetyConsent()).toBe(true);
+    expect(createSafetyConsentStore(storage()).hasSafetyConsent()).toBe(false);
+  });
+
+  it("stores and removes only the accepted acknowledgement value", () => {
+    const fakeStorage = storage();
+    const consent = createSafetyConsentStore(fakeStorage);
+
+    consent.setSafetyConsent(true);
+    expect(fakeStorage.values.get(consentStorageKey)).toBe("accepted");
+    expect(consent.hasSafetyConsent()).toBe(true);
+
+    consent.setSafetyConsent(false);
+    expect(fakeStorage.values.has(consentStorageKey)).toBe(false);
+    expect(consent.hasSafetyConsent()).toBe(false);
+  });
+
+  it("fails closed when reading local acknowledgement throws", () => {
+    const consent = createSafetyConsentStore({
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => undefined,
+      removeItem: () => undefined
+    });
+
+    expect(consent.hasSafetyConsent()).toBe(false);
+    expect(consent.hasSafetyConsent()).toBe(false);
+  });
+
+  it("fails closed through the public query after set or remove failures", () => {
+    const setFailure = createSafetyConsentStore({
+      getItem: () => "accepted",
+      setItem: () => {
+        throw new Error("blocked");
+      },
+      removeItem: () => undefined
+    });
+    setFailure.setSafetyConsent(true);
+    expect(setFailure.hasSafetyConsent()).toBe(false);
+
+    const removeFailure = createSafetyConsentStore({
+      getItem: () => "accepted",
+      setItem: () => undefined,
+      removeItem: () => {
+        throw new Error("blocked");
+      }
+    });
+    removeFailure.setSafetyConsent(false);
+    expect(removeFailure.hasSafetyConsent()).toBe(false);
+  });
+});
+
+``````
+
+### test/unit/render-utils.test.ts
+
+``````text
+import { describe, expect, it } from "vitest";
+import { escapeHtml, formatRemoteDataClass, formatSwingCardWarning } from "../../src/render-utils";
+
+describe("render utilities", () => {
+  it("escapes user-controlled text through one canonical helper", () => {
+    expect(escapeHtml(`<img src=x onerror="alert('x')">`)).toBe(
+      "&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt;"
+    );
+  });
+
+  it("formats remote data classes and Swing Card warnings consistently", () => {
+    expect(formatRemoteDataClass("warnings-and-limitations")).toBe("Warnings and Limitations");
+    expect(formatSwingCardWarning("PHASE_REVIEW_REQUIRED")).toBe(
+      "Phase review is required before metrics should be interpreted."
+    );
+  });
+});
+
+``````
+
+### test/unit/swing-card-actions.test.ts
+
+``````text
+import { describe, expect, it } from "vitest";
+import { createInitialAppState } from "../../src/app-state";
+import { prepareSwingCardContent } from "../../src/swing-card-actions";
+
+describe("swing card actions", () => {
+  it("keeps observedSeekTimestampMs out of prepared export content", async () => {
+    const prepared = await prepareSwingCardContent(createInitialAppState());
+
+    try {
+      expect(JSON.stringify(prepared.content)).not.toContain("observedSeekTimestampMs");
+      expect(prepared.content.analysisPrompt).not.toContain("observedSeekTimestampMs");
+    } finally {
+      prepared.release();
+    }
+  });
+});
+
+``````
+
+### .agents/skills/swing-sync-story-delivery/SKILL.md
+
+``````text
+---
+name: swing-sync-story-delivery
+description: Execute or coordinate a Swing Sync user story from Notion task selection through research/specification, implementation, Claude adversarial audit, pull request, merge, and post-merge context synchronization. Use for Swing Sync story kickoff, delivery, audit response, PR preparation, merge readiness, or task-status handoff work.
+---
+
+# Swing Sync Story Delivery
+
+Deliver one accepted Swing Sync story while keeping repository, Notion, audit,
+and release state aligned. Read `AGENTS.md` for durable repository boundaries
+and `CONTEXT.md` for current state before proceeding.
+
+## Compose Generic Skills
+
+Use the existing generic skills instead of duplicating their guidance:
+
+- Use `$multi-agent-sdlc-orchestration` for role boundaries, handoff contracts,
+  observability decisions, and completion discipline.
+- Use `$adversarial-review-handoff` to prepare Claude audit prompts.
+- Use `$audit-response` to assess and resolve Claude findings.
+- Use `$project-context-sync` when repository, PR, audit, merge, or next-task
+  state changes.
+- Use `$pr-prep` to inspect the diff and prepare or create a PR.
+- Use `$app-scaffold-review` for UI, PWA, frontend, or application-shell
+  stories.
+
+## Run The Story
+
+1. **Establish current state**
+   - Start from updated `main` unless the user explicitly directs otherwise.
+   - Read `CONTEXT.md`, inspect the worktree, and preserve unrelated changes.
+   - Fetch the next Swing Sync Notion task. Confirm acceptance criteria,
+     `Branch`, `Handshake Status`, and any existing `Pull Request`.
+   - Use the Notion handshake values exactly:
+     `0. Backlog`, `1. Spec Drafting (Gemini)`, `2. QA Planning (Claude)`,
+     `3. In Development (ChatGPT)`, `4. Final Audit (Claude)`, `5. Done`.
+
+2. **Classify and plan**
+   - Identify whether the story is safety, privacy, legal, medical,
+     AI-coaching, model-provider, or compliance-sensitive.
+   - Draft a concise implementation plan before editing.
+   - Keep current acceptance criteria separate from future work.
+
+3. **Prepare sensitive-story specification**
+   - Keep roles explicit: Gemini researches/specifies, Codex implements and
+     verifies, and Claude audits and signs off.
+   - Create a self-contained browser-chat Gemini prompt before implementation,
+     normally `docs/ss-###-gemini-research-prompt.md`.
+   - Treat Gemini output as research input, not authority. Verify important
+     claims against primary sources and record broad recommendations as Adopt,
+     Revise, Defer, or Reject in `docs/ss-###-research-disposition.md`.
+   - Do not implement until blocking specification or QA findings are resolved.
+
+4. **Implement and verify**
+   - Implement only the accepted scope and preserve the boundaries in
+     `docs/privacy-architecture.md`, `docs/safety-terms.md`,
+     `docs/licensing.md`, and `docs/models-licensing.md`.
+   - Run targeted checks first, then the build/compliance checks required by
+     `AGENTS.md` and the changed surface.
+   - Record commands and results. For runtime work, explicitly document whether
+     observability was added, unchanged, or deferred.
+
+5. **Audit and respond**
+   - For sensitive stories, create a self-contained Claude audit prompt,
+     normally `docs/ss-###-claude-audit-prompt.md`, and move the task to
+     `4. Final Audit (Claude)` when implementation is ready.
+   - Browser-chat prompts must embed required repository context because Gemini
+     and Claude Chat do not have filesystem or GitHub access.
+   - Every Claude prompt, including QA planning, final audit, and focused
+     re-review prompts, must use the standard adversarial-review skeleton:
+     Role, Stage, Scope, Context, Acceptance criteria, Protected boundaries,
+     Relevant source contents or focused diff, Verification, Known non-goals,
+     and Output required.
+   - For source-sensitive review, summaries alone are insufficient. Include the
+     exact relevant file contents or a complete focused diff for every file
+     Claude must evaluate. If full files are too large, include the smallest
+     complete coherent excerpts with file paths and state what was omitted and
+     why.
+   - For browser-chat audits, create the source packet as a durable artifact
+     before handoff when the prompt cannot inline the full diff. Do not mark the
+     audit handoff ready if the prompt only instructs the user to paste source
+     later but no packet exists.
+   - Resolve findings with `$audit-response`, rerun relevant verification, and
+     obtain Claude PASS before claiming the sensitive story is Done.
+   - After fixes, create a separate focused
+     `docs/ss-###-claude-rereview-prompt.md` containing prior findings, applied
+     fixes, relevant current snippets, verification, and a focused diff. Mark
+     superseded prompt files with a clear do-not-paste redirect.
+   - When Claude flags a gap that is likely to recur, update the story spec,
+     test plan, and durable guidance before implementation resumes. Do not
+     depend on the current chat thread as the only memory of the rule.
+   - For source-sensitive audits, enumerate every changed tracked file in the
+     prompt. Include the full focused diff for coordination files such as
+     `CONTEXT.md` when they changed, or state exactly why a changed file is
+     outside the audit scope.
+   - For verifier changes, specify the shared registration/config mechanism
+     before implementation. Prefer extending existing declarative config and
+     injected file-reader paths over one-off checks. If cross-file assertions
+     are needed, name them in the config and test source-read, target-read,
+     failure, and positive paths.
+   - For parser or extractor logic in verification scripts, add adversarial
+     unit tests for source formatting, missing inputs, empty values, embedded
+     delimiters, and fail-closed behavior. Named verbose test output should be
+     available when the audit depends on coverage evidence.
+
+6. **Prepare PR and synchronize**
+   - Use `$pr-prep`; include scope, verification, risk, deferred work, audit
+     evidence, and observability impact. Complete
+     `.github/pull_request_template.md`.
+   - Record the PR URL and accurate handshake state in Notion and `CONTEXT.md`.
+   - Do not set `5. Done` before required audit, verification, PR, and merge
+     state are accurately recorded.
+   - After merge, update local `main`, synchronize `CONTEXT.md` and Notion, mark
+     the task Done, and identify the next task and branch.
+   - Treat PR creation, merge, and post-merge context synchronization as
+     separate state changes. Record the PR URL before merge, then record the
+     merge commit and final Notion `5. Done` state after merge.
+
+## Learn From Feedback
+
+Use audit and reviewer feedback as process input:
+
+- Convert one-off findings into the smallest durable rule that would have
+  prevented the issue.
+- Put behavior-specific protection in tests or verification scripts when
+  possible; put workflow-specific protection in `AGENTS.md`, this skill, or
+  `CONTEXT.md`.
+- Keep blocker fixes separate from non-blocking recommendations and future
+  hardening so current acceptance criteria do not silently expand.
+- When a new helper, verifier category, parser, or checklist is introduced
+  during implementation, either add it to the reviewed spec and test evidence
+  or defer it. Unreviewed "helpful" mechanisms create avoidable audit churn.
+- For sensitive documentation stories, prefer a single source of truth plus
+  automated non-duplication checks over duplicating security, privacy, or
+  deployment values in prose.
+
+## Enforce Swing Sync Gates
+
+- Never upload raw swing video by default; require separate explicit opt-in
+  before remote sharing.
+- Do not implement model assets, SDKs, or providers before license, terms, and
+  privacy review.
+- Do not make absolute safety, privacy, deletion, legal, anonymity, or
+  compliance claims.
+- Do not claim completion when tests, audit findings, PR state, or Notion state
+  disagree.
+
+``````
+
+### docs/ss-018-research-disposition.md
+
+``````text
+# SS-018 Research And Disposition
+
+Date: 2026-07-04
+
+Task: SS-018 Refactor frontend app shell into maintainable UI/state modules.
+
+## Classification
+
+SS-018 is privacy-, safety-boundary-, frontend-runtime-, refactor-,
+accessibility/test-selector-, and user-facing-behavior-sensitive.
+
+This is a runtime refactor story. It must preserve consent gating, local video
+selection, local pose processing, phase review, Swing Card export, remote model
+review unavailable behavior, accessibility labels, smoke-test selectors,
+local-first raw-media handling, provider/model registry behavior,
+service-worker behavior, and exported data classes.
+
+## Source Checks
+
+- Swing Sync task page, checked 2026-07-04:
+  https://app.notion.com/p/392834a0c8a68115b23bda9510e07958
+- Dedicated test case created 2026-07-04:
+  https://app.notion.com/p/393834a0c8a68126b03deeb86d5d67fa
+- Current app shell: `src/main.ts`.
+- Existing workflow model: `src/workflow.ts`.
+- Current smoke contract: `test/smoke/app.spec.ts`.
+- Current local-first and no-default-upload boundary:
+  `docs/privacy-architecture.md`.
+- Current safety and consent-gate boundary: `docs/safety-terms.md`.
+- Current package scripts and dependency baseline: `package.json`.
+
+## Current `src/main.ts` Responsibilities
+
+`src/main.ts` is currently 869 lines and owns all browser-shell orchestration:
+
+- module imports and initial app boot;
+- local acknowledgement storage through `swing-sync:safety-consent:v1`;
+- mutable workflow/session state for selected video, active step, frame
+  processing, phase review, selected keyframe, overlay state, and Swing Card
+  export status;
+- capture, processing, review, export, remote-review, and keyframe HTML
+  rendering;
+- event binding for consent, local video picker, workflow navigation,
+  analysis start/stop/retry, phase declarations, phase correction, keyframe
+  selection, and Swing Card actions;
+- local frame-processing lifecycle integration with
+  `createBrowserFrameController`;
+- phase proposal/review state rebuilds;
+- selected keyframe overlay rendering;
+- Swing Card content preparation, PNG download, print host rendering, prompt
+  copying, and generated bitmap release;
+- `beforeunload`, `securitypolicyviolation`, and production service-worker
+  registration listeners.
+
+## Existing Protected DOM/Test Surface
+
+Smoke tests and accessibility checks currently depend on these user-facing
+labels, selectors, and states:
+
+- headings: `Capture or choose your swing`, `Capture or upload`, `Processing`,
+  `Review`, `Export`, `Downloadable summary`, and
+  `Remote model review unavailable`;
+- controls: `Use camera`, `Choose a video`, `Begin analysis`,
+  `Stop local analysis`, `Retry local analysis`, `Review phase labels`,
+  `Confirm phase review`, `Open Swing Card export`, `Download PNG`,
+  `Print / Save as PDF`, `Copy prompt`, and `Remote review unavailable`;
+- selectors: `#video-file`, `#analysis-button`, `[data-pose-summary]`,
+  `[data-keyframe-canvas]`, `[data-overlay-status]`,
+  `[data-keyframe-index]`, `[data-phase-index]`,
+  `[data-confirm-phase-review]`, `[data-open-export]`,
+  `[data-download-swing-card]`, `[data-print-swing-card]`,
+  `[data-copy-swing-card-prompt]`, `[data-swing-card-status]`,
+  `[data-swing-card-print-host]`, and `[data-remote-model-send]`;
+- labels: `Local video source`, `Local pose processing`,
+  `Selected local video`, `Swing phase assignments`, `View`, `Handedness`,
+  `Horizontally mirrored`, `Swing Card contents`, `Swing Card warnings`,
+  `Remote model data disclosure`, and `Select keyframe`;
+- privacy/safety status strings used by tests, including local-only analysis
+  status, storage failure behavior, no-sensitive-console-output assertions,
+  external-network blocking, and volatile resource release after stop.
+
+## Adopt
+
+- Split `src/main.ts` into focused modules while keeping the current Vite
+  TypeScript stack and direct DOM rendering approach.
+- Keep `src/main.ts` as a thin bootstrap that imports styles, creates the app
+  shell, renders the initial state, and registers global lifecycle listeners.
+- Extract consent storage into a small module with injectable storage-like
+  behavior so storage failure and removal-failure paths can be unit tested
+  without browser smoke setup.
+- Extract app state/session defaults into a module that centralizes initial
+  values and reset behavior for phase review and Swing Card status.
+- Require app state mutation to flow through named transition functions or a
+  reducer-style API. Other modules should not mutate state fields directly.
+- Add a shared `render-utils.ts` module for `escapeHtml`,
+  `formatRemoteDataClass`, and `formatSwingCardWarning` so security-relevant
+  escaping and protected-boundary formatting are not copy-pasted.
+- Extract renderers into modules that return existing HTML strings and keep
+  stable labels/selectors intact.
+- Assign remote-review-unavailable rendering to an explicit
+  `remote-model-renderer.ts` module because provider/model registry behavior is
+  a protected boundary.
+- Extract app-event binding into a controller module that receives state,
+  rendering, and lifecycle dependencies rather than relying on unrelated
+  global functions.
+- Extract frame-analysis lifecycle handling so `start`, `stop`, `close`,
+  progress, output, and state transitions have a clear boundary around
+  `FrameProcessingController`.
+- Give the analysis lifecycle explicit `closeActive()` and
+  `abortWithNetworkBlocked()` exports for the `beforeunload` and
+  `securitypolicyviolation` paths.
+- Extract Swing Card actions/content preparation into an export controller
+  module while preserving local-only generation and downloaded/printed/copied
+  behavior.
+- Add `observedSeekTimestampMs` export-exclusion regression coverage when
+  Swing Card content preparation moves, because that field is carried on
+  `SampledFrameOutput` but must stay out of exported/serialized content.
+- Add focused unit tests for pure extracted state and consent behavior, plus
+  renderer selector/label preservation where useful.
+- Keep the existing smoke suite as the behavioral gate for the primary
+  browser workflow.
+- Keep observability unchanged. This refactor does not add logs, telemetry,
+  analytics, remote logging, cloud diagnostics, hidden identifiers, persistent
+  debug artifacts, or new operator diagnostics.
+- Add no dependency, framework, bundle-license, notice, or SBOM changes.
+
+## Revise Before Adoption
+
+- Avoid a broad component framework or virtual DOM abstraction. The repo
+  currently uses plain TypeScript, Vite, string renderers, and direct DOM
+  event binding; SS-018 should improve maintainability inside that pattern.
+- Avoid splitting every small helper into its own file. The useful boundary is
+  behavior ownership: consent, app state, rendering, event wiring, analysis
+  lifecycle, and export controls.
+- Treat renderer tests as contract checks for labels/selectors and branching,
+  not pixel or layout tests. Layout remains covered by existing smoke/mobile
+  checks.
+- Keep event-binding tests focused on pure transition helpers or injected
+  dependencies where practical. Do not re-create the full Playwright workflow
+  in unit tests.
+- If extraction reveals a behavior bug, record it as a separate issue or
+  explicit spec change before fixing it in SS-018.
+
+## Defer
+
+- Framework migration, router introduction, state-management libraries, and
+  component libraries are deferred.
+- Design refresh, visual changes, copy rewrites, and new user-facing workflow
+  states are deferred.
+- New remote review, provider registry, model-provider configuration, API,
+  cloud storage, persistence, telemetry, analytics, remote logging, and debug
+  artifact behavior is deferred.
+- Service-worker registration changes are deferred.
+- Exported data class changes are deferred.
+- Additional browser network guards or runtime diagnostics are deferred unless
+  a later reviewed story approves them.
+
+## Reject For Current Scope
+
+- Reject any behavior change to consent gating, local video selection, local
+  pose processing, phase review, Swing Card export, or remote-review disabled
+  behavior.
+- Reject any change to runtime privacy posture, raw-media handling, remote
+  sharing, provider/model registry behavior, service-worker behavior, or
+  exported data classes.
+- Reject telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, persistent debug artifacts, or expanded console output.
+- Reject new framework or dependency additions.
+- Reject changing smoke-test selectors or accessibility labels unless Claude
+  QA planning and the task acceptance criteria explicitly approve the change.
+
+## Observability Decision
+
+Runtime observability remains intentionally unchanged for SS-018. The story
+refactors ownership boundaries and does not add new externally observable
+runtime behavior. Existing local UI status text and sanitized stable error
+codes remain the only user-visible diagnostics in scope.
+
+## Claude QA Planning Round 1 Disposition
+
+Claude QA planning returned FAIL with six blockers. Codex accepts all six as
+valid and revised `docs/ss-018-preimplementation-spec.md` accordingly.
+
+- B1: Accepted. The spec now requires `src/app-state.ts` to own state mutation
+  through named transition functions or a reducer-style API. Other modules must
+  not mutate state fields directly, and `selectCanBeginAnalysis` is the single
+  selector for the `#analysis-button` enablement decision.
+- B2: Accepted. The spec now adds `src/render-utils.ts` as the canonical home
+  for `escapeHtml`, `formatRemoteDataClass`, and `formatSwingCardWarning`.
+  Renderer modules must import these helpers instead of duplicating them.
+- B3: Accepted. The spec now assigns remote-review-unavailable rendering,
+  empty-provider registry disclosure, and outbound/blocked data class display
+  to `src/remote-model-renderer.ts`.
+- B4: Accepted. The spec now requires unit coverage proving
+  `observedSeekTimestampMs` is absent from every serialized/exported Swing
+  Card content shape produced by the extracted Swing Card action module.
+- B5: Accepted. The spec now requires `src/consent-state.ts` to accept an
+  injectable storage interface while defaulting production construction to
+  `window.localStorage`.
+- B6: Accepted. The spec now requires `analysisLifecycle.closeActive()` for
+  `beforeunload` and `analysisLifecycle.abortWithNetworkBlocked()` for
+  `securitypolicyviolation`, preserving the loading/processing-only guard and
+  abort code `UNEXPECTED_NETWORK_BLOCKED`.
+
+Claude non-blocking recommendations were also incorporated where they reduced
+future ambiguity without expanding runtime behavior: `src/app-events.ts` is now
+required instead of optional, smoke tests are required after protected-boundary
+extraction milestones when practical, `npm run docs:verify` is explicit in
+final verification, and imperative canvas helpers are split into
+`src/keyframe-overlay-renderer.ts` rather than mixed with pure HTML renderers.
+
+## Claude QA Planning Round 2 Disposition
+
+Claude focused B1-B6 re-review returned FAIL after closing B1-B6. Claude
+introduced two new blockers created by the revised module split. Codex accepts
+B7-B8 as valid and revised `docs/ss-018-preimplementation-spec.md`
+accordingly.
+
+- B7: Accepted. The spec now defines the render-to-rebind control loop:
+  `src/main.ts` owns a `requestRender(statusMessage?)` coordinator closure
+  passed to `src/app-events.ts`; state-changing handlers call it after
+  transitions; `requestRender` fully replaces the `#app` subtree via
+  `app-renderer.renderApp(...)`, calls `app-events.bindAppEvents(...)` on the
+  fresh DOM, and redraws the selected keyframe canvas. Since the subtree is
+  replaced, old listeners are discarded with old DOM nodes. The spec now
+  requires repeated render/bind unit coverage proving a single click produces
+  a single effect after multiple re-renders.
+- B8: Accepted. The spec now states that `src/app-state.ts` holds only
+  serializable or UI-derived session state, while `src/analysis-lifecycle.ts`
+  owns non-serializable `FrameProcessingController` and abort callback handles
+  as an explicit scoped exception to the direct-state-mutation ban. Lifecycle
+  code must call app-state transition functions so derived UI state stays in
+  sync after close/abort, and unit tests must cover handle clearing plus app
+  state synchronization.
+
+Claude non-blocking recommendations were incorporated: the duplicated
+`confirmation/confirmation` wording was cleaned up in the focused prompt,
+`selectCanBeginAnalysis` full-matrix tests are required, and consent storage
+failure tests must prove the public consent query function fails closed.
+
+## Claude QA Planning Round 3 Disposition
+
+Claude focused B7-B8 re-review returned FAIL after closing B8. B7 remains open
+because the prior plan left frame-processing progress DOM updates as an
+unspecified partial-render bypass. Codex accepts the residual B7 finding as
+valid and revised `docs/ss-018-preimplementation-spec.md` accordingly.
+
+- B7 residual: Accepted. The spec now assigns processing-progress DOM updates
+  to `src/app-renderer.ts` through
+  `updateProcessingProgressUi(root, state)`. `src/analysis-lifecycle.ts` owns
+  frame-processing callbacks and controller handles, but it must call
+  app-state transition functions and delegate processing-panel DOM updates to
+  `app-renderer.updateProcessingProgressUi(...)`; it must not cache progress
+  DOM nodes or write progress/status text directly.
+- `updateProcessingProgressUi(root, state)` must re-query current DOM targets
+  such as `[data-pose-summary]`, `[data-retry-analysis]`, and
+  `[data-review-phases]` on every tick, so progress updates survive any
+  intervening full `requestRender(...)` replacement.
+- Required B7 regression: trigger an intervening full render during active
+  processing and assert the next progress/output tick updates the visible
+  `[data-pose-summary]` rather than a detached node.
+- Required B7/B8 composition regression: stop during processing, clear
+  lifecycle controller handles, drive app-state to `idle`, then call
+  `requestRender(...)` and assert the rendered UI reflects the idle/capture
+  state.
+
+Claude's non-blocking throttling recommendation is deferred. SS-018 preserves
+the current eight-sample processing cadence; throttling progress ticks would be
+a behavior/performance change only if future profiling proves it necessary.
+
+## Claude QA Planning Round 4 Disposition
+
+Claude focused residual B7 re-review returned PASS. B1-B8 are closed, no new
+blockers were introduced, and SS-018 is cleared for implementation.
+
+Claude noted three non-blocking recommendations, which Codex folded into
+`docs/ss-018-preimplementation-spec.md` before implementation:
+
+- `#app` root stability is now explicit: `requestRender(...)` replaces only
+  children, so a root reference may be held across processing partial-update
+  calls.
+- `updateProcessingProgressUi(...)` must no-op when processing selectors are
+  absent, covering close/abort timing around late callbacks.
+- Dynamic progress/status writes in `updateProcessingProgressUi(...)` must use
+  `textContent` or element properties. Future user-influenced HTML in that
+  helper must use `render-utils.escapeHtml`.
+
+Implementation audit evidence must include executed named tests, not summary
+claims, for render/rebind single-effect behavior,
+`observedSeekTimestampMs` export exclusion, consent fail-closed behavior,
+escaping regression coverage, processing-progress reattachment after
+intervening full render, stop-during-processing composition, and no-op
+missing-selector behavior.
+
+``````
+
+### docs/ss-018-preimplementation-spec.md
+
+``````text
+# SS-018 Preimplementation Spec
+
+Date: 2026-07-04
+
+Status: Candidate spec for Claude QA planning. Do not implement the runtime
+refactor until Claude QA planning passes or blocking findings are resolved and
+re-reviewed.
+
+## Story
+
+Reduce `src/main.ts` orchestration pressure before the next UI feature wave.
+Keep behavior unchanged while separating workflow rendering, state
+transitions, export controls, consent handling, and analysis lifecycle into
+clearer modules.
+
+## Acceptance Criteria
+
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- No new framework or dependency unless separately reviewed and approved.
+
+## Protected Boundaries
+
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+- Preserve `docs/privacy-architecture.md`, `docs/safety-terms.md`,
+  `docs/licensing.md`, and `docs/models-licensing.md` boundaries.
+
+## Target Files
+
+Expected runtime files:
+
+- Keep `src/main.ts` as the app bootstrap and global listener registration
+  entry point.
+- Add `src/app-state.ts` for state shape, initial state, and reset helpers.
+- Add `src/consent-state.ts` for local acknowledgement storage helpers and
+  fail-closed storage behavior.
+- Add `src/render-utils.ts` as the single canonical home for shared rendering
+  helpers: `escapeHtml`, `formatRemoteDataClass`, and
+  `formatSwingCardWarning`.
+- Add `src/app-renderer.ts` for top-level shell rendering and workflow panel
+  dispatch, plus processing-panel partial update helpers.
+- Add `src/phase-review-renderer.ts` for phase review, declaration controls,
+  and keyframe review HTML.
+- Add `src/keyframe-overlay-renderer.ts` for imperative canvas drawing helpers
+  such as selected keyframe rendering and annotated keyframe bitmap creation.
+- Add `src/remote-model-renderer.ts` for remote-review-unavailable rendering,
+  empty-provider registry disclosure, and outbound/blocked data class display.
+- Add `src/swing-card-actions.ts` for Swing Card preparation and local export
+  actions.
+- Add `src/analysis-lifecycle.ts` for frame-processing lifecycle state
+  handlers around `FrameProcessingController`.
+- Add `src/app-events.ts` for `bindInteractions` ownership and cross-module
+  event wiring.
+
+Expected tests:
+
+- Add focused unit tests for `consent-state` fail-closed behavior.
+- Add focused unit tests for `app-state` reset behavior, especially phase
+  review and Swing Card status reset.
+- Add full-matrix `selectCanBeginAnalysis` tests covering consent true/false,
+  selected video present/absent, and active processing states so the canonical
+  gate cannot drift.
+- Add consent-state tests proving get/set/remove storage failures propagate
+  through the public consent query function as a fail-closed not-consented
+  result, not only that fake storage methods threw.
+- Add focused renderer tests that verify protected selectors and labels remain
+  present for capture, processing, review, export, and remote-review-disabled
+  branches without requiring Playwright.
+- Add focused Swing Card action tests that assert `observedSeekTimestampMs` is
+  absent from every serialized/exported Swing Card content shape produced by
+  the extracted export-preparation module.
+- Add focused lifecycle tests that assert `securitypolicyviolation` still maps
+  an active loading/processing session to `UNEXPECTED_NETWORK_BLOCKED`.
+- Keep the smoke suite as the end-to-end behavior gate.
+
+No dependency, framework, package lock, SBOM, license policy, notice, provider,
+model, worker asset, service-worker, telemetry, analytics, remote logging,
+backend, or cloud-storage file should change.
+
+## Module Requirements
+
+### `src/main.ts`
+
+- Import `./styles.css`.
+- Select `#app`.
+- Instantiate app state and dependencies.
+- Render the initial app.
+- Register `beforeunload`, `securitypolicyviolation`, and production
+  service-worker listeners with the same conditions as today.
+- Call `analysisLifecycle.closeActive()` from `beforeunload`.
+- Call `analysisLifecycle.abortWithNetworkBlocked()` from
+  `securitypolicyviolation`; the lifecycle method must preserve the current
+  loading/processing-only guard and abort code `UNEXPECTED_NETWORK_BLOCKED`.
+- Own a small `requestRender(statusMessage?: string)` coordinator closure that
+  calls `app-renderer.renderApp(...)`, fully replaces the `#app` subtree, calls
+  `app-events.bindAppEvents(...)` on the fresh DOM, and then calls
+  `keyframe-overlay-renderer.renderSelectedKeyframeCanvas(...)`.
+- Preserve the `#app` root element itself. `requestRender(...)` replaces only
+  its children, so a reference to the root may be safely passed across
+  lifecycle partial-update calls.
+- Avoid owning detailed HTML rendering, Swing Card content construction, or
+  frame-processing lifecycle internals after extraction.
+
+### `src/consent-state.ts`
+
+- Export a small injectable storage interface:
+
+```ts
+export interface ConsentStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+```
+
+- Default production construction must use `window.localStorage`.
+- Unit tests must pass fake storage objects directly; they must not require a
+  real browser storage implementation.
+- Preserve storage key `swing-sync:safety-consent:v1`.
+- Preserve fail-closed behavior:
+  - if `localStorage.getItem` throws, consent is treated as not accepted;
+  - after a storage failure, consent checks return false;
+  - if `localStorage.setItem` or `removeItem` throws, future consent checks
+    return false.
+- Store only the existing local acknowledgement value `accepted`.
+- Do not upload, log, persist extra data, or create durable legal/privacy
+  consent claims.
+- Unit tests must cover accepted, missing, get failure, set failure, and
+  remove failure paths, and must assert those failures are observable through
+  the public consent query function as `false`.
+
+### `src/app-state.ts`
+
+- Define the mutable app state shape currently represented by top-level
+  variables in `src/main.ts`.
+- Own all state mutation through named transition functions or a reducer-style
+  API. Other modules must not mutate state fields directly.
+- Export explicit transition functions for current behaviors, including at
+  least:
+  - `selectWorkflowStep`;
+  - `selectLocalVideo`;
+  - `setProcessingState`;
+  - `setProcessingProgress`;
+  - `recordProcessingOutput`;
+  - `completeProcessingWithOutputs`;
+  - `resetPhaseReview`;
+  - `rebuildPhaseReviewState`;
+  - `setPhaseDeclaration`;
+  - `setPhaseDraftAssignment`;
+  - `setPhaseConfirmation`;
+  - `confirmPhaseReview`;
+  - `selectKeyframe`;
+  - `setOverlayResult`;
+  - `setSwingCardBusy`;
+  - `setSwingCardStatus`.
+- Export a selector such as `selectCanBeginAnalysis(state, consentAccepted)`
+  as the single source for the `#analysis-button` enablement decision.
+- Keep only serializable or UI-derived session state in `AppState`, including
+  `processingState`, `poseStatusCode`, frame counts, landmark count, selected
+  video metadata/reference, phase review state, selected keyframe index,
+  overlay result, and Swing Card busy/status.
+- Do not store non-serializable frame-analysis resource handles such as
+  `FrameProcessingController` or the abort callback in `AppState`. Those live
+  in `src/analysis-lifecycle.ts` as an explicit scoped exception to the
+  direct-state-mutation ban.
+- Provide an initial state helper with current defaults:
+  - active step `capture`;
+  - processing state `idle`;
+  - zero frame and landmark counts;
+  - empty phase outputs and draft assignments;
+  - undeclared phase declarations;
+  - selected keyframe index `0`;
+  - Swing Card status `Swing Card export is generated locally after review
+    data exists.`;
+  - no selected video, controller, abort handler, pose status code, review
+    state, overlay result, or busy export state.
+- Unit tests must verify transition functions preserve existing behavior,
+  including that reset helpers clear volatile phase/export state without
+  changing unrelated workflow fields.
+- Unit tests must enumerate `selectCanBeginAnalysis(state, consentAccepted)`
+  across consent true/false, selected video present/absent, and active
+  processing states. It should only enable the start action when consent is
+  accepted, a selected local video exists, and the workflow is in the current
+  allowed pre-analysis state.
+
+### `src/render-utils.ts`
+
+- Export one `escapeHtml` helper used by every string renderer for
+  user-controlled text such as selected file names, warnings, and status
+  strings.
+- Export one `formatRemoteDataClass` helper for
+  `src/remote-model-renderer.ts`; do not duplicate remote data class
+  formatting in renderer modules.
+- Export one `formatSwingCardWarning` helper for Swing Card panel rendering;
+  do not duplicate warning-label mapping in renderer or action modules.
+- Renderer modules must import these helpers from `src/render-utils.ts`.
+- Unit tests must include at least one escaping regression proving
+  user-controlled selected file names render escaped.
+
+### Renderers
+
+- Renderer modules may continue returning HTML strings. They should receive
+  explicit state and derived dependencies rather than reading unrelated module
+  globals.
+- Preserve HTML escaping for user-controlled values by importing
+  `escapeHtml` from `src/render-utils.ts`.
+- Preserve all accessibility labels, status roles, button names, IDs, and
+  `data-*` selectors currently used by `test/smoke/app.spec.ts`.
+- Preserve remote-review unavailable copy, empty provider registry behavior,
+  and outbound/blocked data class rendering from the existing model-consent
+  modules through `src/remote-model-renderer.ts`.
+- Renderer tests must directly assert every protected label and selector from
+  `docs/ss-018-research-disposition.md` at least once in the branch where it
+  appears. This is required minimum coverage, not an alternative to smoke
+  tests.
+- Keep pure HTML-string renderers separate from imperative canvas drawing.
+  `src/phase-review-renderer.ts` owns phase-review/keyframe HTML;
+  `src/keyframe-overlay-renderer.ts` owns canvas drawing and bitmap creation.
+- `src/app-renderer.ts` owns processing-progress DOM updates through exported
+  partial-update functions. `analysis-lifecycle.ts` must not mutate processing
+  DOM nodes directly.
+- Required processing partial-update API:
+
+```ts
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void;
+```
+
+- `updateProcessingProgressUi` must re-query current DOM targets on each call
+  using selectors such as `[data-pose-summary]`, `[data-retry-analysis]`, and
+  `[data-review-phases]`; it must not cache element references across ticks.
+  This keeps progress updates attached to the visible DOM after any
+  intervening full `requestRender(...)` replacement.
+- If the processing-panel selectors are absent, `updateProcessingProgressUi`
+  must no-op rather than throw. This covers close/abort timing where a late
+  callback arrives after the processing panel has been replaced.
+- `updateProcessingProgressUi` must use `textContent` or element properties for
+  dynamic status/progress writes. If future user-influenced HTML is added to
+  this function, it must route through `render-utils.escapeHtml`.
+- Unit tests must trigger an intervening full render during active processing
+  and then assert the next progress/output tick updates the visible
+  `[data-pose-summary]` text rather than a detached node.
+- Unit tests must cover no-op behavior when processing selectors are absent.
+
+### Analysis Lifecycle
+
+- Preserve `createBrowserFrameController(video, selectedVideo, callbacks)` as
+  the runtime path for local pose processing.
+- Preserve progress, output, completed, failed, cancelled, and closed status
+  text.
+- Own frame-processing callbacks and controller handles, but delegate every
+  processing-panel DOM update to `app-renderer.updateProcessingProgressUi(...)`
+  after calling app-state transition functions. `analysis-lifecycle.ts` must
+  not cache progress DOM nodes or write progress/status text directly.
+- Preserve behavior where completed processing captures outputs, resets
+  selected keyframe index, clears declarations, and rebuilds phase review.
+- Preserve `securitypolicyviolation` abort behavior while loading or
+  processing with code `UNEXPECTED_NETWORK_BLOCKED`.
+- Export `closeActive()` for the `beforeunload` path.
+- Export `abortWithNetworkBlocked()` for the `securitypolicyviolation` path.
+  It must check current processing state and only abort when state is
+  `loading` or `processing`, preserving current behavior.
+- Preserve close/cancel behavior that releases volatile resources and clears
+  controller references when appropriate.
+- Lifecycle unit tests must cover active loading/processing abort,
+  non-active idle/completed no-op behavior, and controller-reference clearing
+  after close.
+- After lifecycle-owned controller handles are closed or cleared, lifecycle
+  code must call app-state transition functions so derived UI state remains in
+  sync with the lifecycle state. Unit tests must prove close clears lifecycle
+  controller handles and drives the expected app-state transition, rather than
+  leaving either side stale.
+- Add a compose test for the stop-during-processing path: user action calls
+  lifecycle stop/close, controller handles are cleared, app-state reaches
+  `idle`, and a subsequent `requestRender(...)` reflects the idle/capture UI.
+- Do not add persistence, network calls, telemetry, logging, or debug
+  artifacts.
+
+### Swing Card Actions
+
+- Preserve local content preparation from phase definitions and selected
+  assignments.
+- Preserve generated bitmap release behavior.
+- Preserve PNG download, print-host rendering, and clipboard prompt copy
+  status strings.
+- Preserve raw-video exclusion and manual-sharing-only behavior.
+- Preserve disabled/busy behavior for Swing Card controls.
+- Do not change `SwingCardContent`, `SwingCardKeyframe`, outbound data class
+  unions, or exported report contents.
+- Do not copy `observedSeekTimestampMs` from `SampledFrameOutput` into
+  `SwingCardContent`, prompt text, PNG/print content, clipboard content, or
+  any serialized/exported value. SS-018 touches export preparation by moving
+  it, so this exclusion must be asserted in new unit coverage.
+- Unit tests must serialize or inspect every produced Swing Card content shape
+  from the extracted module and assert `observedSeekTimestampMs` is absent.
+
+### `src/app-events.ts`
+
+- Own DOM event binding currently in `bindInteractions`.
+- Export `bindAppEvents(root, dependencies)` as the only event-binding entry
+  point.
+- Receive state transition functions, consent helpers, `requestRender`
+  callback,
+  analysis lifecycle, phase-review actions, and Swing Card actions as explicit
+  dependencies.
+- After every state-changing transition, handler code must call
+  `requestRender(statusMessage?)`. Frame-processing progress/output ticks are
+  the only partial-update path, and they are owned by `analysis-lifecycle.ts`
+  delegating to `app-renderer.updateProcessingProgressUi(...)`.
+- `requestRender(statusMessage?)` is owned by the bootstrap coordinator in
+  `src/main.ts`: it fully replaces the `#app` subtree via
+  `app-renderer.renderApp(...)`, calls `bindAppEvents(...)` against the fresh
+  subtree, and then redraws the selected keyframe canvas when present.
+- Because each render replaces `#app.innerHTML`, old event listeners are
+  discarded with the old DOM nodes. No explicit listener teardown is required
+  for the current direct-DOM pattern. If a future implementation changes to
+  persistent DOM nodes, it must add teardown or delegated-listener coverage in
+  the same reviewed change.
+- Do not mutate state fields directly; call `src/app-state.ts` transition
+  functions.
+- Do not duplicate `selectCanBeginAnalysis`; use the selector from
+  `src/app-state.ts`.
+- Unit tests must cover repeated render/bind cycles for at least one
+  state-changing control and one Swing Card action: after two re-renders,
+  triggering the control once must produce a single effect, not a duplicate
+  listener effect.
+
+## Migration Steps
+
+1. Add `src/app-state.ts`, transition functions/selectors, and
+   `src/consent-state.ts` with injectable storage. Run targeted unit tests.
+2. Add `src/render-utils.ts` and extract pure renderers, including
+   `src/remote-model-renderer.ts`, while keeping protected labels/selectors
+   equivalent. Add `app-renderer.updateProcessingProgressUi(...)` and run
+   renderer/partial-update contract tests.
+3. Add `src/keyframe-overlay-renderer.ts` for canvas/bitmap helpers.
+4. Extract `src/analysis-lifecycle.ts` with `closeActive()` and
+   `abortWithNetworkBlocked()`. Run lifecycle tests including the CSP abort
+   path.
+5. Extract `src/swing-card-actions.ts` and add the
+   `observedSeekTimestampMs` exclusion regression.
+6. Extract `src/app-events.ts` and keep `src/main.ts` as bootstrap only.
+7. Run `npm run test:smoke` after each protected-boundary extraction
+   milestone: consent/app-state, remote-model rendering, analysis lifecycle,
+   and Swing Card actions.
+8. Keep any behavior bug discovered during extraction out of scope unless it
+   becomes a documented blocker and receives focused QA review.
+
+## Test Plan
+
+Targeted unit tests:
+
+- `npm run test:unit -- consent-state`
+- `npm run test:unit -- app-state`
+- `npm run test:unit -- render-utils`
+- `npm run test:unit -- app-renderer`
+- `npm run test:unit -- phase-review-renderer`
+- `npm run test:unit -- remote-model-renderer`
+- `npm run test:unit -- analysis-lifecycle`
+- `npm run test:unit -- app-events`
+- `npm run test:unit -- swing-card-actions`
+- Existing related tests such as `npm run test:unit -- workflow`,
+  `npm run test:unit -- phase-review`, and
+  `npm run test:unit -- swing-card-generator` as changed surfaces require.
+
+Browser smoke:
+
+- `npm run test:smoke`
+- Run after each protected-boundary extraction milestone when practical, and
+  always before final audit handoff.
+
+Required final verification:
+
+- `npm run build`
+- `npm run docs:verify`
+- `npm run compliance:verify`
+- `npm run safety:verify`
+- `npm run privacy:verify`
+- `git diff --check`
+
+No dependency, bundle, license-policy, notice, or SBOM changes are expected. If
+that changes, run `npm run license:audit`,
+`npm run verify:bundle-license-fixture`, and `npm run sbom:generate` before PR
+handoff.
+
+Test evidence for the final audit must map named tests to acceptance criteria,
+protected boundaries, and any QA blockers, especially selector/label
+preservation, consent fail-closed behavior, local-first processing,
+`securitypolicyviolation` fail-closed behavior, remote-review-disabled
+behavior, render/rebind single-effect behavior, processing-progress
+partial-update survival after intervening full render, lifecycle handle
+ownership sync with app-state transitions, stop-during-processing render
+composition, `observedSeekTimestampMs` export exclusion, and no
+dependency/telemetry changes.
+
+## Rollback Risk
+
+The primary risk is behavioral drift caused by moving shared mutable state and
+DOM event binding across modules. Keep the migration reversible by preserving
+plain TypeScript modules, direct imports, existing public function behavior,
+and current smoke-test selectors.
+
+The fallback is to keep a smaller extraction if a proposed module boundary
+adds complexity without reducing `src/main.ts` orchestration pressure.
+
+## Audit Packet Requirements
+
+Claude QA planning and final audit packets must be self-contained. Include:
+
+- every changed tracked file, or a concrete rationale for omission;
+- focused diffs or complete coherent excerpts for runtime modules under
+  review;
+- named test results mapped to acceptance criteria and any audit blockers;
+- explicit observability decision;
+- protected no-telemetry/no-remote/no-dependency boundaries.
+
+## Observability Decision
+
+SS-018 intentionally leaves runtime observability unchanged. No logs,
+telemetry, analytics, remote logging, cloud diagnostics, hidden identifiers,
+persistent debug artifacts, or new operator diagnostics should be added.
+
+``````
+
+### docs/ss-018-claude-qa-planning-prompt.md
+
+``````text
+# SS-018 Claude QA Planning Prompt
+
+Superseded for paste use by
+`docs/ss-018-claude-qa-rereview-prompt.md` after Claude Round 1 returned FAIL
+with B1-B6. Keep this file as the original QA planning record.
+
+Paste this prompt into Claude for preimplementation QA planning. Claude Chat
+does not have repository, filesystem, GitHub, or Notion access, so this prompt
+is self-contained.
+
+```text
+Role: You are the lead adversarial QA planner for Swing Sync, a local-first
+browser app for educational golf swing review.
+
+Stage: Pre-implementation QA planning.
+
+Scope: Review the SS-018 candidate refactor plan before any runtime app-shell
+refactor is implemented. Your job is to find blockers, behavior-preservation
+risks, missing test contracts, protected-boundary gaps, and fail-open
+verification requirements.
+
+Context:
+Swing Sync is a local-first Vite/TypeScript browser app. The current app runs
+local video selection, local Pose Landmarker inference on sampled frames,
+phase review, selected keyframe overlay review, and local Swing Card export.
+Raw swing video is not uploaded by default. Remote model review is unavailable
+because the production reviewed-provider registry is empty. Manual Swing Card
+export and Copy prompt do not require provider configuration. There is no app
+backend, account system, telemetry, analytics, remote logging, cloud storage,
+or configured remote model provider in the current app.
+
+SS-018 intent:
+Reduce `src/main.ts` orchestration pressure before the next UI feature wave.
+Keep behavior unchanged while separating workflow rendering, state
+transitions, export controls, consent handling, and analysis lifecycle into
+clearer modules.
+
+Acceptance criteria:
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- No new framework or dependency unless separately reviewed and approved.
+
+Protected boundaries:
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+- Preserve local-first privacy architecture, safety terms, licensing, and
+  model-licensing boundaries.
+
+Relevant current source contents:
+
+File: `src/main.ts` responsibility summary
+```
+Current file length: 869 lines.
+
+Top-level state:
+- consent storage key `swing-sync:safety-consent:v1`
+- `consentStorageFailed`
+- `activeStep`
+- `selectedVideo`
+- `frameController`
+- `abortFrameController`
+- `processingState`
+- `poseStatusCode`
+- extracted/total frame counts
+- latest landmark count
+- phase outputs/declarations/review state/draft/confirmation
+- selected keyframe index
+- latest overlay result
+- Swing Card busy/status
+
+Current functions:
+- `hasSafetyConsent`
+- `setSafetyConsent`
+- `escapeHtml`
+- `renderWorkflowPanel`
+- `renderPhaseReview`
+- `renderSwingCardExport`
+- `renderRemoteModelReviewPanel`
+- `renderKeyframeOverlayReview`
+- `renderDeclarationSelect`
+- `formatRemoteDataClass`
+- `renderApp`
+- `bindInteractions`
+- `handleProcessingState`
+- `handleProcessingProgress`
+- `handleProcessingOutput`
+- `updateProcessingUi`
+- `startFrameAnalysis`
+- `stopFrameAnalysis`
+- `closeFrameAnalysis`
+- `rebuildPhaseReview`
+- `clearPhaseReview`
+- `renderSelectedKeyframeCanvas`
+- `undeclaredPhaseDeclarations`
+- `downloadSwingCard`
+- `printSwingCard`
+- `copySwingCardPrompt`
+- `prepareSwingCardContent`
+- `getCompleteSwingCardAssignments`
+- `renderAnnotatedKeyframe`
+- `formatSwingCardWarning`
+
+Global listeners:
+- initial `renderApp()`
+- `beforeunload` closes frame analysis
+- `securitypolicyviolation` aborts active loading/processing with
+  `UNEXPECTED_NETWORK_BLOCKED`
+- production-only service worker registration for `/sw.js`
+```
+
+File: `src/workflow.ts`
+```
+export const workflowSteps = [
+  {
+    id: "capture",
+    shortLabel: "Capture",
+    label: "Capture or upload",
+    status: "Ready for consent",
+    description: "Choose how a future local analysis session will begin."
+  },
+  {
+    id: "processing",
+    shortLabel: "Process",
+    label: "Processing",
+    status: "Local only",
+    description: "Load the approved local pose model and process selected video frames."
+  },
+  {
+    id: "review",
+    shortLabel: "Review",
+    label: "Review",
+    status: "No results",
+    description: "Preview the stable layout for future swing feedback and metrics."
+  },
+  {
+    id: "export",
+    shortLabel: "Export",
+    label: "Export",
+    status: "Local download",
+    description: "Download a local Swing Card or open the browser print dialog."
+  }
+] as const;
+
+export type WorkflowStepId = (typeof workflowSteps)[number]["id"];
+
+export function getWorkflowStep(id: WorkflowStepId) {
+  return workflowSteps.find((step) => step.id === id) ?? workflowSteps[0];
+}
+
+export function getNextWorkflowStep(id: WorkflowStepId) {
+  const currentIndex = workflowSteps.findIndex((step) => step.id === id);
+  return workflowSteps[Math.min(currentIndex + 1, workflowSteps.length - 1)];
+}
+```
+
+Protected smoke-test labels and selectors:
+```
+Headings:
+- Capture or choose your swing
+- Capture or upload
+- Processing
+- Review
+- Export
+- Downloadable summary
+- Remote model review unavailable
+
+Controls:
+- Use camera
+- Choose a video
+- Begin analysis
+- Stop local analysis
+- Retry local analysis
+- Review phase labels
+- Confirm phase review
+- Open Swing Card export
+- Download PNG
+- Print / Save as PDF
+- Copy prompt
+- Remote review unavailable
+
+Selectors:
+- #video-file
+- #analysis-button
+- [data-pose-summary]
+- [data-keyframe-canvas]
+- [data-overlay-status]
+- [data-keyframe-index]
+- [data-phase-index]
+- [data-confirm-phase-review]
+- [data-open-export]
+- [data-download-swing-card]
+- [data-print-swing-card]
+- [data-copy-swing-card-prompt]
+- [data-swing-card-status]
+- [data-swing-card-print-host]
+- [data-remote-model-send]
+
+Accessible labels:
+- Local video source
+- Local pose processing
+- Selected local video
+- Swing phase assignments
+- View
+- Handedness
+- Horizontally mirrored
+- Swing Card contents
+- Swing Card warnings
+- Remote model data disclosure
+- Select keyframe
+```
+
+Current smoke coverage summary:
+```
+test/smoke/app.spec.ts verifies:
+- opening capture flow and analysis disabled until consent and selected video;
+- local consent storage unavailable and removal-failure paths fail closed;
+- runtime consent guard focuses acknowledgement when disabled state is bypassed;
+- placeholder states for processing, review, and export;
+- local worker processing extracts 8 of 8 fixture frames and avoids external
+  network requests, sensitive console output, IndexedDB, and Cache storage;
+- accessible phase review, keyframe canvas labels, overlay status, and valid
+  nondecreasing phase correction;
+- Swing Card PNG download, print, prompt copy success and failure states;
+- remote model review remains unavailable with empty reviewed-provider
+  registry and expected outbound/blocked data class text;
+- Swing Card keyframes remain unavailable until phase review is complete;
+- pose model initialization failure, retry, cancel, and unexpected-network
+  failure behavior;
+- mobile layout keeps key controls visible and non-overlapping.
+```
+
+File: `docs/privacy-architecture.md` boundary excerpt
+```
+Swing Sync must process swing video locally by default. Raw swing video and
+frame pixels must not be uploaded, sent to model providers, or shared with
+remote services unless a future feature adds a separate, explicit opt-in flow
+for that action.
+
+The current application implements local file selection and local Pose
+Landmarker inference for sampled video frames. It does not implement camera
+capture, raw-video or landmark persistence, exports, remote sharing, or remote
+model APIs. The current consent acknowledgement is a local scaffold, not a
+durable legal or privacy record.
+```
+
+File: `docs/safety-terms.md` consent boundary excerpt
+```
+Before the first swing analysis, the app must block analysis until the user has
+explicitly acknowledged all of the following:
+
+- Swing Sync is for educational use only.
+- Swing Sync is not medical advice, pain diagnosis, rehabilitation guidance, or
+  professional athletic instruction.
+- Golf practice and movement changes involve risk, and the user accepts
+  responsibility for deciding whether and how to practice.
+- The user should stop if they feel pain or concerning symptoms and seek
+  qualified help when appropriate.
+- Raw swing video stays on the device by default unless the user separately
+  opts in to a feature that sends it elsewhere.
+
+The consent gate should store only the minimum local acknowledgement state
+needed to avoid repeated prompts. It should not upload consent records or raw
+video by default.
+```
+
+Candidate module plan:
+- Keep `src/main.ts` as thin bootstrap for styles, app creation, initial render,
+  global listeners, and production service-worker registration.
+- Add `src/app-state.ts` for app state shape, initial state, and reset helpers.
+- Add `src/consent-state.ts` for local acknowledgement storage and fail-closed
+  behavior.
+- Add `src/app-renderer.ts` for top-level shell rendering and workflow panel
+  dispatch.
+- Add `src/phase-review-renderer.ts` for phase review, declaration controls,
+  and keyframe review HTML.
+- Add `src/swing-card-actions.ts` for Swing Card preparation and local export
+  actions.
+- Add `src/analysis-lifecycle.ts` for frame-processing lifecycle state
+  handlers around `FrameProcessingController`.
+- Optionally add `src/app-events.ts` if event binding remains large after
+  renderer and lifecycle extraction.
+
+Candidate unit-test plan:
+- Add `test/unit/consent-state.test.ts` for accepted, missing, get failure,
+  set failure, and remove failure paths.
+- Add `test/unit/app-state.test.ts` for initial defaults and phase/export reset
+  behavior.
+- Add `test/unit/app-renderer.test.ts` or focused renderer tests for protected
+  selectors and labels across capture, processing, review, export, and
+  remote-review-disabled branches.
+- Continue relying on `test/smoke/app.spec.ts` for browser behavior,
+  local-processing, no-network, storage, canvas, export, mobile, and
+  accessibility checks.
+
+Required final verification after implementation:
+- targeted unit tests for extracted logic;
+- `npm run test:smoke`;
+- `npm run build`;
+- `npm run compliance:verify`;
+- `npm run safety:verify`;
+- `npm run privacy:verify`;
+- `git diff --check`.
+
+No dependency, bundle, license-policy, notice, or SBOM changes are expected. If
+that changes, the implementation must also run `npm run license:audit`,
+`npm run verify:bundle-license-fixture`, and `npm run sbom:generate`.
+
+Known non-goals:
+- No framework migration or new dependency.
+- No design refresh, copy rewrite, or new user-facing workflow.
+- No backend, auth, accounts, secrets, telemetry, analytics, remote logging,
+  cloud diagnostics, cloud storage, provider SDK, model provider, remote model
+  review enablement, or remote sharing.
+- No service-worker behavior change.
+- No exported data class change.
+- No additional console output, hidden identifiers, or persistent debug
+  artifacts.
+
+Observability decision:
+Runtime observability remains intentionally unchanged. Existing local UI status
+text and sanitized stable error codes remain the only diagnostics in scope.
+
+Output required:
+- PASS/FAIL verdict.
+- Blockers ordered by severity.
+- Non-blocking recommendations.
+- Missing tests or edge cases.
+- Any behavior-preservation risks in the proposed module boundaries.
+- Any protected-boundary risks around privacy, safety, remote sharing,
+  provider registry, service worker, exported data classes, dependencies, or
+  observability.
+- Explicit sign-off status for whether implementation may begin.
+```
+
+``````
+
+### docs/ss-018-claude-qa-response.md
+
+``````text
+# SS-018 Claude QA Planning Response
+
+Date: 2026-07-04
+
+Stage: Pre-implementation QA planning.
+
+Verdict: FAIL.
+
+Claude found the refactor intent sound, but identified six blockers in the
+module ownership plan. Codex accepts all six blockers as valid planning defects
+and revised `docs/ss-018-preimplementation-spec.md` before implementation.
+
+## Blockers
+
+### B1: Missing State-Mutation Ownership Contract
+
+Claude finding: `app-state.ts` had no explicit contract for whether consuming
+modules mutate shared fields directly or use named transitions.
+
+Disposition: Accepted.
+
+Spec response:
+
+- `src/app-state.ts` must own all state mutation through named transition
+  functions or a reducer-style API.
+- Other modules must not mutate state fields directly.
+- The spec names required transition functions for workflow selection, local
+  video selection, processing state/progress/output, phase review, keyframe
+  selection, overlay result, and Swing Card busy/status.
+- `selectCanBeginAnalysis(state, consentAccepted)` is now the single source
+  for the `#analysis-button` enablement decision.
+
+### B2: Shared Render Helpers Had No Owner
+
+Claude finding: `escapeHtml`, `formatRemoteDataClass`, and
+`formatSwingCardWarning` could be duplicated across renderer modules.
+
+Disposition: Accepted.
+
+Spec response:
+
+- Added `src/render-utils.ts` as the canonical home for those helpers.
+- Renderer/action modules must import helpers from `src/render-utils.ts`.
+- Added a required escaping regression for user-controlled selected file names.
+
+### B3: Remote-Review-Unavailable Rendering Was Unassigned
+
+Claude finding: `renderRemoteModelReviewPanel` was not assigned to a target
+module even though provider/model registry behavior is a protected boundary.
+
+Disposition: Accepted.
+
+Spec response:
+
+- Added `src/remote-model-renderer.ts` for remote-review-unavailable rendering,
+  empty-provider registry disclosure, and outbound/blocked data class display.
+
+### B4: Missing `observedSeekTimestampMs` Export-Exclusion Test
+
+Claude finding: moving `prepareSwingCardContent` into `swing-card-actions.ts`
+touches a path that must keep `observedSeekTimestampMs` out of exported Swing
+Card content.
+
+Disposition: Accepted.
+
+Spec response:
+
+- Added required Swing Card action unit tests that serialize or inspect every
+  produced Swing Card content shape and assert `observedSeekTimestampMs` is
+  absent.
+- The spec explicitly forbids copying `observedSeekTimestampMs` into
+  `SwingCardContent`, prompt text, PNG/print content, clipboard content, or
+  any serialized/exported value.
+
+### B5: Consent Storage Injection Was Not Explicit
+
+Claude finding: consent failure-path unit tests depend on injectable storage,
+but the spec did not require it.
+
+Disposition: Accepted.
+
+Spec response:
+
+- Added an explicit `ConsentStorage` interface with `getItem`, `setItem`, and
+  `removeItem`.
+- Production construction defaults to `window.localStorage`.
+- Unit tests must pass fake storage objects directly.
+
+### B6: Global Lifecycle Handler Contract Was Unspecified
+
+Claude finding: `beforeunload` and `securitypolicyviolation` are
+security/privacy-relevant global paths, but the plan did not name the exported
+lifecycle methods `main.ts` should call after extraction.
+
+Disposition: Accepted.
+
+Spec response:
+
+- `main.ts` must call `analysisLifecycle.closeActive()` from `beforeunload`.
+- `main.ts` must call `analysisLifecycle.abortWithNetworkBlocked()` from
+  `securitypolicyviolation`.
+- `abortWithNetworkBlocked()` must preserve the current loading/processing-only
+  guard and abort code `UNEXPECTED_NETWORK_BLOCKED`.
+- Lifecycle unit tests must cover active loading/processing abort, inactive
+  no-op behavior, and controller-reference clearing after close.
+
+## Non-Blocking Recommendations Incorporated
+
+- `src/app-events.ts` is now required instead of optional.
+- `npm run test:smoke` is required after protected-boundary extraction
+  milestones when practical.
+- `npm run docs:verify` is explicit in required final verification.
+- Imperative canvas helpers are assigned to `src/keyframe-overlay-renderer.ts`
+  instead of being mixed into pure HTML renderers.
+- Renderer contract tests must directly assert every protected label/selector
+  at least once where it appears.
+
+## Current Gate
+
+Implementation remains blocked pending focused Claude B1-B6 re-review PASS.
+
+``````
+
+### docs/ss-018-claude-qa-rereview-prompt.md
+
+``````text
+# SS-018 Claude QA B1-B6 Re-Review Prompt
+
+Superseded for paste use by
+`docs/ss-018-claude-qa-b7-b8-rereview-prompt.md` after Claude Round 2 closed
+B1-B6 and returned FAIL with B7-B8. Keep this file as the Round 2 re-review
+record.
+
+Paste this prompt into Claude for focused preimplementation QA re-review.
+Claude Chat does not have repository, filesystem, GitHub, or Notion access, so
+this prompt is self-contained.
+
+```text
+Role: You are the lead adversarial QA planner for Swing Sync, a local-first
+browser app for educational golf swing review.
+
+Stage: Focused pre-implementation QA re-review after Round 1 FAIL.
+
+Scope: Re-review only whether the SS-018 plan now closes Round 1 blockers
+B1-B6 without introducing new planning blockers. Do not re-audit unrelated
+future implementation details unless the revised plan creates a new blocker.
+
+Context:
+Swing Sync is a local-first Vite/TypeScript browser app. SS-018 is a runtime
+refactor story to reduce `src/main.ts` orchestration pressure while preserving
+current behavior. Raw swing video is not uploaded by default. Remote model
+review remains unavailable because the production reviewed-provider registry is
+empty. There is no app backend, telemetry, analytics, remote logging, cloud
+storage, or configured remote model provider in the current app.
+
+Acceptance criteria:
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- No new framework or dependency unless separately reviewed and approved.
+
+Protected boundaries:
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+
+Prior Round 1 findings and applied plan fixes:
+
+B1: No state-mutation ownership contract.
+Applied fix:
+- `src/app-state.ts` must own all state mutation through named transition
+  functions or a reducer-style API.
+- Other modules must not mutate state fields directly.
+- Required transition functions are named for workflow selection, local video
+  selection, processing state/progress/output, processing completion, phase
+  reset/rebuild/declarations/draft/confirmation, keyframe
+  selection, overlay result, and Swing Card busy/status.
+- `selectCanBeginAnalysis(state, consentAccepted)` is the single source for
+  the `#analysis-button` enablement decision.
+
+B2: Shared render helpers had no assigned home.
+Applied fix:
+- `src/render-utils.ts` is the canonical home for `escapeHtml`,
+  `formatRemoteDataClass`, and `formatSwingCardWarning`.
+- Renderer modules must import these helpers from `src/render-utils.ts`.
+- Unit tests must include at least one escaping regression proving
+  user-controlled selected file names render escaped.
+
+B3: Remote-review-unavailable rendering had no assigned module.
+Applied fix:
+- `src/remote-model-renderer.ts` owns remote-review-unavailable rendering,
+  empty-provider registry disclosure, and outbound/blocked data class display.
+
+B4: `observedSeekTimestampMs` exclusion had no export-module regression test.
+Applied fix:
+- `src/swing-card-actions.ts` must not copy `observedSeekTimestampMs` from
+  `SampledFrameOutput` into `SwingCardContent`, prompt text, PNG/print
+  content, clipboard content, or any serialized/exported value.
+- New Swing Card action tests must serialize or inspect every produced Swing
+  Card content shape from the extracted module and assert
+  `observedSeekTimestampMs` is absent.
+
+B5: Consent storage access was not specified as injectable.
+Applied fix:
+- `src/consent-state.ts` exports an injectable `ConsentStorage` interface with
+  `getItem`, `setItem`, and `removeItem`.
+- Production construction defaults to `window.localStorage`.
+- Unit tests pass fake storage objects directly and cover accepted, missing,
+  get failure, set failure, and remove failure paths.
+
+B6: Cross-module contract for `beforeunload` and `securitypolicyviolation` was
+unspecified.
+Applied fix:
+- `main.ts` must call `analysisLifecycle.closeActive()` from `beforeunload`.
+- `main.ts` must call `analysisLifecycle.abortWithNetworkBlocked()` from
+  `securitypolicyviolation`.
+- `abortWithNetworkBlocked()` must check current processing state and only
+  abort when state is `loading` or `processing`, preserving abort code
+  `UNEXPECTED_NETWORK_BLOCKED`.
+- Lifecycle unit tests must cover active loading/processing abort,
+  non-active idle/completed no-op behavior, and controller-reference clearing
+  after close.
+
+Other incorporated recommendations:
+- `src/app-events.ts` is required, not optional, for DOM event binding.
+- `src/keyframe-overlay-renderer.ts` owns imperative canvas/bitmap helpers,
+  while `src/phase-review-renderer.ts` owns pure phase-review/keyframe HTML.
+- Renderer tests must directly assert every protected label and selector at
+  least once in the branch where it appears.
+- `npm run test:smoke` must run after protected-boundary extraction milestones
+  when practical and before final audit.
+- Final verification explicitly includes `npm run docs:verify`,
+  `npm run compliance:verify`, `npm run safety:verify`,
+  `npm run privacy:verify`, `npm run build`, `npm run test:smoke`, targeted
+  unit tests, and `git diff --check`.
+
+Relevant revised target modules:
+- `src/main.ts`: bootstrap and global listener registration only.
+- `src/app-state.ts`: state shape, initial state, selectors, and named
+  transitions/reducer-style API.
+- `src/consent-state.ts`: injectable local acknowledgement storage and
+  fail-closed behavior.
+- `src/render-utils.ts`: shared escaping and formatting helpers.
+- `src/app-renderer.ts`: top-level shell and workflow dispatch.
+- `src/phase-review-renderer.ts`: phase review, declaration controls, and
+  keyframe HTML.
+- `src/keyframe-overlay-renderer.ts`: selected keyframe canvas drawing and
+  annotated keyframe bitmap creation.
+- `src/remote-model-renderer.ts`: remote-review-unavailable panel and data
+  class disclosure.
+- `src/swing-card-actions.ts`: Swing Card content preparation and local export
+  actions.
+- `src/analysis-lifecycle.ts`: frame-processing lifecycle and global handler
+  methods.
+- `src/app-events.ts`: DOM event binding and cross-module event wiring.
+
+Known non-goals:
+- No framework migration or new dependency.
+- No design refresh, copy rewrite, or new user-facing workflow.
+- No backend, auth, accounts, secrets, telemetry, analytics, remote logging,
+  cloud diagnostics, cloud storage, provider SDK, model provider, remote model
+  review enablement, or remote sharing.
+- No service-worker behavior change.
+- No exported data class change.
+- No additional console output, hidden identifiers, or persistent debug
+  artifacts.
+
+Observability decision:
+Runtime observability remains intentionally unchanged. Existing local UI status
+text and sanitized stable error codes remain the only diagnostics in scope.
+
+Verification so far:
+- Planning/spec-only changes.
+- No runtime implementation has started.
+- `git diff --check` will be run after this focused prompt is finalized.
+
+Output required:
+- PASS/FAIL verdict.
+- For each prior blocker B1-B6, state closed or still open.
+- Any new blockers introduced by the revised plan.
+- Non-blocking recommendations.
+- Missing tests or edge cases.
+- Explicit sign-off status for whether implementation may begin.
+```
+
+``````
+
+### docs/ss-018-claude-qa-rereview-response.md
+
+``````text
+# SS-018 Claude QA Focused Re-Review Response
+
+Date: 2026-07-04
+
+Stage: Focused pre-implementation QA re-review after Round 1 FAIL.
+
+Verdict: FAIL.
+
+Claude closed B1-B6 and introduced two new blockers, B7-B8. Codex accepts both
+new blockers as valid planning defects and revised
+`docs/ss-018-preimplementation-spec.md` before implementation.
+
+## Closed Findings
+
+- B1: Closed. State mutation ownership through named transitions and
+  `selectCanBeginAnalysis(state, consentAccepted)` is accepted.
+- B2: Closed. `src/render-utils.ts` is accepted as canonical shared render
+  helper ownership.
+- B3: Closed. `src/remote-model-renderer.ts` is accepted as the
+  remote-review-unavailable owner.
+- B4: Closed. Required `observedSeekTimestampMs` export-exclusion coverage is
+  accepted.
+- B5: Closed. Injectable `ConsentStorage` is accepted.
+- B6: Closed. `closeActive()` and `abortWithNetworkBlocked()` lifecycle
+  methods are accepted.
+
+## New Blockers
+
+### B7: Render-To-Rebind Control Loop Unspecified
+
+Claude finding: splitting rendering into `app-renderer.ts` and event binding
+into `app-events.ts` did not specify who triggers re-render after transitions
+or how listener reattachment avoids stale UI or double-fired actions.
+
+Disposition: Accepted.
+
+Spec response:
+
+- `src/main.ts` owns a `requestRender(statusMessage?)` coordinator closure.
+- `src/app-events.ts` receives `requestRender` as an explicit dependency and
+  calls it after every state-changing transition unless existing behavior only
+  updates current processing DOM through lifecycle progress handlers.
+- `requestRender` calls `app-renderer.renderApp(...)`, fully replaces the
+  `#app` subtree, calls `app-events.bindAppEvents(...)` on the fresh DOM, and
+  redraws the selected keyframe canvas when present.
+- Because the subtree is replaced, old listeners are discarded with old nodes;
+  no explicit teardown is required for the current direct-DOM pattern.
+- Unit tests must cover repeated render/bind cycles and prove a single
+  interaction produces a single effect after multiple re-renders.
+
+### B8: Non-Serializable Frame Controller Handle Ownership Ambiguous
+
+Claude finding: B1's app-state ownership rule conflicted with B6 lifecycle
+tests because `frameController` and `abortFrameController` are live resource
+handles that may not belong in reducer-style state.
+
+Disposition: Accepted.
+
+Spec response:
+
+- `src/app-state.ts` holds only serializable or UI-derived session state.
+- `FrameProcessingController` and abort callback handles are owned by
+  `src/analysis-lifecycle.ts` as an explicit scoped exception to the
+  direct-state-mutation ban.
+- Lifecycle code must call app-state transition functions so derived UI state
+  remains synchronized after close/abort.
+- Unit tests must prove close clears lifecycle controller handles and drives
+  the expected app-state transition.
+
+## Non-Blocking Recommendations Incorporated
+
+- Cleaned up duplicated `confirmation/confirmation` wording.
+- Required full-matrix `selectCanBeginAnalysis` unit tests.
+- Required consent storage failure tests proving the public consent query
+  function fails closed after get/set/remove failures.
+
+## Current Gate
+
+Implementation remains blocked pending focused Claude B7-B8 re-review PASS.
+
+``````
+
+### docs/ss-018-claude-qa-b7-b8-rereview-prompt.md
+
+``````text
+# SS-018 Claude QA B7-B8 Re-Review Prompt
+
+Superseded for paste use by
+`docs/ss-018-claude-qa-b7-rereview-prompt.md` after Claude Round 3 closed B8
+and returned FAIL on residual B7. Keep this file as the Round 3 re-review
+record.
+
+Paste this prompt into Claude for focused preimplementation QA re-review.
+Claude Chat does not have repository, filesystem, GitHub, or Notion access, so
+this prompt is self-contained.
+
+```text
+Role: You are the lead adversarial QA planner for Swing Sync, a local-first
+browser app for educational golf swing review.
+
+Stage: Focused pre-implementation QA re-review after Round 2 FAIL.
+
+Scope: Re-review only whether the SS-018 plan now closes B7-B8 without
+introducing new planning blockers. B1-B6 were closed in Round 2.
+
+Context:
+Swing Sync is a local-first Vite/TypeScript browser app. SS-018 is a runtime
+refactor story to reduce `src/main.ts` orchestration pressure while preserving
+current behavior. Raw swing video is not uploaded by default. Remote model
+review remains unavailable because the production reviewed-provider registry is
+empty. There is no app backend, telemetry, analytics, remote logging, cloud
+storage, or configured remote model provider in the current app.
+
+Acceptance criteria:
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- No new framework or dependency unless separately reviewed and approved.
+
+Protected boundaries:
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+
+B1-B6 status from prior re-review:
+- B1 state-mutation ownership: closed.
+- B2 shared render helpers: closed.
+- B3 remote-review rendering ownership: closed.
+- B4 `observedSeekTimestampMs` export exclusion: closed.
+- B5 injectable consent storage: closed.
+- B6 global listener to lifecycle contract: closed.
+
+Prior Round 2 findings and applied plan fixes:
+
+B7: Render-to-rebind control-loop ownership was unspecified.
+Applied fix:
+- `src/main.ts` owns a `requestRender(statusMessage?)` coordinator closure.
+- `src/app-events.ts` receives `requestRender` as an explicit dependency.
+- After every state-changing transition, event handlers call
+  `requestRender(statusMessage?)` unless the existing behavior only updates
+  current processing DOM through lifecycle progress handlers.
+- `requestRender` calls `app-renderer.renderApp(...)`, fully replaces the
+  `#app` subtree, calls `app-events.bindAppEvents(...)` against the fresh DOM,
+  and then calls `keyframe-overlay-renderer.renderSelectedKeyframeCanvas(...)`
+  when a keyframe canvas is present.
+- Because each render replaces `#app.innerHTML`, old event listeners are
+  discarded with old DOM nodes. No explicit listener teardown is required for
+  the current direct-DOM pattern. If a future implementation changes to
+  persistent DOM nodes, it must add teardown or delegated-listener coverage in
+  the same reviewed change.
+- Unit tests must cover repeated render/bind cycles for at least one
+  state-changing control and one Swing Card action: after two re-renders,
+  triggering the control once must produce a single effect, not a duplicate
+  listener effect.
+
+B8: Ownership of `frameController` and `abortFrameController` as
+non-serializable resource handles was ambiguous against the B1 state contract.
+Applied fix:
+- `src/app-state.ts` keeps only serializable or UI-derived session state:
+  `processingState`, `poseStatusCode`, frame counts, landmark count, selected
+  video metadata/reference, phase review state, selected keyframe index,
+  overlay result, and Swing Card busy/status.
+- `src/app-state.ts` does not store non-serializable frame-analysis resource
+  handles such as `FrameProcessingController` or the abort callback.
+- `FrameProcessingController` and abort callback handles live in
+  `src/analysis-lifecycle.ts` as an explicit scoped exception to the
+  direct-state-mutation ban.
+- After lifecycle-owned controller handles are closed or cleared, lifecycle
+  code must call app-state transition functions so derived UI state remains in
+  sync with lifecycle state.
+- Unit tests must prove close clears lifecycle controller handles and drives
+  the expected app-state transition, rather than leaving either side stale.
+
+Additional test-plan clarifications:
+- `selectCanBeginAnalysis(state, consentAccepted)` must have full-matrix unit
+  tests for consent true/false, selected video present/absent, and active
+  processing states.
+- Consent storage get/set/remove failure tests must prove the public consent
+  query function returns false, not merely that fake storage methods throw.
+- `src/app-events.ts` has a targeted unit test command:
+  `npm run test:unit -- app-events`.
+- Final audit evidence must map named tests to render/rebind single-effect
+  behavior and lifecycle handle ownership sync.
+
+Known non-goals:
+- No framework migration or new dependency.
+- No design refresh, copy rewrite, or new user-facing workflow.
+- No backend, auth, accounts, secrets, telemetry, analytics, remote logging,
+  cloud diagnostics, cloud storage, provider SDK, model provider, remote model
+  review enablement, or remote sharing.
+- No service-worker behavior change.
+- No exported data class change.
+- No additional console output, hidden identifiers, or persistent debug
+  artifacts.
+
+Observability decision:
+Runtime observability remains intentionally unchanged. Existing local UI status
+text and sanitized stable error codes remain the only diagnostics in scope.
+
+Verification so far:
+- Planning/spec-only changes.
+- No runtime implementation has started.
+- `git diff --check` will be run after this focused prompt is finalized.
+
+Output required:
+- PASS/FAIL verdict.
+- For B7 and B8, state closed or still open.
+- Any new blockers introduced by the revised plan.
+- Non-blocking recommendations.
+- Missing tests or edge cases.
+- Explicit sign-off status for whether implementation may begin.
+```
+
+``````
+
+### docs/ss-018-claude-qa-b7-rereview-response.md
+
+``````text
+# SS-018 Claude QA Focused B7/B8 Re-Review Response
+
+Date: 2026-07-05
+
+Stage: Focused pre-implementation QA re-review after Round 2 FAIL.
+
+Verdict: FAIL.
+
+Claude closed B8 and kept B7 open. Codex accepts the residual B7 finding as a
+valid planning defect and revised `docs/ss-018-preimplementation-spec.md`
+before implementation.
+
+## Closed Finding
+
+### B8: Controller-Handle Ownership
+
+Status: Closed.
+
+Claude accepted the plan that `src/app-state.ts` holds only serializable or
+UI-derived fields while `src/analysis-lifecycle.ts` owns the non-serializable
+`FrameProcessingController` and abort callback handles as a documented
+exception to the app-state mutation rule.
+
+## Open Finding
+
+### B7: Processing Progress Partial-Update Ownership
+
+Status: Still open in Claude Round 3; accepted by Codex.
+
+Claude finding: the prior plan correctly specified the full render/rebind loop
+for synchronous user-triggered transitions, but left a vague carve-out for
+frame-processing progress/output ticks. That partial-update path could cache
+detached DOM nodes or create a second renderer for processing-panel status.
+
+Spec response:
+
+- `src/app-renderer.ts` now owns processing-panel DOM partial updates.
+- Required exported API:
+
+```ts
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void;
+```
+
+- `src/analysis-lifecycle.ts` owns frame-processing callbacks and
+  non-serializable controller handles, but after app-state transitions it must
+  delegate processing-panel DOM updates to
+  `app-renderer.updateProcessingProgressUi(...)`.
+- `src/analysis-lifecycle.ts` must not cache processing DOM nodes or write
+  progress/status text directly.
+- `updateProcessingProgressUi` must re-query current DOM targets on each call,
+  including `[data-pose-summary]`, `[data-retry-analysis]`, and
+  `[data-review-phases]`, so updates continue to hit the visible DOM after any
+  intervening full `requestRender(...)` replacement.
+- Unit tests must trigger a full render during active processing and then
+  assert the next progress/output tick updates the visible
+  `[data-pose-summary]` text rather than a detached node.
+- A composition test must cover stop during processing, controller handle
+  clearing, app-state reaching `idle`, and a subsequent `requestRender(...)`
+  reflecting the idle/capture UI.
+
+## Non-Blocking Recommendation
+
+Claude suggested considering progress-tick throttling. Codex defers this:
+SS-018 preserves current behavior and the existing eight-sample processing
+cadence. Throttling can be considered in a future performance story if
+profiling shows a need.
+
+## Current Gate
+
+Implementation remains blocked pending focused Claude residual B7 re-review
+PASS.
+
+``````
+
+### docs/ss-018-claude-qa-b7-rereview-prompt.md
+
+``````text
+# SS-018 Claude QA Residual B7 Re-Review Prompt
+
+Paste this prompt into Claude for focused preimplementation QA re-review.
+Claude Chat does not have repository, filesystem, GitHub, or Notion access, so
+this prompt is self-contained.
+
+```text
+Role: You are the lead adversarial QA planner for Swing Sync, a local-first
+browser app for educational golf swing review.
+
+Stage: Focused pre-implementation QA re-review after Round 3 FAIL.
+
+Scope: Re-review only whether the SS-018 plan now closes residual B7 without
+introducing new planning blockers. B1-B6 were closed in Round 2. B8 was closed
+in Round 3.
+
+Context:
+Swing Sync is a local-first Vite/TypeScript browser app. SS-018 is a runtime
+refactor story to reduce `src/main.ts` orchestration pressure while preserving
+current behavior. Raw swing video is not uploaded by default. Remote model
+review remains unavailable because the production reviewed-provider registry is
+empty. There is no app backend, telemetry, analytics, remote logging, cloud
+storage, or configured remote model provider in the current app.
+
+Acceptance criteria:
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- No new framework or dependency unless separately reviewed and approved.
+
+Protected boundaries:
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+
+Prior status:
+- B1 state-mutation ownership: closed.
+- B2 shared render helpers: closed.
+- B3 remote-review rendering ownership: closed.
+- B4 `observedSeekTimestampMs` export exclusion: closed.
+- B5 injectable consent storage: closed.
+- B6 global listener to lifecycle contract: closed.
+- B8 controller-handle ownership: closed.
+
+Residual B7 finding:
+The Round 2 plan specified the full render/rebind path, but left processing
+progress/output updates as an unspecified partial-update bypass. Claude noted
+that if lifecycle code caches DOM node references or mutates processing status
+text directly, a full `requestRender(...)` between progress ticks could leave
+the next tick writing to detached nodes or create a second processing-panel
+renderer outside `app-renderer.ts`.
+
+Applied B7 fix:
+- `src/app-renderer.ts` owns processing-progress DOM updates through exported
+  partial-update functions.
+- Required API:
+
+```ts
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void;
+```
+
+- `src/analysis-lifecycle.ts` owns frame-processing callbacks and controller
+  handles, but it must delegate every processing-panel DOM update to
+  `app-renderer.updateProcessingProgressUi(...)` after calling app-state
+  transition functions.
+- `src/analysis-lifecycle.ts` must not cache progress DOM nodes or write
+  progress/status text directly.
+- `updateProcessingProgressUi(root, state)` must re-query current DOM targets
+  on each call using selectors such as `[data-pose-summary]`,
+  `[data-retry-analysis]`, and `[data-review-phases]`.
+- Re-querying on every tick is required so progress updates attach to the
+  visible DOM after any intervening full `requestRender(...)` replacement.
+- Unit tests must trigger an intervening full render during active processing
+  and then assert the next progress/output tick updates the visible
+  `[data-pose-summary]` text rather than a detached node.
+- A composition test must cover stop during processing: user action calls
+  lifecycle stop/close, controller handles are cleared, app-state reaches
+  `idle`, and a subsequent `requestRender(...)` reflects the idle/capture UI.
+
+Throttling note:
+Progress-tick throttling is deferred. SS-018 preserves current behavior and
+the existing eight-sample processing cadence; throttling can be considered in a
+future performance story if profiling shows a need.
+
+Known non-goals:
+- No framework migration or new dependency.
+- No design refresh, copy rewrite, or new user-facing workflow.
+- No backend, auth, accounts, secrets, telemetry, analytics, remote logging,
+  cloud diagnostics, cloud storage, provider SDK, model provider, remote model
+  review enablement, or remote sharing.
+- No service-worker behavior change.
+- No exported data class change.
+- No additional console output, hidden identifiers, or persistent debug
+  artifacts.
+
+Observability decision:
+Runtime observability remains intentionally unchanged. Existing local UI status
+text and sanitized stable error codes remain the only diagnostics in scope.
+
+Verification so far:
+- Planning/spec-only changes.
+- No runtime implementation has started.
+- `git diff --check` will be run after this focused prompt is finalized.
+
+Output required:
+- PASS/FAIL verdict.
+- State whether residual B7 is closed or still open.
+- Any new blockers introduced by the revised plan.
+- Non-blocking recommendations.
+- Missing tests or edge cases.
+- Explicit sign-off status for whether implementation may begin.
+```
+
+``````
+
+### docs/ss-018-claude-qa-b7-pass-response.md
+
+``````text
+# SS-018 Claude QA Residual B7 Re-Review Response
+
+Date: 2026-07-05
+
+Stage: Focused pre-implementation QA re-review after Round 3 FAIL.
+
+Verdict: PASS.
+
+Claude closed residual B7. The full B1-B8 QA planning blocker set is closed,
+and implementation may begin.
+
+## Closed Finding
+
+### B7: Processing Progress Partial-Update Ownership
+
+Status: Closed.
+
+Claude accepted that:
+
+- `src/app-renderer.ts` is the sole owner of
+  `updateProcessingProgressUi(root, state)`.
+- `src/analysis-lifecycle.ts` delegates to the renderer helper and does not
+  cache DOM nodes or write processing-panel text directly.
+- `updateProcessingProgressUi(...)` re-queries visible DOM targets on every
+  call, including `[data-pose-summary]`, `[data-retry-analysis]`, and
+  `[data-review-phases]`.
+- Required tests now cover an intervening full render during active processing
+  followed by a progress tick updating live DOM, plus stop-during-processing
+  composition across controller clearing, app-state `idle`, and subsequent
+  render.
+- Progress throttling remains deferred to preserve current eight-sample
+  behavior.
+
+## Non-Blocking Recommendations Folded Into Spec
+
+- State that the `#app` root is stable and only its children are replaced.
+- Specify that missing processing selectors are a no-op.
+- Specify that dynamic progress/status writes use `textContent` or element
+  properties, with future user-influenced HTML routed through
+  `render-utils.escapeHtml`.
+
+## Implementation Gate
+
+Implementation may begin. Final implementation audit must include executed
+named tests for render/rebind single-effect behavior,
+`observedSeekTimestampMs` exclusion, consent fail-closed behavior, escaping
+regression coverage, the B7 reattachment/composition tests, and required
+`docs:verify`, `compliance:verify`, `safety:verify`, `privacy:verify`,
+`test:smoke`, `build`, and `git diff --check` results.
+
+``````
+
+### docs/ss-018-claude-audit-prompt.md
+
+``````text
+# SS-018 Claude Implementation Audit Prompt
+
+Do not treat any prior chat as authoritative. Audit only the packet below and
+any complete file contents or diff pasted with it.
+
+## Role
+
+You are the lead adversarial auditor for Swing Sync.
+
+## Stage
+
+Implementation audit for SS-018 after Codex implementation and local
+verification.
+
+## Scope
+
+Audit the SS-018 app-shell refactor on branch
+`ss-018-frontend-architecture`.
+
+The story intent is to reduce `src/main.ts` orchestration pressure before the
+next UI feature wave while preserving existing user-facing behavior. The
+refactor separates workflow rendering, state transitions, export controls,
+consent handling, and analysis lifecycle into focused modules.
+
+## Context
+
+Swing Sync is a local-first golf swing analysis app. Runtime privacy and safety
+boundaries are protected:
+
+- Raw swing video is not uploaded by default.
+- Remote sharing requires a separate explicit opt-in.
+- Remote model review remains unavailable in the current app shell.
+- No telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts may be added.
+- Provider/model registry behavior, service-worker behavior, raw-media
+  handling, and exported data classes must not change.
+- User-facing coaching/safety language must remain bounded and avoid absolute
+  medical, legal, deletion, anonymity, or compliance claims.
+
+Claude QA planning previously failed and then passed after blockers B1-B8 were
+resolved in the implementation plan. Implementation was not started until the
+Round 4 QA planning PASS.
+
+## Acceptance Criteria
+
+- Split the current app shell into focused modules without changing
+  user-facing behavior.
+- Keep consent gating, local video selection, local pose processing, phase
+  review, Swing Card export, and remote-review-unavailable behavior intact.
+- Preserve existing accessibility labels and test selectors used by smoke
+  tests.
+- Add or adjust unit tests around extracted state/renderer behavior where
+  useful.
+- Add no new framework or dependency unless separately reviewed and approved.
+
+## Protected Boundaries
+
+- Do not change runtime privacy posture, raw-media handling, remote sharing,
+  provider/model registry behavior, service-worker behavior, or exported data
+  classes.
+- Do not add telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, or persistent debug artifacts.
+
+## Prior QA Planning Findings To Re-check
+
+Confirm that the implementation actually satisfies the planning fixes:
+
+- B1: `src/app-state.ts` owns state mutation through named transitions or
+  selectors; other modules must not directly mutate state fields except through
+  the documented lifecycle handle exception.
+- B2: shared render helpers, especially `escapeHtml`, are canonical in
+  `src/render-utils.ts`; renderer modules must not duplicate escaping logic.
+- B3: remote-review-unavailable rendering is explicitly owned by
+  `src/remote-model-renderer.ts` and does not alter provider/model registry
+  behavior.
+- B4: `observedSeekTimestampMs` is excluded from serialized/exported Swing
+  Card content surfaces after export extraction.
+- B5: consent storage uses an injectable storage interface and fails closed on
+  get/set/remove errors.
+- B6: `beforeunload` and `securitypolicyviolation` delegate to named lifecycle
+  methods and preserve fail-closed `UNEXPECTED_NETWORK_BLOCKED` behavior.
+- B7: render/rebind ownership is explicit. `src/main.ts` owns
+  `requestRender(statusMessage?)`; `src/app-events.ts` calls it after
+  state-changing handlers; `src/app-renderer.ts` owns
+  `updateProcessingProgressUi(root, state)`, re-queries processing DOM targets
+  on every tick, and no-ops on missing selectors. Lifecycle code must not cache
+  progress DOM nodes or write processing UI text directly.
+- B8: `src/app-state.ts` holds UI-derived/session state while
+  `src/analysis-lifecycle.ts` owns non-serializable controller and abort
+  handles as a scoped exception, then synchronizes back through app-state
+  transitions.
+
+## Implementation Summary
+
+- `src/main.ts` is now a thin bootstrap/render coordinator.
+- `src/app-state.ts` owns state shape, selectors, and named transitions.
+- `src/consent-state.ts` owns injectable safety-consent storage and fail-closed
+  consent reads/writes.
+- `src/app-renderer.ts` owns workflow/export HTML rendering and the processing
+  partial-update helper.
+- `src/app-events.ts` owns DOM event binding and calls state transitions plus
+  `requestRender`.
+- `src/analysis-lifecycle.ts` owns frame-processing controller handles,
+  lifecycle methods, global-handler methods, and delegates processing UI
+  updates to `src/app-renderer.ts`.
+- `src/keyframe-overlay-renderer.ts` owns imperative keyframe canvas drawing.
+- `src/phase-review-renderer.ts` owns phase review rendering.
+- `src/remote-model-renderer.ts` owns remote-review-unavailable rendering.
+- `src/render-utils.ts` owns shared escaping and Swing Card warning/data-class
+  formatting.
+- `src/swing-card-actions.ts` owns Swing Card download, print, clipboard, and
+  content preparation.
+- `scripts/verify-safety-terms.js` and
+  `scripts/verify-privacy-boundaries.js` were updated so safety/privacy
+  verifiers follow the extracted app-shell modules.
+- Runtime observability is intentionally unchanged.
+- No dependency, framework, bundle, license-policy, notice, or SBOM changes
+  were made.
+
+## Changed-File Manifest
+
+Runtime source files:
+
+- `src/main.ts`
+- `src/analysis-lifecycle.ts`
+- `src/app-events.ts`
+- `src/app-renderer.ts`
+- `src/app-state.ts`
+- `src/consent-state.ts`
+- `src/keyframe-overlay-renderer.ts`
+- `src/phase-review-renderer.ts`
+- `src/remote-model-renderer.ts`
+- `src/render-utils.ts`
+- `src/swing-card-actions.ts`
+
+Verifier files:
+
+- `scripts/verify-privacy-boundaries.js`
+- `scripts/verify-safety-terms.js`
+
+Unit tests:
+
+- `test/unit/analysis-lifecycle.test.ts`
+- `test/unit/app-events.test.ts`
+- `test/unit/app-renderer.test.ts`
+- `test/unit/app-state.test.ts`
+- `test/unit/consent-state.test.ts`
+- `test/unit/render-utils.test.ts`
+- `test/unit/swing-card-actions.test.ts`
+
+Planning, audit, and context files:
+
+- `.agents/skills/swing-sync-story-delivery/SKILL.md`
+- `CONTEXT.md`
+- `docs/ss-018-research-disposition.md`
+- `docs/ss-018-preimplementation-spec.md`
+- `docs/ss-018-claude-qa-planning-prompt.md`
+- `docs/ss-018-claude-qa-response.md`
+- `docs/ss-018-claude-qa-rereview-prompt.md`
+- `docs/ss-018-claude-qa-rereview-response.md`
+- `docs/ss-018-claude-qa-b7-b8-rereview-prompt.md`
+- `docs/ss-018-claude-qa-b7-rereview-response.md`
+- `docs/ss-018-claude-qa-b7-rereview-prompt.md`
+- `docs/ss-018-claude-qa-b7-pass-response.md`
+- `docs/ss-018-claude-audit-prompt.md`
+
+The intentional untracked
+`docs/agent-guidance/*new-codex-session-prompt.md` files predate SS-018 and are
+not part of this audit.
+
+## Source Packet Requirement
+
+If this prompt is pasted into Claude Chat, paste
+`docs/ss-018-claude-audit-source-packet.md` immediately after this prompt. That
+packet contains the complete changed file contents for the runtime source,
+verifier, unit-test, planning, audit, and context files listed in the manifest
+above. Do not pass/fail from the summary alone.
+
+Claude's first implementation-audit attempt returned no PASS/FAIL because only
+this prompt was pasted and the source packet was omitted. Treat that as a
+handoff defect already corrected by `docs/ss-018-claude-audit-source-packet.md`,
+not as a runtime implementation finding.
+
+For source-sensitive review, treat summaries as orientation only. The audit
+should inspect the actual changed code for cross-module ownership violations,
+selector/label regressions, privacy/safety boundary drift, and missing test
+coverage.
+
+## Verification Evidence
+
+Executed local commands and results:
+
+- `npm run test:unit -- consent-state app-state render-utils app-renderer app-events analysis-lifecycle swing-card-actions`
+  passed: 7 files, 15 tests.
+- `npm run test:unit` passed: 21 files, 176 tests.
+- `npm run test:smoke` initially could not bind localhost in the managed
+  sandbox and reported `listen EPERM: operation not permitted 127.0.0.1:4174`.
+  The direct Playwright equivalent was rerun with approved local-server
+  permissions:
+  `DEBUG=pw:webserver node_modules/.bin/playwright test --reporter=line`
+  passed: 32 desktop/mobile tests.
+- `npm run build` passed.
+- `npm run docs:verify` passed.
+- `npm run compliance:verify` passed.
+- `npm run safety:verify` passed.
+- `npm run privacy:verify` passed.
+- `git diff --check` passed.
+
+Coverage mapping:
+
+- Consent fail-closed and injectable storage:
+  `test/unit/consent-state.test.ts`.
+- Canonical `selectCanBeginAnalysis` gate selector:
+  `test/unit/app-state.test.ts`.
+- Escaping and canonical render helpers:
+  `test/unit/render-utils.test.ts`.
+- Protected selector/label preservation, processing progress re-query, and
+  missing-selector no-op:
+  `test/unit/app-renderer.test.ts`.
+- Render/rebind single-effect behavior:
+  `test/unit/app-events.test.ts`.
+- Global handler/lifecycle/controller clearing and stop/idle composition:
+  `test/unit/analysis-lifecycle.test.ts`.
+- `observedSeekTimestampMs` export exclusion:
+  `test/unit/swing-card-actions.test.ts`.
+- Primary workflow selector/label preservation:
+  full Playwright smoke suite.
+- Protected safety/privacy text and local-first boundaries:
+  `npm run safety:verify`, `npm run privacy:verify`, and
+  `npm run compliance:verify`.
+
+## Known Non-goals
+
+- No UI copy, layout, or workflow behavior redesign.
+- No framework migration.
+- No progress throttling changes.
+- No remote review enablement.
+- No provider/model registry changes.
+- No service-worker behavior changes.
+- No telemetry, analytics, remote logging, cloud diagnostics, hidden
+  identifiers, persistent debug artifacts, or new operator diagnostics.
+- No dependency, bundle, license-policy, notice, or SBOM changes.
+- No PR has been created yet; this audit is the gate before PR preparation.
+
+## Output Required
+
+Return:
+
+- PASS or FAIL verdict.
+- Blockers ordered by severity, with file/line references where possible.
+- Non-blocking recommendations.
+- Missing tests or edge cases.
+- Explicit sign-off status: whether SS-018 may proceed to PR preparation, or
+  whether fixes and focused re-review are required.
+
+Focus especially on:
+
+- Any hidden direct state mutation outside `src/app-state.ts`.
+- Any duplicated or bypassed escaping/render-helper logic.
+- Any stale-DOM or double-binding risk after render/rebind extraction.
+- Any processing-progress path that writes DOM outside `src/app-renderer.ts`.
+- Any controller-handle state sync bug in `src/analysis-lifecycle.ts`.
+- Any consent fail-open behavior.
+- Any `observedSeekTimestampMs` leak in export surfaces.
+- Any selector/accessibility label regression that smoke tests could miss.
+- Any verifier update that creates a false positive or false negative for
+  safety/privacy boundaries.
+
+``````
+
+### CONTEXT.md
+
+``````text
 # Swing Sync Context
 
-Last updated: 2026-07-19
+Last updated: 2026-07-06
 
 ## Current State
 
@@ -269,106 +4464,9 @@ Kickoff/spec state on 2026-07-04:
   `.agents/skills/swing-sync-story-delivery/SKILL.md`: browser-chat audit
   handoffs must create the source packet before marking the handoff ready; a
   prompt that only instructs the user to paste source later is insufficient.
-- Claude full-source implementation audit returned FAIL with B9-B12:
-  - B9: `analysisLifecycle.closeActive()` did not request a render after async
-    close/idle completion, so capture could remain visually disabled after
-    leaving active processing.
-  - B10: renderer unit tests did not directly assert protected review, export,
-    and remote-review-unavailable selectors/labels.
-  - B11: `observedSeekTimestampMs` exclusion coverage used empty state and did
-    not exercise populated sampled-frame output.
-  - B12: safety/privacy verifier app-source scan lists covered only a subset
-    of extracted runtime modules.
-- Codex accepted B9-B12 as valid and patched the focused surfaces:
-  `src/analysis-lifecycle.ts`, `test/unit/analysis-lifecycle.test.ts`,
-  `test/unit/app-renderer.test.ts`, `test/unit/swing-card-actions.test.ts`,
-  `scripts/verify-privacy-boundaries.js`, and
-  `scripts/verify-safety-terms.js`.
-- B9 fix: `closeActive()` now calls `requestRender()` after close, handle
-  clearing, and `setProcessingState(..., "idle")`; lifecycle tests assert the
-  render call and cover the stale capture render path where the analysis button
-  becomes enabled after the async close promise settles.
-- B10 fix: renderer tests now assert protected review selectors/labels
-  (`data-confirm-phase-review`, `data-phase-index`, `data-open-export`, Swing
-  phase assignments, View, Handedness, Horizontally mirrored, Select keyframe)
-  and export/remote-review selectors/labels (`data-download-swing-card`,
-  `data-print-swing-card`, `data-copy-swing-card-prompt`,
-  `data-swing-card-status`, `data-swing-card-print-host`,
-  `data-remote-model-send`, Downloadable summary, Remote model review
-  unavailable, Remote model data disclosure).
-- B11 fix: Swing Card action tests now build populated eight-sample
-  `SampledFrameOutput` fixtures containing `observedSeekTimestampMs`, drive
-  real phase-review assignments, and assert the field/value are absent from
-  produced keyframes and `analysisPrompt`.
-- B12 fix: safety and privacy verifiers now scan `listScannableFiles("src")`
-  for app-source protected boundary checks. The safety verifier normalizes
-  explicit `Do not provide ...` guardrail sentences before applying affirmative
-  unsafe-claim regexes so broad scanning does not fail on negated safety
-  constraints.
-- Verification after B9-B12 fixes:
-  - `npm run test:unit -- analysis-lifecycle app-renderer swing-card-actions`
-    passed: 3 files, 9 tests.
-  - `npm run test:unit` passed: 21 files, 179 tests.
-  - `npm run safety:verify` passed.
-  - `npm run privacy:verify` passed.
-  - `npm run compliance:verify` passed.
-  - `npm run build` passed.
-  - `git diff --check` passed before the focused re-review prompt/context
-    updates.
-- Smoke verification after B9-B12 fixes is not complete: `npm run test:smoke`
-  and direct Playwright retries hung before test output. Manual Vite preview
-  startup succeeded, but Playwright still hung before browser/test output.
-  Orphaned Playwright/Chrome processes from an earlier `@playwright/cli` daemon
-  were found, terminated, and confirmed absent; a final clean
-  `npm run test:smoke` retry still hung before Vite/browser child startup and
-  was interrupted. No Playwright assertion failure or app smoke failure was
-  observed in this pass.
-- Focused Claude re-review prompt prepared:
-  `docs/ss-018-claude-audit-rereview-prompt.md`. The earlier
-  `docs/ss-018-claude-audit-prompt.md` and
-  `docs/ss-018-claude-audit-source-packet.md` are superseded for paste use.
-- Claude focused B9-B12 re-review closed B9, B10, and B11. B12 was
-  substantially addressed but yielded B13: the safety verifier's temporary
-  broad `src` scan needed either full-file evidence and false-positive
-  accounting for SS-012 coaching files, or a narrower explicit app-shell scan
-  list.
-- Codex accepted B13 as valid and chose the lower-risk explicit-list fix. The
-  safety verifier now scans only `src/main.ts`, `src/app-renderer.ts`,
-  `src/app-events.ts`, `src/consent-state.ts`,
-  `src/phase-review-renderer.ts`, `src/remote-model-renderer.ts`, and
-  `src/swing-card-actions.ts` for app-source safety copy. The broad
-  `listScannableFiles("src")` safety scan and negated-guardrail normalization
-  workaround were removed because they are not needed for SS-018 scope.
-- Node-version smoke issue resolved: the default shell was Node `v20.11.0`,
-  while `.nvmrc` requires Node `22`. Running through `nvm use` selected
-  Node `v22.22.3` and resolved the Playwright hang.
-- Verification after B13/smoke follow-up under Node `v22.22.3`:
-  - `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && node --version && npm run test:smoke'`
-    passed: 32 desktop/mobile smoke tests.
-  - `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && node --version && npm run test:unit && npm run build && npm run compliance:verify && git diff --check'`
-    passed: unit suite 21 files / 179 tests, production build,
-    compliance/fixture/pose-assets/safety/privacy/docs verification, and
-    whitespace diff check.
-- Short Claude follow-up prompt prepared:
-  `docs/ss-018-claude-audit-b13-smoke-followup-prompt.md`. The prior focused
-  re-review prompt is superseded for paste use.
-- Claude B13/smoke follow-up returned PASS on 2026-07-19. Claude closed B13,
-  accepted the Node 22 smoke evidence, and cleared SS-018 for PR preparation.
-  Response record:
-  `docs/ss-018-claude-audit-b13-smoke-followup-response.md`.
-- Codex removed the no-longer-needed defensive negative-lookbehind regex from
-  `scripts/verify-safety-terms.js` before PR preparation, restoring the
-  original affirmative medical-advice claim pattern while keeping the explicit
-  app-shell scan list. Follow-up verification under Node `v22.22.3` passed:
-  `npm run safety:verify`, `npm run compliance:verify`, and
-  `git diff --check`.
-- Non-blocking future notes from Claude, not SS-018 gates: consider adding
-  `render-utils.ts` and `analysis-lifecycle.ts` to safety verifier scope if
-  they grow user-facing safety/status copy, and consider splitting
-  `app-renderer.test.ts` branch coverage into per-module renderer tests.
-- Next owner: Codex PR preparation. SS-018 must not move to `5. Done` until PR
-  creation, merge, local `main` sync, Notion sync, and post-merge context
-  updates are complete.
+- Next owner: Claude final implementation audit. SS-018 must not move to
+  `5. Done` or PR preparation until Claude returns PASS or any blockers are
+  fixed and re-reviewed.
 
 ## SS-017 Coordination
 
@@ -3291,3 +7389,5 @@ Remaining SS-002 pre-release gate:
 - Any connected model or coaching prompt must avoid medical diagnosis, pain triage, or aggressive mechanical prescriptions.
 - Observability: SS-002 adds no runtime logging, telemetry, remote calls, or raw
   video handling. Consent acknowledgement is local-only browser state.
+
+``````
