@@ -24,16 +24,16 @@ Last updated: 2026-07-28
 - Active handshake status: `4. Final Audit (Claude)`. Notion was successfully
   moved to this configured board value and refetched for confirmation on
   2026-07-21.
-- Active Pull Request: none.
+- Active Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20).
 - Authorized story branch, now created at the confirmed baseline:
   `ss-019-accessibility-design-hardening`.
-- Implementation status: uncommitted SS-019 runtime, accessibility,
-  responsive-design, unit, smoke, and manual-QA changes are present on the
-  story branch. Full Node 22 verification now passes at 24 files / 218 unit
-  tests and 48 desktop/mobile smoke tests. Claude focused re-review returned
-  PASS, closed B-NEW1, and explicitly cleared PR preparation. PR preparation
-  is underway; the Pull Request remains empty until it is separately created
-  and synchronized.
+- Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
+  (`feat: harden accessibility and responsive design`), pushed on the story
+  branch. The exact reviewed commit spans 43 files. Full Node 22 verification
+  passes at 24 files / 218 unit tests and 48 desktop/mobile smoke tests.
+  Claude focused re-review returned PASS, closed B-NEW1, and explicitly cleared
+  PR preparation. PR #20 is open; required compliance is initially
+  `IN_PROGRESS`, and no merge has occurred.
 - Remaining visible non-Done backlog tasks: SS-019 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
@@ -570,6 +570,20 @@ SS-019 focused final-audit re-review PASS on 2026-07-28:
   `4. Final Audit (Claude)` and Pull Request remains empty until PR creation
   and later merge state are separately synchronized. Next owner: builder/lead
   for PR preparation.
+
+SS-019 PR preparation state on 2026-07-28:
+
+- PR #20: https://github.com/ajason13/swing-sync/pull/20. The implementation
+  and audit evidence are committed at
+  `ba564f368df654c07b1a73ad91aa46762cfa9721`; this is the exact 43-file commit
+  reviewed by the cleared focused audit.
+- Claude PASS and `CLEARED FOR PR PREPARATION` remain valid. Handshake remains
+  `4. Final Audit (Claude)` until PR/merge state is separately synchronized.
+  Pull Request is open, required compliance is initially `IN_PROGRESS`, and no
+  merge is authorized or recorded.
+- Next owner: builder/lead for CI review and PR readiness. Observability,
+  dependency, protected-copy, selector, local-first, and manual-execution
+  posture remain unchanged.
 
 SS-019 feedback-retention note on 2026-07-28:
 

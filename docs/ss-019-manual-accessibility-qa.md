@@ -9,14 +9,14 @@ statement.
 ## Build under review
 
 - Repository base SHA: `b4db367bedcc0f7aefcbb55878ec7ec1a0f549a1`.
-- Implementation state: uncommitted SS-019 working tree on
-  `ss-019-accessibility-design-hardening`; no implementation commit SHA exists
-  yet. The final audit reviewed this uncommitted worktree through exact hashed
-  evidence blocks and packets, including compact packet SHA-256
+- Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
+  on `ss-019-accessibility-design-hardening`. The final audit reviewed the
+  committed runtime/test contents through exact hashed evidence blocks and
+  packets, including compact packet SHA-256
   `9f65d37449bfb614e9433b4f7a35126f8e856577fb759a6bb17bff5618767cc0`;
-  see `docs/ss-019-claude-audit-rereview-raw-response.md`. PR preparation will
-  commit the audited runtime/test contents. Any later runtime/test change
-  requires renewed verification and audit; no manual execution is claimed.
+  see `docs/ss-019-claude-audit-rereview-raw-response.md`. Any later
+  runtime/test change requires renewed verification and audit; no manual
+  execution is claimed.
 - Automated environment: Node `v22.22.3`, npm `10.9.8`.
 - Automated commands actually completed:
   - Full unit: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:unit'`
