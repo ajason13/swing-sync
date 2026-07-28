@@ -889,10 +889,6 @@ button:disabled {
     padding: 4px;
   }
 
-  .keyframe-button {
-    min-height: 52px;
-  }
-
   .swing-card-summary {
     grid-template-columns: 1fr;
   }

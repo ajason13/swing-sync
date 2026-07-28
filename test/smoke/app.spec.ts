@@ -106,8 +106,8 @@ async function expectMeaningfulHeadingOrder(page: Page): Promise<void> {
   }
 }
 
-async function expectResponsiveGeometry(page: Page, textSelectors: readonly string[]): Promise<void> {
-  const result = await page.evaluate((selectors) => {
+async function collectResponsiveGeometry(page: Page, textSelectors: readonly string[]) {
+  return page.evaluate((selectors) => {
     // Native checkboxes have intentionally compact glyphs with a >=44px labelled row;
     // the defensive native file input is removed from sequential/visual flow.
     const targetExceptions = ["input[type='checkbox']", "#video-file"];
@@ -118,11 +118,30 @@ async function expectResponsiveGeometry(page: Page, textSelectors: readonly stri
     };
     const texts = selectors.flatMap((selector) => [...document.querySelectorAll<HTMLElement>(selector)])
       .filter(isVisible)
-      .map((element) => ({
-        selector: element.id || element.getAttribute("data-focus-key") || element.className || element.tagName,
-        clipped: element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1,
-        rect: element.getBoundingClientRect().toJSON()
-      }));
+      .map((element) => {
+        const style = getComputedStyle(element);
+        const overflowX = style.overflowX;
+        const overflowY = style.overflowY;
+        const scrollWidth = element.scrollWidth;
+        const clientWidth = element.clientWidth;
+        const scrollHeight = element.scrollHeight;
+        const clientHeight = element.clientHeight;
+        const clippedX = scrollWidth > clientWidth + 1 && overflowX !== "visible";
+        const clippedY = scrollHeight > clientHeight + 1 && overflowY !== "visible";
+        return {
+          selector: element.id || element.getAttribute("data-focus-key") || element.className || element.tagName,
+          clipped: clippedX || clippedY,
+          clippedX,
+          clippedY,
+          scrollWidth,
+          clientWidth,
+          scrollHeight,
+          clientHeight,
+          overflowX,
+          overflowY,
+          rect: element.getBoundingClientRect().toJSON()
+        };
+      });
     const controls = [...document.querySelectorAll<HTMLElement>("button, select, input")]
       .filter(isVisible)
       .map((element) => {
@@ -147,18 +166,72 @@ async function expectResponsiveGeometry(page: Page, textSelectors: readonly stri
     });
     return {
       pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      textDiagnostics: texts,
       clipped: texts.filter((item) => item.clipped),
       outsideViewport: texts.filter((item) => item.rect.left < 0 || item.rect.right > document.documentElement.clientWidth + 1),
       undersized: controls.filter((control) => !control.excepted && (control.width < 44 || control.height < 44)),
       overlaps
     };
   }, textSelectors);
+}
+
+async function expectResponsiveGeometry(page: Page, textSelectors: readonly string[]): Promise<void> {
+  const result = await collectResponsiveGeometry(page, textSelectors);
   expect(result.pageOverflow).toBe(false);
   expect(result.clipped).toEqual([]);
   expect(result.outsideViewport).toEqual([]);
   expect(result.undersized).toEqual([]);
   expect(result.overlaps).toEqual([]);
 }
+
+test("responsive geometry distinguishes visible overflow from hidden clipped content", async ({ page }) => {
+  await page.locator("body").evaluate((body) => {
+    const fixture = document.createElement("div");
+    fixture.innerHTML = `
+      <div id="visible-overflow-fixture">Visible overflow sample</div>
+      <div id="hidden-overflow-fixture">Hidden overflow sample</div>
+    `;
+    Object.assign(fixture.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      zIndex: "-1"
+    });
+    for (const element of fixture.children) {
+      Object.assign((element as HTMLElement).style, {
+        width: "20px",
+        height: "20px",
+        whiteSpace: "nowrap"
+      });
+    }
+    (fixture.children[0] as HTMLElement).style.overflow = "visible";
+    (fixture.children[1] as HTMLElement).style.overflow = "hidden";
+    body.append(fixture);
+  });
+
+  const result = await collectResponsiveGeometry(page, [
+    "#visible-overflow-fixture",
+    "#hidden-overflow-fixture"
+  ]);
+  const visible = result.textDiagnostics.find((item) => item.selector === "visible-overflow-fixture");
+  const hidden = result.textDiagnostics.find((item) => item.selector === "hidden-overflow-fixture");
+
+  expect(visible).toBeDefined();
+  expect(visible!.scrollWidth).toBeGreaterThan(visible!.clientWidth + 1);
+  expect(visible).toMatchObject({
+    clipped: false,
+    clippedX: false,
+    overflowX: "visible"
+  });
+  expect(hidden).toBeDefined();
+  expect(hidden!.scrollWidth).toBeGreaterThan(hidden!.clientWidth + 1);
+  expect(hidden).toMatchObject({
+    clipped: true,
+    clippedX: true,
+    overflowX: "hidden"
+  });
+  expect(result.clipped.map((item) => item.selector)).toEqual(["hidden-overflow-fixture"]);
+});
 
 async function completePhaseReview(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Review phase labels" }).click();
