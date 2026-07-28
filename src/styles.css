@@ -1,4 +1,7 @@
 :root {
+  --focus-inner: #ffffff;
+  --focus-outer: #17211b;
+  --interactive-boundary: #607367;
   color: #17211b;
   background: #f3f5f1;
   font-family:
@@ -29,9 +32,11 @@ button {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-a:focus-visible {
-  outline: 3px solid #d7972d;
-  outline-offset: 3px;
+a:focus-visible,
+[tabindex="-1"]:focus-visible {
+  outline: 2px solid var(--focus-inner);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--focus-outer);
 }
 
 .visually-hidden {
@@ -85,6 +90,14 @@ a:focus-visible {
   display: grid;
   gap: 24px;
   align-items: start;
+}
+
+.workspace > *,
+.stage > *,
+.action-row > *,
+.swing-card-panel > *,
+.remote-model-panel > * {
+  min-width: 0;
 }
 
 .workflow {
@@ -164,7 +177,7 @@ li {
 }
 
 .step-button.is-active {
-  border-color: #276240;
+  border-color: var(--interactive-boundary);
   color: #173d29;
   background: #eaf3ec;
 }
@@ -204,6 +217,13 @@ li {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.stage-heading > *,
+.keyframe-review__heading > *,
+.swing-card-panel__header > *,
+.remote-model-panel__header > * {
+  min-width: 0;
 }
 
 .stage-description {
@@ -261,6 +281,7 @@ li {
 }
 
 .secondary-action {
+  border: 1px solid var(--interactive-boundary);
   align-self: flex-start;
   margin-top: auto;
   color: #214d33;
@@ -297,6 +318,24 @@ button:disabled {
 
 .processing-placeholder p {
   margin: 6px 0 0;
+}
+
+.processing-placeholder > div:last-child {
+  min-width: 0;
+}
+
+#processing-status {
+  overflow-wrap: anywhere;
+}
+
+.processing-placeholder.is-failed {
+  border-width: 2px;
+  border-style: solid;
+}
+
+.processing-placeholder.is-failed #processing-status::before {
+  content: "Analysis needs attention: ";
+  font-weight: 800;
 }
 
 .analysis-video {
@@ -394,7 +433,7 @@ button:disabled {
 }
 
 .keyframe-button.is-selected {
-  border-color: #245b3b;
+  border-color: var(--interactive-boundary);
   background: #eaf3ec;
 }
 
@@ -452,8 +491,8 @@ button:disabled {
 
 .phase-declarations select,
 .phase-assignment select {
-  min-height: 42px;
-  border: 1px solid #b8c4ba;
+  min-height: 44px;
+  border: 1px solid var(--interactive-boundary);
   border-radius: 6px;
   padding: 0 10px;
   color: #173d29;
@@ -476,6 +515,11 @@ button:disabled {
 .phase-assignment span {
   display: grid;
   gap: 3px;
+}
+
+.phase-assignment h3 {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .phase-assignment small {
@@ -655,6 +699,15 @@ button:disabled {
   font-size: 0.86rem;
 }
 
+.remote-model-disclosure dd,
+.swing-card-summary span,
+.phase-warning,
+.action-note,
+.status,
+.stage-description {
+  overflow-wrap: anywhere;
+}
+
 .swing-card-print {
   color: #17211b;
   background: #ffffff;
@@ -736,6 +789,18 @@ button:disabled {
   font-weight: 700;
 }
 
+.source-option,
+.step-button,
+.keyframe-button {
+  border-color: var(--interactive-boundary);
+}
+
+.consent-check,
+.phase-setup-confirmation,
+.phase-confirmation {
+  min-height: 44px;
+}
+
 @keyframes rotate {
   to {
     transform: rotate(360deg);
@@ -801,6 +866,21 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
+  .topbar,
+  .stage-heading,
+  .keyframe-review__heading,
+  .swing-card-panel__header,
+  .remote-model-panel__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .local-badge,
+  .stage-status {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
   .stage {
     padding: 16px;
   }
@@ -811,6 +891,47 @@ button:disabled {
 
   .swing-card-summary {
     grid-template-columns: 1fr;
+  }
+
+  .phase-assignment {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-action,
+  .secondary-action,
+  .source-option,
+  .step-button,
+  .keyframe-button,
+  .phase-declarations select,
+  .phase-assignment select {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  button,
+  input,
+  select,
+  a,
+  .stage,
+  .consent-panel,
+  .processing-placeholder,
+  .review-placeholder,
+  .export-placeholder,
+  .swing-card-panel,
+  .keyframe-canvas-wrap {
+    border-color: CanvasText;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  a:focus-visible,
+  [tabindex="-1"]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }
 

@@ -1,4 +1,5 @@
 import { updateProcessingProgressUi } from "./app-renderer";
+import type { AccessibilityIntent, RenderRequest } from "./app-accessibility";
 import type { AppState } from "./app-state";
 import {
   completeProcessingWithOutputs,
@@ -19,12 +20,14 @@ import type {
 export interface AnalysisLifecycleOptions {
   root: ParentNode;
   state: AppState;
-  requestRender(statusMessage?: string): void;
+  requestRender(request?: RenderRequest): void;
+  applyAccessibilityIntent(intent: AccessibilityIntent): void;
 }
 
 export class AnalysisLifecycle {
   private frameController: FrameProcessingController | undefined;
   private abortFrameController: ((code: string) => void) | undefined;
+  private activeCallbackToken: symbol | undefined;
 
   constructor(private readonly options: AnalysisLifecycleOptions) {}
 
@@ -39,10 +42,12 @@ export class AnalysisLifecycle {
 
     resetProcessingCounters(this.options.state);
     resetPhaseReview(this.options.state);
+    const token = Symbol("analysis-controller");
+    this.activeCallbackToken = token;
     const browserController = createBrowserFrameController(video, selectedVideo, {
-      onState: (state, code) => this.handleProcessingState(state, code),
-      onProgress: (completed, total) => this.handleProcessingProgress(completed, total),
-      onOutput: (output) => this.handleProcessingOutput(output)
+      onState: (state, code) => this.handleProcessingState(token, state, code),
+      onProgress: (completed, total) => this.handleProcessingProgress(token, completed, total),
+      onOutput: (output) => this.handleProcessingOutput(token, output)
     });
     this.frameController = browserController.controller;
     this.abortFrameController = browserController.abort;
@@ -51,26 +56,33 @@ export class AnalysisLifecycle {
 
   async stopActive(): Promise<void> {
     const controller = this.frameController;
+    this.activeCallbackToken = undefined;
     resetPhaseReview(this.options.state);
     await controller?.cancel();
     if (this.frameController === controller) this.clearControllerHandles();
     setProcessingState(this.options.state, "idle");
     selectWorkflowStep(this.options.state, "capture");
-    this.options.requestRender("Local analysis stopped and volatile resources were released.");
+    const message = "Local analysis stopped and volatile resources were released.";
+    this.options.requestRender({
+      focusKey: "stage-heading",
+      visibleStatusText: message,
+      announcement: message
+    });
   }
 
   async closeActive(): Promise<void> {
     const controller = this.frameController;
+    this.activeCallbackToken = undefined;
     resetPhaseReview(this.options.state);
     await controller?.close();
     if (this.frameController === controller) this.clearControllerHandles();
     setProcessingState(this.options.state, "idle");
-    this.options.requestRender();
   }
 
   async retryActive(): Promise<void> {
     // Retry progress is surfaced through the processing partial-update path.
     resetPhaseReview(this.options.state);
+    this.options.applyAccessibilityIntent({ focusKey: "stage-heading" });
     await this.frameController?.retry();
   }
 
@@ -80,26 +92,43 @@ export class AnalysisLifecycle {
     }
   }
 
-  private handleProcessingState(state: FrameProcessingState, code?: string): void {
+  private handleProcessingState(token: symbol, state: FrameProcessingState, code?: string): void {
+    if (token !== this.activeCallbackToken) return;
     setProcessingState(this.options.state, state, code);
     if (state === "completed" && this.frameController) {
       completeProcessingWithOutputs(this.options.state, this.frameController);
     }
-    updateProcessingProgressUi(this.options.root, this.options.state);
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
+    if (
+      (state === "completed" || state === "failed") &&
+      this.options.state.activeStep === "processing" &&
+      token === this.activeCallbackToken
+    ) {
+      this.options.applyAccessibilityIntent({ focusKey: "stage-heading" });
+    }
   }
 
-  private handleProcessingProgress(completed: number, total: number): void {
+  private handleProcessingProgress(token: symbol, completed: number, total: number): void {
+    if (token !== this.activeCallbackToken) return;
     setProcessingProgress(this.options.state, completed, total);
-    updateProcessingProgressUi(this.options.root, this.options.state);
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
   }
 
-  private handleProcessingOutput(output: SampledFrameOutput): void {
+  private handleProcessingOutput(token: symbol, output: SampledFrameOutput): void {
+    if (token !== this.activeCallbackToken) return;
     recordProcessingOutput(this.options.state, output);
-    updateProcessingProgressUi(this.options.root, this.options.state);
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
   }
 
   private clearControllerHandles(): void {
     this.frameController = undefined;
     this.abortFrameController = undefined;
+    this.activeCallbackToken = undefined;
   }
 }

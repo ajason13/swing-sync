@@ -1,4 +1,5 @@
 import type { AppState } from "./app-state";
+import type { RenderRequest } from "./app-accessibility";
 import {
   getCompleteSwingCardAssignments,
   setSwingCardBusy,
@@ -22,11 +23,15 @@ export interface PreparedSwingCardContent {
   release(): void;
 }
 
-export async function downloadSwingCard(state: AppState, requestRender: (statusMessage?: string) => void): Promise<void> {
+export async function downloadSwingCard(state: AppState, requestRender: (request?: RenderRequest) => void): Promise<void> {
   if (state.swingCardBusy) return;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing local Swing Card PNG.");
-  requestRender();
+  requestRender({
+    focusKey: "swing-card-status",
+    visibleStatusText: state.swingCardStatus,
+    announcement: state.swingCardStatus
+  });
   const prepared = await prepareSwingCardContent(state);
   try {
     const result = await composeSwingCardPng(prepared.content);
@@ -36,40 +41,60 @@ export async function downloadSwingCard(state: AppState, requestRender: (statusM
     } else {
       setSwingCardStatus(state, `Swing Card PNG export stopped (${result.reason}).`);
     }
+  } catch {
+    setSwingCardStatus(state, "Swing Card PNG export stopped (LOCAL_EXPORT_FAILED).");
   } finally {
     prepared.release();
     setSwingCardBusy(state, false);
-    requestRender();
+    requestRender({
+      focusKey: "swing-card-download",
+      visibleStatusText: state.swingCardStatus,
+      announcement: state.swingCardStatus
+    });
   }
 }
 
 export async function printSwingCard(
   root: ParentNode,
   state: AppState,
-  requestRender: (statusMessage?: string) => void
+  requestRender: (request?: RenderRequest) => void
 ): Promise<void> {
   if (state.swingCardBusy) return;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing browser print view.");
-  requestRender();
+  requestRender({
+    focusKey: "swing-card-status",
+    visibleStatusText: state.swingCardStatus,
+    announcement: state.swingCardStatus
+  });
   const prepared = await prepareSwingCardContent(state);
   try {
     const host = root.querySelector<HTMLElement>("[data-swing-card-print-host]");
     host?.replaceChildren(renderSwingCardPrintSurface(prepared.content));
     setSwingCardStatus(state, "Browser print dialog opened. Save as PDF if your browser supports it.");
     window.print();
+  } catch {
+    setSwingCardStatus(state, "Browser print view could not be prepared.");
   } finally {
     prepared.release();
     setSwingCardBusy(state, false);
-    requestRender();
+    requestRender({
+      focusKey: "swing-card-print",
+      visibleStatusText: state.swingCardStatus,
+      announcement: state.swingCardStatus
+    });
   }
 }
 
-export async function copySwingCardPrompt(state: AppState, requestRender: (statusMessage?: string) => void): Promise<void> {
+export async function copySwingCardPrompt(state: AppState, requestRender: (request?: RenderRequest) => void): Promise<void> {
   if (state.swingCardBusy) return;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing prompt text.");
-  requestRender();
+  requestRender({
+    focusKey: "swing-card-status",
+    visibleStatusText: state.swingCardStatus,
+    announcement: state.swingCardStatus
+  });
   const prepared = await prepareSwingCardContent(state);
   try {
     await navigator.clipboard.writeText(prepared.content.analysisPrompt);
@@ -79,7 +104,11 @@ export async function copySwingCardPrompt(state: AppState, requestRender: (statu
   } finally {
     prepared.release();
     setSwingCardBusy(state, false);
-    requestRender();
+    requestRender({
+      focusKey: "swing-card-copy",
+      visibleStatusText: state.swingCardStatus,
+      announcement: state.swingCardStatus
+    });
   }
 }
 

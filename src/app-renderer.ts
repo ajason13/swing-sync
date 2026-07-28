@@ -13,7 +13,9 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
   const currentStatus =
     statusMessage ??
     (consentAccepted
-      ? "Consent recorded locally. Choose a local video to begin analysis."
+      ? state.selectedVideo
+        ? "Local video selected. Begin analysis when ready."
+        : "Consent recorded locally. Choose a local video to begin analysis."
       : "First analysis is blocked until this acknowledgement is checked.");
 
   root.innerHTML = `
@@ -33,7 +35,7 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
               .map(
                 (item, index) => `
                   <button class="step-button ${item.id === state.activeStep ? "is-active" : ""}" type="button"
-                    data-step="${item.id}" aria-current="${item.id === state.activeStep ? "step" : "false"}">
+                    data-step="${item.id}" data-focus-key="workflow-step:${item.id}" aria-current="${item.id === state.activeStep ? "step" : "false"}">
                     <span class="step-number">${index + 1}</span><span>${item.shortLabel}</span>
                   </button>`
               )
@@ -41,7 +43,7 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
           </nav>
           <section class="stage" aria-labelledby="stage-heading">
             <div class="stage-heading">
-              <div><p class="placeholder-kicker">Local workflow</p><h2 id="stage-heading">${step.label}</h2></div>
+              <div><p class="placeholder-kicker">Local workflow</p><h2 id="stage-heading" tabindex="-1" data-focus-key="stage-heading">${step.label}</h2></div>
               <span class="stage-status">${step.status}</span>
             </div>
             <p class="stage-description">${step.description}</p>
@@ -58,11 +60,11 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
             <li>Consult qualified medical or coaching professionals for personal concerns.</li>
           </ul>
           <label class="consent-check">
-            <input id="safety-consent" type="checkbox" ${consentAccepted ? "checked" : ""} />
+            <input id="safety-consent" type="checkbox" data-focus-key="safety-consent" ${consentAccepted ? "checked" : ""} />
             <span>I understand Swing Sync is educational only and that golf practice involves physical risk I accept responsibility for.</span>
           </label>
           <p class="privacy-note">Only this acknowledgement is stored locally. It is not a durable or legally audited consent record.</p>
-          <p class="status" role="status">${currentStatus}</p>
+          <p class="status" id="app-visible-status">${currentStatus}</p>
         </aside>
       </main>
     </div>
@@ -72,19 +74,19 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
 export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): string {
   if (state.activeStep === "capture") {
     return `
-      <div class="capture-options" aria-label="Local video source">
-        <button class="source-option" type="button" data-placeholder-action="camera">
+      <div class="capture-options" role="group" aria-label="Local video source">
+        <button class="source-option" type="button" data-placeholder-action="camera" data-focus-key="camera-placeholder">
           <span class="source-option__title">Use camera</span>
           <span>Camera capture is not part of this story</span>
         </button>
-        <button class="source-option" type="button" data-video-picker>
+        <button class="source-option" type="button" data-video-picker data-focus-key="video-picker">
           <span class="source-option__title">Choose a video</span>
           <span>${state.selectedVideo ? escapeHtml(state.selectedVideo.name) : "Select a local video file"}</span>
         </button>
-        <input id="video-file" class="visually-hidden" type="file" accept="video/*" />
+        <input id="video-file" class="visually-hidden" type="file" accept="video/*" tabindex="-1" aria-label="Choose a local video file" />
       </div>
       <div class="action-row">
-        <button id="analysis-button" class="primary-action" type="button" ${
+        <button id="analysis-button" class="primary-action" type="button" data-focus-key="analysis-start" aria-describedby="app-visible-status" ${
           selectCanBeginAnalysis(state, consentAccepted) ? "" : "disabled"
         }>
           Begin analysis
@@ -96,20 +98,21 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
 
   if (state.activeStep === "processing") {
     return `
-      <div class="processing-placeholder" aria-label="Local pose processing">
+      <div class="processing-placeholder ${state.processingState === "failed" ? "is-failed" : ""}" role="group" aria-label="Local pose processing">
         <div class="processing-mark" aria-hidden="true"></div>
         <div>
-          <strong>${processingStatusText(state.processingState, state.poseStatusCode)}</strong>
+          <strong id="processing-status" role="status" aria-live="polite" aria-atomic="true">${processingStatusText(state.processingState, state.poseStatusCode)}</strong>
           <p data-pose-summary>${processingSummaryText(state)}</p>
         </div>
       </div>
       <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
       <div class="action-row">
-        <button class="secondary-action" type="button" data-cancel-analysis>Stop local analysis</button>
-        <button class="secondary-action" type="button" data-retry-analysis hidden>Retry local analysis</button>
-        <button class="primary-action" type="button" data-review-phases ${
+        <button class="secondary-action" type="button" data-cancel-analysis data-focus-key="stop-analysis">Stop local analysis</button>
+        <button class="secondary-action" type="button" data-retry-analysis data-focus-key="retry-analysis" hidden>Retry local analysis</button>
+        <button class="primary-action" type="button" data-review-phases data-focus-key="review-phases" aria-describedby="phase-review-status" ${
           state.processingState === "completed" ? "" : "hidden"
         }>Review phase labels</button>
+        <p class="action-note" id="phase-review-status">${processingReviewStatusText(state.processingState, state.poseStatusCode)}</p>
       </div>
     `;
   }
@@ -117,7 +120,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
   if (state.activeStep === "review") {
     if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
     return `
-      <div class="review-placeholder" aria-label="Review placeholder">
+      <div class="review-placeholder" role="group" aria-label="Review placeholder">
         <div class="swing-frame"><span>Video and pose preview</span></div>
         <dl class="metric-list">
           <div><dt>Tempo</dt><dd>--</dd></div>
@@ -125,18 +128,19 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
           <div><dt>Rotation</dt><dd>--</dd></div>
         </dl>
       </div>
-      <button class="secondary-action" type="button" data-next-step>Preview export state</button>
+      <button class="secondary-action" type="button" data-next-step data-focus-key="workflow-next">Preview export state</button>
     `;
   }
 
   if (state.phaseOutputs.length === 0) {
     return `
-      <div class="export-placeholder" aria-label="Export placeholder">
+      <section class="export-placeholder" aria-labelledby="export-placeholder-heading">
         <p class="placeholder-kicker">Local Swing Card</p>
-        <h3>Swing Card unavailable</h3>
+        <h3 id="export-placeholder-heading">Swing Card unavailable</h3>
         <p>Complete local analysis before creating a Swing Card. Raw swing video is not included in Swing Card exports.</p>
-      </div>
-      <button class="secondary-action" type="button" disabled>Export is not available yet</button>
+      </section>
+      <button class="secondary-action" type="button" disabled aria-describedby="phase-review-status">Export is not available yet</button>
+      <p class="action-note" id="phase-review-status">A valid, confirmed phase review is required before export is available.</p>
     `;
   }
 
@@ -144,15 +148,17 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
 }
 
 export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {
-  const status = root.querySelector<HTMLElement>(".processing-placeholder strong");
+  const status = root.querySelector<HTMLElement>("#processing-status");
   const summary = root.querySelector<HTMLElement>("[data-pose-summary]");
   const retry = root.querySelector<HTMLButtonElement>("[data-retry-analysis]");
   const review = root.querySelector<HTMLButtonElement>("[data-review-phases]");
+  const reviewStatus = root.querySelector<HTMLElement>("#phase-review-status");
 
   if (status) status.textContent = processingStatusText(state.processingState, state.poseStatusCode);
   if (summary) summary.textContent = processingSummaryText(state);
   if (retry) retry.hidden = state.processingState !== "failed";
   if (review) review.hidden = state.processingState !== "completed";
+  if (reviewStatus) reviewStatus.textContent = processingReviewStatusText(state.processingState, state.poseStatusCode);
 }
 
 function renderSwingCardExport(state: AppState): string {
@@ -173,12 +179,12 @@ function renderSwingCardExport(state: AppState): string {
       <div class="swing-card-panel__header">
         <div>
           <p class="placeholder-kicker">Local Swing Card</p>
-          <h3 id="swing-card-heading">Downloadable summary</h3>
+          <h3 id="swing-card-heading" tabindex="-1" data-focus-key="swing-card-heading">Downloadable summary</h3>
         </div>
         <span class="stage-status">Manual sharing</span>
       </div>
       <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included.</p>
-      <div class="swing-card-summary" aria-label="Swing Card contents">
+      <div class="swing-card-summary" role="group" aria-label="Swing Card contents">
         <div><strong>${state.phaseOutputs.length}</strong><span>local keyframes</span></div>
         <div><strong>PNG</strong><span>download</span></div>
         <div><strong>Print</strong><span>save as PDF where supported</span></div>
@@ -187,10 +193,10 @@ function renderSwingCardExport(state: AppState): string {
         ${warnings.map((warning) => `<li>${escapeHtml(formatSwingCardWarning(warning))}</li>`).join("")}
       </ul>
       <div class="action-row swing-card-actions">
-        <button class="primary-action" type="button" data-download-swing-card ${state.swingCardBusy ? "disabled" : ""}>Download PNG</button>
-        <button class="secondary-action" type="button" data-print-swing-card ${state.swingCardBusy ? "disabled" : ""}>Print / Save as PDF</button>
-        <button class="secondary-action" type="button" data-copy-swing-card-prompt ${state.swingCardBusy ? "disabled" : ""}>Copy prompt</button>
-        <p class="action-note" data-swing-card-status role="status">${escapeHtml(state.swingCardStatus)}</p>
+        <button class="primary-action" type="button" data-download-swing-card data-focus-key="swing-card-download" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Download PNG</button>
+        <button class="secondary-action" type="button" data-print-swing-card data-focus-key="swing-card-print" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Print / Save as PDF</button>
+        <button class="secondary-action" type="button" data-copy-swing-card-prompt data-focus-key="swing-card-copy" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Copy prompt</button>
+        <p class="action-note" id="swing-card-action-status" data-swing-card-status tabindex="-1" data-focus-key="swing-card-status">${escapeHtml(state.swingCardStatus)}</p>
       </div>
       <div class="swing-card-print-host" data-swing-card-print-host aria-hidden="true"></div>
       ${renderRemoteModelReviewPanel()}
@@ -212,6 +218,22 @@ function processingStatusText(state: FrameProcessingState, code?: string): strin
             : state === "closed"
               ? "Local pose session closed."
               : "Preparing local pose analysis.";
+}
+
+function processingReviewStatusText(state: FrameProcessingState, code?: string): string {
+  return state === "completed"
+    ? "Local processing output is ready for phase review."
+    : state === "failed"
+      ? `Phase review is unavailable because local pose analysis stopped (${code ?? "UNKNOWN_ERROR"}). Retry local analysis.`
+      : state === "cancelled"
+        ? "Phase review is unavailable because local processing was cancelled."
+        : state === "closed"
+          ? "Phase review is unavailable because the local pose session was closed."
+          : state === "loading"
+            ? "Phase review requires local pose model loading and processing to complete."
+            : state === "processing"
+              ? "Phase review requires local video frame processing to complete."
+              : "Phase review requires completed local processing output.";
 }
 
 function processingSummaryText(state: AppState): string {

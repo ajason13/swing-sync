@@ -132,6 +132,22 @@ Use audit and reviewer feedback as process input:
 - For sensitive documentation stories, prefer a single source of truth plus
   automated non-duplication checks over duplicating security, privacy, or
   deployment values in prose.
+- Static callsite or source-string inventories do not substitute for behavioral
+  path tests when sign-off depends on exact typed payloads, announcement owners,
+  or failure-state assertions.
+- Live-region audits must target exact owner IDs and prove mutation
+  exclusivity for each semantic event; broad role counts alone do not prove
+  single-owner announcement behavior.
+- Refresh durable unit, smoke, build, verifier, and manual-risk evidence after
+  the final test additions and before serializing an audit source packet.
+- `git diff --check` does not inspect untracked files. Before committing
+  intended untracked audit artifacts, separately inventory and whitespace-check
+  all non-evidence files. Preserve mechanically verified packet bytes; document
+  only narrow path exclusions for intentional Markdown hard breaks or serialized
+  diff whitespace in immutable evidence. Never normalize an audited packet
+  after hashing/sign-off: regeneration requires manifest re-verification and,
+  when review evidence changes, re-review. This never relaxes whitespace checks
+  for runtime, tests, or ordinary docs.
 
 ## Enforce Swing Sync Gates
 

@@ -91,6 +91,75 @@ async function expectNoBrowserStorage(page: Page): Promise<void> {
   expect(storage.caches).toEqual([]);
 }
 
+async function expectMeaningfulHeadingOrder(page: Page): Promise<void> {
+  const headings = await page.locator("h1, h2, h3, h4, h5, h6").evaluateAll((elements) =>
+    elements.map((element) => ({
+      level: Number(element.tagName.slice(1)),
+      text: element.textContent?.trim() ?? ""
+    }))
+  );
+  expect(headings.filter((heading) => heading.level === 1)).toHaveLength(1);
+  expect(headings[0]?.level).toBe(1);
+  expect(headings.every((heading) => heading.text.length > 0)).toBe(true);
+  for (let index = 1; index < headings.length; index += 1) {
+    expect(headings[index].level - headings[index - 1].level).toBeLessThanOrEqual(1);
+  }
+}
+
+async function expectResponsiveGeometry(page: Page, textSelectors: readonly string[]): Promise<void> {
+  const result = await page.evaluate((selectors) => {
+    // Native checkboxes have intentionally compact glyphs with a >=44px labelled row;
+    // the defensive native file input is removed from sequential/visual flow.
+    const targetExceptions = ["input[type='checkbox']", "#video-file"];
+    const isVisible = (element: HTMLElement) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+    };
+    const texts = selectors.flatMap((selector) => [...document.querySelectorAll<HTMLElement>(selector)])
+      .filter(isVisible)
+      .map((element) => ({
+        selector: element.id || element.getAttribute("data-focus-key") || element.className || element.tagName,
+        clipped: element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1,
+        rect: element.getBoundingClientRect().toJSON()
+      }));
+    const controls = [...document.querySelectorAll<HTMLElement>("button, select, input")]
+      .filter(isVisible)
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          name: element.getAttribute("data-focus-key") || element.id || element.tagName,
+          width: rect.width,
+          height: rect.height,
+          excepted: targetExceptions.some((selector) => element.matches(selector)),
+          rect: rect.toJSON()
+        };
+      });
+    const overlapControls = controls.filter((control) => !control.excepted);
+    const overlaps: string[] = [];
+    overlapControls.forEach((control, index) => {
+      for (const other of overlapControls.slice(index + 1)) {
+        if (
+          control.rect.left < other.rect.right && control.rect.right > other.rect.left &&
+          control.rect.top < other.rect.bottom && control.rect.bottom > other.rect.top
+        ) overlaps.push(`${control.name}/${other.name}`);
+      }
+    });
+    return {
+      pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      clipped: texts.filter((item) => item.clipped),
+      outsideViewport: texts.filter((item) => item.rect.left < 0 || item.rect.right > document.documentElement.clientWidth + 1),
+      undersized: controls.filter((control) => !control.excepted && (control.width < 44 || control.height < 44)),
+      overlaps
+    };
+  }, textSelectors);
+  expect(result.pageOverflow).toBe(false);
+  expect(result.clipped).toEqual([]);
+  expect(result.outsideViewport).toEqual([]);
+  expect(result.undersized).toEqual([]);
+  expect(result.overlaps).toEqual([]);
+}
+
 async function completePhaseReview(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Review phase labels" }).click();
   await page.getByLabel("View", { exact: true }).selectOption("face-on");
@@ -109,12 +178,131 @@ test("opens to capture flow and keeps analysis fail closed until consent and vid
 
   const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
   await expect(beginAnalysis).toBeDisabled();
+  await expect(beginAnalysis).toHaveAttribute("aria-describedby", "app-visible-status");
+  await expect(page.locator("#app-visible-status")).toHaveText(
+    "First analysis is blocked until this acknowledgement is checked."
+  );
   await page.getByRole("checkbox").check();
   await expect(beginAnalysis).toBeDisabled();
+  await expect(beginAnalysis).toHaveAttribute("aria-describedby", "app-visible-status");
+  await expect(page.locator("#app-visible-status")).toHaveText(
+    "Consent recorded locally. Choose a local video to begin analysis."
+  );
   await page.locator("#video-file").setInputFiles(poseFixture);
   await expect(beginAnalysis).toBeEnabled();
+  await expect(page.locator("#app-visible-status")).toHaveText(
+    "Local video selected. It has not been analyzed or persisted."
+  );
   await page.getByRole("button", { name: "Use camera" }).click();
-  await expect(page.getByRole("status")).toContainText("Camera capture remains out of scope");
+  await expect(page.locator("#app-announcer")).toContainText("Camera capture remains out of scope");
+  await expect(page.locator("#app-visible-status")).toContainText("Camera capture remains out of scope");
+  await expect(page.locator("#app-visible-status")).not.toHaveAttribute("role", "status");
+  await expect(page.locator("#app-visible-status")).not.toHaveAttribute("aria-live");
+});
+
+test("keeps one main landmark dynamic titles and bounded focus targets", async ({ page }) => {
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await expect(page).toHaveTitle("Swing Sync | Capture");
+  await page.getByRole("button", { name: /Process/ }).click();
+  await expect(page).toHaveTitle("Swing Sync | Processing");
+  await expect(page.locator("[data-focus-key='stage-heading']")).toBeFocused();
+  await page.getByRole("button", { name: /Review/ }).click();
+  await expect(page).toHaveTitle("Swing Sync | Review");
+  await page.getByRole("button", { name: /Export/ }).click();
+  await expect(page).toHaveTitle("Swing Sync | Export");
+});
+
+test("returns picker focus for success cancel and defensive hidden-input focus", async ({ page }) => {
+  const picker = page.locator("[data-video-picker]");
+  await picker.focus();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(picker).toBeFocused();
+  await page.locator("#video-file").dispatchEvent("cancel");
+  await expect(picker).toBeFocused();
+  await page.locator("#video-file").evaluate((input: HTMLInputElement) => input.focus());
+  await expect(picker).toBeFocused();
+  await expect(page.locator("#video-file")).toHaveAttribute("tabindex", "-1");
+  await expect(page.locator("#video-file")).not.toHaveAttribute("aria-hidden", "true");
+});
+
+test("applies approved focus geometry tokens and forced-colors focus", async ({ page }) => {
+  const picker = page.locator("[data-video-picker]");
+  await picker.focus();
+  const styles = await picker.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    const root = getComputedStyle(document.documentElement);
+    return {
+      inner: root.getPropertyValue("--focus-inner").trim(),
+      outer: root.getPropertyValue("--focus-outer").trim(),
+      boundary: root.getPropertyValue("--interactive-boundary").trim(),
+      outlineWidth: computed.outlineWidth,
+      outlineOffset: computed.outlineOffset,
+      boxShadow: computed.boxShadow
+    };
+  });
+  expect(styles).toMatchObject({ inner: "#ffffff", outer: "#17211b", boundary: "#607367", outlineWidth: "2px", outlineOffset: "2px" });
+  expect(styles.boxShadow).toContain("6px");
+  expect(await picker.evaluate((element) => getComputedStyle(element).borderColor)).toBe("rgb(96, 115, 103)");
+  await expect(page.locator("[data-step='capture']")).toHaveCSS("border-color", "rgb(96, 115, 103)");
+
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  const primary = page.locator("#analysis-button");
+  await expect(page.locator("[data-video-picker]")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(primary).toBeFocused();
+  await expect(primary).toHaveCSS("background-color", "rgb(36, 91, 59)");
+  const primaryFocus = await primary.evaluate((element) => ({
+    outline: getComputedStyle(element).outlineWidth,
+    offset: getComputedStyle(element).outlineOffset,
+    shadow: getComputedStyle(element).boxShadow
+  }));
+  expect(primaryFocus).toMatchObject({ outline: "2px", offset: "2px" });
+  expect(primaryFocus.shadow).toContain("6px");
+
+  await page.getByRole("button", { name: /Review/ }).click();
+  const secondary = page.locator("[data-next-step]");
+  await expect(secondary).toHaveCSS("border-color", "rgb(96, 115, 103)");
+  await page.getByRole("button", { name: /Capture/ }).click();
+  await page.emulateMedia({ forcedColors: "active" });
+  await picker.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(picker).toBeFocused();
+  const forced = await picker.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      borderStyle: style.borderStyle,
+      borderWidth: style.borderWidth,
+      boxShadow: style.boxShadow,
+      forcedColorAdjust: style.forcedColorAdjust
+    };
+  });
+  expect(forced.outlineStyle).not.toBe("none");
+  expect(forced.outlineWidth).toBe("2px");
+  expect(forced.borderStyle).not.toBe("none");
+  expect(forced.borderWidth).not.toBe("0px");
+  expect(forced.boxShadow).toBe("none");
+  expect(forced.forcedColorAdjust).toBe("auto");
+});
+
+test("reflows long status text at 320 CSS pixels without clipping or overlap", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.locator("#app-visible-status").evaluate((element) => {
+    element.textContent = "A very long local-only prerequisite explanation that must wrap without clipping, overlap, or horizontal scrolling even when system text is enlarged.";
+  });
+  const layout = await page.evaluate(() => {
+    const status = document.querySelector("#app-visible-status") as HTMLElement;
+    const rect = status.getBoundingClientRect();
+    return {
+      pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      clipped: status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight,
+      withinViewport: rect.left >= 0 && rect.right <= document.documentElement.clientWidth
+    };
+  });
+  expect(layout).toEqual({ pageOverflow: false, clipped: false, withinViewport: true });
 });
 
 test("fails closed when local consent storage is unavailable", async ({ page }) => {
@@ -163,14 +351,16 @@ test("runtime consent guard reports inline and focuses the acknowledgement", asy
   await beginAnalysis.evaluate((button) => button.removeAttribute("disabled"));
   await beginAnalysis.click();
 
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator("#app-announcer")).toContainText(
     "Please acknowledge the safety terms before starting analysis"
   );
+  await expect(page.locator("#app-visible-status")).toContainText("Please acknowledge the safety terms");
   await expect(consent).toBeFocused();
   await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
 });
 
 test("shows every required placeholder state", async ({ page }) => {
+  await expect(page.getByRole("group", { name: "Local video source" })).toBeVisible();
   for (const [buttonName, headingName] of [
     ["Process", "Processing"],
     ["Review", "Review"],
@@ -180,6 +370,12 @@ test("shows every required placeholder state", async ({ page }) => {
     await expect(page.getByRole("heading", { name: headingName })).toBeVisible();
     await expect(page.getByText("Local workflow")).toBeVisible();
   }
+  await page.getByRole("button", { name: /Process/ }).click();
+  await expect(page.getByRole("group", { name: "Local pose processing" })).toBeVisible();
+  await page.getByRole("button", { name: /Review/ }).click();
+  await expect(page.getByRole("group", { name: "Review placeholder" })).toBeVisible();
+  await page.getByRole("button", { name: /Export/ }).click();
+  await expect(page.getByRole("region", { name: "Swing Card unavailable" })).toBeVisible();
 });
 
 test("loads locally in a worker and extracts complete fixture landmarks", async ({ page }) => {
@@ -206,6 +402,226 @@ test("loads locally in a worker and extracts complete fixture landmarks", async 
   await expectNoBrowserStorage(page);
 });
 
+test("keeps completed and failed processing terminal updates scoped to processing status", async ({ page }) => {
+  let releaseSuccessfulModel!: () => void;
+  const successfulModelGate = new Promise<void>((resolveGate) => {
+    releaseSuccessfulModel = resolveGate;
+  });
+  await page.route("**/models/pose_landmarker_full-float16-v1.task", async (route) => {
+    await successfulModelGate;
+    await route.continue();
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("#processing-status")).toContainText("Loading the local pose model");
+  const completedGlobalBefore = await page.locator("#app-announcer").textContent();
+  await page.evaluate(() => {
+    const counts = { global: 0, processing: 0 };
+    Object.assign(window, { __terminalStatusMutations: counts });
+    new MutationObserver(() => { counts.global += 1; }).observe(document.querySelector("#app-announcer")!, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+    new MutationObserver(() => { counts.processing += 1; }).observe(document.querySelector("#processing-status")!, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  });
+  releaseSuccessfulModel();
+  await expect(page.locator("#processing-status")).toHaveText("Local frame processing completed.", {
+    timeout: 30_000
+  });
+  await expect(page.locator("#app-announcer")).toHaveText(completedGlobalBefore ?? "");
+  await expect.poll(() => page.evaluate(() =>
+    (window as typeof window & { __terminalStatusMutations: { global: number; processing: number } })
+      .__terminalStatusMutations
+  )).toMatchObject({ global: 0 });
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __terminalStatusMutations: { global: number; processing: number } })
+      .__terminalStatusMutations.processing
+  )).toBeGreaterThan(0);
+
+  await page.unroute("**/models/pose_landmarker_full-float16-v1.task");
+  await page.reload();
+  let releaseFailedModel!: () => void;
+  const failedModelGate = new Promise<void>((resolveGate) => {
+    releaseFailedModel = resolveGate;
+  });
+  await page.route("**/models/pose_landmarker_full-float16-v1.task", async (route) => {
+    await failedModelGate;
+    await route.abort();
+  });
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("#processing-status")).toContainText("Loading the local pose model");
+  const failedGlobalBefore = await page.locator("#app-announcer").textContent();
+  await page.evaluate(() => {
+    const counts = { global: 0, processing: 0 };
+    Object.assign(window, { __terminalStatusMutations: counts });
+    new MutationObserver(() => { counts.global += 1; }).observe(document.querySelector("#app-announcer")!, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+    new MutationObserver(() => { counts.processing += 1; }).observe(document.querySelector("#processing-status")!, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  });
+  releaseFailedModel();
+  await expect(page.locator("#processing-status")).toHaveText(
+    "Local pose analysis stopped (LOCAL_MODEL_INIT_FAILED).",
+    { timeout: 20_000 }
+  );
+  await expect(page.locator("#app-announcer")).toHaveText(failedGlobalBefore ?? "");
+  await expect.poll(() => page.evaluate(() =>
+    (window as typeof window & { __terminalStatusMutations: { global: number; processing: number } })
+      .__terminalStatusMutations
+  )).toMatchObject({ global: 0 });
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __terminalStatusMutations: { global: number; processing: number } })
+      .__terminalStatusMutations.processing
+  )).toBeGreaterThan(0);
+});
+
+test("traverses capture processing review confirmation and export with keyboard input", async ({ page }) => {
+  await expectMeaningfulHeadingOrder(page);
+  await expect(page.locator("[role='status']")).toHaveCount(1);
+  await expect(page.locator("#app-announcer")).toHaveAttribute("aria-live", "polite");
+  await page.getByRole("checkbox").focus();
+  await page.keyboard.press("Space");
+  const chooserPromise = page.waitForEvent("filechooser");
+  await page.locator("[data-video-picker]").focus();
+  await page.keyboard.press("Enter");
+  const chooser = await chooserPromise;
+  await chooser.setFiles(poseFixture);
+  await expect(page.locator("[data-video-picker]")).toBeFocused();
+  await page.getByRole("button", { name: "Begin analysis" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("#processing-status")).toContainText("completed");
+  await expect(page.locator("#app-announcer, #processing-status")).toHaveCount(2);
+  await expect(page.locator("#app-announcer")).toHaveAttribute("role", "status");
+  await expect(page.locator("#processing-status")).toHaveAttribute("role", "status");
+  await expect(page.locator("#processing-status")).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator("[data-review-phases]")).toHaveAttribute("aria-describedby", "phase-review-status");
+  await expect(page.locator("#phase-review-status")).toHaveText(
+    "Local processing output is ready for phase review."
+  );
+  await page.getByRole("button", { name: "Review phase labels" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-focus-key='phase-review-heading']")).toBeFocused();
+  await expectMeaningfulHeadingOrder(page);
+  await expect(page.locator("#app-announcer, #keyframe-overlay-status")).toHaveCount(2);
+  await expect(page.locator("#app-announcer")).toHaveAttribute("role", "status");
+  await expect(page.locator("#keyframe-overlay-status")).toHaveAttribute("role", "status");
+  await expect(page.locator("#keyframe-overlay-status")).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator("#phase-review-status")).not.toHaveAttribute("role", "status");
+  await expect(page.locator("#phase-review-status")).not.toHaveAttribute("aria-live");
+
+  for (const [label, key] of [["View", "f"], ["Handedness", "r"], ["Horizontally mirrored", "n"]]) {
+    await page.getByLabel(label, { exact: true }).focus();
+    await page.keyboard.press(key);
+    await page.keyboard.press("Tab");
+  }
+  await page.getByLabel(/I confirm this is one trimmed/).focus();
+  await page.keyboard.press("Space");
+  await page.getByLabel(/I reviewed these provisional labels/).focus();
+  await page.keyboard.press("Space");
+  await page.getByRole("button", { name: "Confirm phase review" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-focus-key='phase-review-heading']")).toBeFocused();
+  await page.getByRole("button", { name: "Open Swing Card export" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-focus-key='swing-card-heading']")).toBeFocused();
+  await expect(page).toHaveTitle("Swing Sync | Export");
+  await expectMeaningfulHeadingOrder(page);
+  await expect(page.locator("#swing-card-action-status")).not.toHaveAttribute("role", "status");
+  await expect(page.locator("#swing-card-action-status")).not.toHaveAttribute("aria-live");
+  await expect(page.locator("#remote-model-status")).not.toHaveAttribute("role", "status");
+  await expect(page.locator("#remote-model-status")).not.toHaveAttribute("aria-live");
+  await expect(page.locator("[role='status']")).toHaveCount(1);
+
+  await page.evaluate(() => {
+    Object.assign(window, { __keyboardPrintCalls: 0 });
+    window.print = () => {
+      (window as typeof window & { __keyboardPrintCalls: number }).__keyboardPrintCalls += 1;
+    };
+  });
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+    let release!: () => void;
+    const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
+    Object.assign(window, { __releaseKeyboardPrint: release });
+    window.createImageBitmap = async (...arguments_) => {
+      await gate;
+      return originalCreateImageBitmap(...arguments_);
+    };
+  });
+  const print = page.locator("[data-print-swing-card]");
+  await print.focus();
+  await page.keyboard.press("Enter");
+  await expect(print).toBeDisabled();
+  await expect(print).toHaveAttribute("aria-describedby", "swing-card-action-status");
+  await expect(page.locator("#swing-card-action-status")).toHaveText("Preparing browser print view.");
+  await page.evaluate(() =>
+    (window as typeof window & { __releaseKeyboardPrint: () => void }).__releaseKeyboardPrint()
+  );
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __keyboardPrintCalls: number }).__keyboardPrintCalls)).toBe(1);
+  await expect(page.locator("#swing-card-action-status")).toContainText("Browser print dialog opened");
+  await expect(page.locator("#app-announcer")).toContainText("Browser print dialog opened");
+  await expect(print).toBeFocused();
+
+  await page.evaluate(() => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    Object.assign(window, { __releaseKeyboardCopy: release });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => gate }
+    });
+  });
+  const copy = page.locator("[data-copy-swing-card-prompt]");
+  await copy.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#swing-card-action-status")).toHaveText("Preparing prompt text.");
+  await expect(page.locator("#app-announcer")).toHaveText("Preparing prompt text.");
+  await expect(copy).toBeDisabled();
+  await expect(copy).toHaveAttribute("aria-describedby", "swing-card-action-status");
+  await page.evaluate(() => (window as typeof window & { __releaseKeyboardCopy: () => void }).__releaseKeyboardCopy());
+  await expect(page.locator("#swing-card-action-status")).toHaveText("Prompt copied for manual use.");
+  await expect(copy).toBeFocused();
+
+  const downloadPromise = page.waitForEvent("download");
+  const downloadButton = page.locator("[data-download-swing-card]");
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+    let release!: () => void;
+    const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
+    Object.assign(window, { __releaseKeyboardDownload: release });
+    window.createImageBitmap = async (...arguments_) => {
+      await gate;
+      return originalCreateImageBitmap(...arguments_);
+    };
+  });
+  await downloadButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(downloadButton).toBeDisabled();
+  await expect(downloadButton).toHaveAttribute("aria-describedby", "swing-card-action-status");
+  await expect(page.locator("#swing-card-action-status")).toHaveText("Preparing local Swing Card PNG.");
+  await page.evaluate(() =>
+    (window as typeof window & { __releaseKeyboardDownload: () => void }).__releaseKeyboardDownload()
+  );
+  await downloadPromise;
+  await expect(page.locator("#swing-card-action-status")).toHaveText("Swing Card PNG download started.");
+  await expect(page.locator("#app-announcer")).toHaveText("Swing Card PNG download started.");
+  await expect(downloadButton).toBeFocused();
+});
+
 test("requires accessible explicit review and accepts only valid nondecreasing phase correction", async ({
   page
 }) => {
@@ -218,8 +634,13 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await page.getByRole("button", { name: "Review phase labels" }).click();
 
   await expect(page.locator(".phase-warning")).toContainText("Unsupported input");
-  await expect(page.locator(".phase-warning")).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator(".phase-warning")).toHaveAttribute("id", "phase-review-status");
+  await expect(page.locator(".phase-warning")).not.toHaveAttribute("role", "status");
+  await expect(page.locator(".phase-warning")).not.toHaveAttribute("aria-live");
+  await expect(page.locator("[data-confirm-phase-review]")).toHaveAttribute("aria-describedby", "phase-review-status");
   const canvas = page.locator("[data-keyframe-canvas]");
+  await expect(page.getByRole("group", { name: "Swing phase assignments" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Select keyframe" })).toBeVisible();
   await expect(canvas).toHaveCount(1);
   await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Address");
   await expect(page.locator("[data-overlay-status]")).toContainText(/Skeleton overlay/);
@@ -298,12 +719,68 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeEnabled();
   await page.getByRole("button", { name: "Confirm phase review" }).click();
   await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
-  await expect(page.getByText(/Future metric readiness is available/)).toBeVisible();
+  await expect(page.locator("#phase-review-status p")).toHaveText(
+    "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here."
+  );
+  await expect(page.locator(".phase-review > .action-row .action-note")).toHaveText(
+    "Future metric readiness is available for a separately reviewed story. No metrics are generated here."
+  );
 
   await page.getByRole("button", { name: /Export/ }).click();
   await page.getByRole("button", { name: /Review/ }).click();
-  await expect(page.getByRole("heading", { name: "Review" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
   await expect(page.getByText("Annotated keyframes")).toBeVisible();
+});
+
+test("keeps phase semantic announcements and overlay ownership mutually exclusive", async ({ page }) => {
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+
+  const announcer = page.locator("#app-announcer");
+  const overlay = page.locator("#keyframe-overlay-status");
+  const initialGlobal = await announcer.textContent();
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await expect(announcer).toHaveText(initialGlobal ?? "");
+  const stableOverlay = await overlay.textContent();
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await expect(announcer).toHaveText(initialGlobal ?? "");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await expect(announcer).toHaveText(initialGlobal ?? "");
+
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+  await expect(announcer).toContainText("ready for review");
+  await expect(overlay).toHaveText(stableOverlay ?? "");
+  const reviewRequiredGlobal = await announcer.textContent();
+
+  const firstAssignment = page.locator("[data-phase-index='0']");
+  await firstAssignment.selectOption("1");
+  await expect(announcer).toHaveText(reviewRequiredGlobal ?? "");
+  await firstAssignment.selectOption("0");
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await expect(announcer).toHaveText(reviewRequiredGlobal ?? "");
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await expect(announcer).toHaveText("Phase review confirmed.");
+  const confirmedGlobal = await announcer.textContent();
+
+  await page.evaluate(() => {
+    const counts = { global: 0, overlay: 0 };
+    Object.assign(window, { __semanticMutationCounts: counts });
+    new MutationObserver(() => { counts.global += 1; }).observe(
+      document.querySelector("#app-announcer")!,
+      { childList: true, characterData: true, subtree: true }
+    );
+    new MutationObserver((records) => {
+      counts.overlay += records.filter((record) => (record.target as Element).id === "keyframe-overlay-status").length;
+    }).observe(document.querySelector("#app")!, { childList: true, characterData: true, subtree: true });
+  });
+  await page.locator("[data-keyframe-index='3']").click();
+  await expect(announcer).toHaveText(confirmedGlobal ?? "");
+  await expect.poll(() => page.evaluate(() =>
+    (window as typeof window & { __semanticMutationCounts: { global: number; overlay: number } }).__semanticMutationCounts
+  )).toEqual({ global: 0, overlay: 1 });
 });
 
 test("downloads a local Swing Card PNG and exposes print and prompt controls", async ({ page }) => {
@@ -326,6 +803,9 @@ test("downloads a local Swing Card PNG and exposes print and prompt controls", a
 
   await expect(page.getByRole("heading", { name: "Downloadable summary" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Remote model review unavailable" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Swing Card contents" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Remote model data disclosure" })).toBeVisible();
+  await expect(page.locator("dl.remote-model-disclosure")).toHaveCount(1);
   await expect(page.getByText("No reviewed provider is configured for this story.")).toBeVisible();
   await expect(page.getByText("Metrics, Warnings and Limitations, Manual Swing Card Prompt")).toBeVisible();
   await expect(page.getByText("Raw Video, Frame Pixels, Selected Keyframe Images, Pose Landmarks")).toBeVisible();
@@ -494,7 +974,8 @@ test("keeps the UI responsive while the local model loads", async ({ page }) => 
   await page.getByRole("button", { name: "Stop local analysis" }).click();
 
   await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("volatile resources were released");
+  await expect(page.locator("#app-announcer")).toContainText("volatile resources were released");
+  await expect(page.locator("#app-visible-status")).toContainText("volatile resources were released");
 });
 
 test("fails closed and reports a CSP-blocked outbound request", async ({ page }) => {
@@ -615,4 +1096,87 @@ test("fits the mobile viewport without horizontal page overflow", async ({ page 
   expect(layout.minButtonHeight).toBeGreaterThanOrEqual(44);
   expect(layout.hasButtonOverlap).toBe(false);
   expect(layout.clippedCriticalText).toEqual([]);
+});
+
+test("keeps real failure review and confirmed export usable at 320 CSS pixels", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await expect(page.getByRole("group", { name: "Local video source" })).toBeVisible();
+  await page.locator("#app-visible-status").evaluate((element) => {
+    element.textContent = "A deliberately long local consent and video prerequisite that must wrap without clipping at the narrowest supported reflow width.";
+  });
+  await expectResponsiveGeometry(page, ["#app-visible-status", ".capture-options", ".source-option"]);
+
+  await page.getByRole("button", { name: /Review/ }).click();
+  await expect(page.getByRole("group", { name: "Review placeholder" })).toBeVisible();
+  await expectResponsiveGeometry(page, [".review-placeholder", ".metric-list"]);
+  await page.getByRole("button", { name: /Export/ }).click();
+  await expect(page.getByRole("region", { name: "Swing Card unavailable" })).toBeVisible();
+  await expectResponsiveGeometry(page, [".export-placeholder", "#phase-review-status"]);
+  await page.getByRole("button", { name: /Capture/ }).click();
+
+  let shouldFail = true;
+  await page.route("**/models/pose_landmarker_full-float16-v1.task", (route) => {
+    if (shouldFail) {
+      void route.abort();
+      return;
+    }
+    void route.continue();
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("#processing-status")).toContainText("LOCAL_MODEL_INIT_FAILED", { timeout: 20_000 });
+  await expect(page.getByRole("group", { name: "Local pose processing" })).toBeVisible();
+  await page.locator("#processing-status").evaluate((element) => {
+    element.textContent += " — LOCAL_MODEL_INITIALIZATION_FAILED_WITH_A_DELIBERATELY_LONG_UNBROKEN_DIAGNOSTIC_CODE";
+  });
+  await page.locator("#phase-review-status").evaluate((element) => {
+    element.textContent += " Retry remains local and this deliberately long prerequisite must stay readable.";
+  });
+  await expectResponsiveGeometry(page, [".processing-placeholder", "#processing-status", "#phase-review-status", "[data-pose-summary]"]);
+
+  await page.unroute("**/models/pose_landmarker_full-float16-v1.task");
+  await page.reload();
+  await page.setViewportSize({ width: 320, height: 800 });
+  const consent = page.getByRole("checkbox");
+  if (!(await consent.isChecked())) await consent.check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+  await expect(page.getByRole("group", { name: "Swing phase assignments" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Select keyframe" })).toBeVisible();
+  await expect(page.locator("[data-phase-index='0']")).toHaveCSS("border-color", "rgb(96, 115, 103)");
+  await expect(page.locator("[data-keyframe-index='0']")).toHaveCSS("border-color", "rgb(96, 115, 103)");
+  await page.locator("#phase-review-status p").evaluate((element) => {
+    element.textContent += " This deliberately extended validation explanation exercises wrapping without changing the protected workflow decision.";
+  });
+  await expectResponsiveGeometry(page, [
+    "#phase-review-status", ".phase-declarations", ".phase-assignment-list", ".phase-assignment",
+    "#keyframe-overlay-status", ".keyframe-strip", ".keyframe-button"
+  ]);
+
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+  await expect(page.getByRole("group", { name: "Swing Card contents" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Remote model data disclosure" })).toBeVisible();
+  await expect(page.locator("dl.remote-model-disclosure")).toHaveCount(1);
+  await page.locator(".swing-card-panel > p").evaluate((element) => {
+    element.textContent += " This deliberately long export explanation must remain readable without horizontal scrolling or an unusable panel.";
+  });
+  await page.locator("#swing-card-action-status").evaluate((element) => {
+    element.textContent = "A deliberately long local export status covering download, print, and copy preparation without claiming remote persistence.";
+  });
+  await page.locator("#remote-model-status").evaluate((element) => {
+    element.textContent += " This deliberately long unavailable-provider prerequisite must wrap and remain associated with the disabled control.";
+  });
+  await expectResponsiveGeometry(page, [
+    ".swing-card-panel", ".swing-card-summary", ".swing-card-warning-list", "#swing-card-action-status",
+    ".remote-model-panel", ".remote-model-disclosure", ".remote-model-disclosure dd", "#remote-model-status"
+  ]);
 });
