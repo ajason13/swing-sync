@@ -32,8 +32,9 @@ Last updated: 2026-07-28
   branch. The exact reviewed commit spans 43 files. Full Node 22 verification
   passes at 24 files / 218 unit tests and 48 desktop/mobile smoke tests.
   Claude focused re-review returned PASS, closed B-NEW1, and explicitly cleared
-  PR preparation. PR #20 is open; required compliance is initially
-  `IN_PROGRESS`, and no merge has occurred.
+  PR preparation. A narrow approved CSS correction is implemented and locally
+  verified for the 320 CSS-pixel keyframe geometry failure; PR #20 remains open
+  and unmerged pending CI and focused Claude re-review before merge.
 - Remaining visible non-Done backlog tasks: SS-019 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
@@ -579,11 +580,34 @@ SS-019 PR preparation state on 2026-07-28:
   reviewed by the cleared focused audit.
 - Claude PASS and `CLEARED FOR PR PREPARATION` remain valid. Handshake remains
   `4. Final Audit (Claude)` until PR/merge state is separately synchronized.
-  Pull Request is open, required compliance is initially `IN_PROGRESS`, and no
-  merge is authorized or recorded.
+  Pull Request is open and unmerged. Required CI fails reproducibly on runs
+  `30369511639` and `30369792132`: 46/48 smoke tests pass, but desktop and
+  mobile `keeps real failure review and confirmed export usable at 320 CSS
+  pixels` report `keyframe:4` clipped at `119×48.6875`. All preceding
+  license/SBOM/build/compliance steps pass. The approved correction changes
+  only `src/styles.css`: the base keyframe minimum remains 48px and the
+  existing `@media (max-width: 480px)` adds a 52px minimum for 3.3px
+  system-font slack. Local Node 22 targeted 2/2, full smoke 48, build,
+  compliance, safety, privacy, docs, and diff checks pass. PR CI and focused
+  Claude re-review remain required before merge.
 - Next owner: builder/lead for CI review and PR readiness. Observability,
   dependency, protected-copy, selector, local-first, and manual-execution
   posture remain unchanged.
+
+SS-019 PR #20 CI failure state on 2026-07-28:
+
+- PR #20 remains open and unmerged at audited commit
+  `ba564f368df654c07b1a73ad91aa46762cfa9721`; handshake remains
+  `4. Final Audit (Claude)`. Lead approved a narrow correction now implemented
+  in `src/styles.css`: retain the base 48px keyframe minimum and add a 52px
+  minimum inside the existing `@media (max-width: 480px)` for 3.3px
+  system-font slack. The strict verifier is unchanged; no selector, copy,
+  dependency, or observability drift is introduced.
+- Local Node 22 verification passes: targeted 2/2, full smoke 48, build,
+  compliance, safety, privacy, docs, and `git diff --check`. Commit the narrow
+  correction before CI reruns; PR CI and focused Claude re-review remain
+  required before merge. The existing audit clearance applies only to the
+  audited commit, not this later implementation change.
 
 SS-019 feedback-retention note on 2026-07-28:
 
