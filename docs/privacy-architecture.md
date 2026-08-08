@@ -6,6 +6,9 @@ This document defines Swing Sync's local-first privacy architecture for future
 video analysis work. It is product and engineering guidance, not legal advice
 or a guarantee of privacy, security, deletion, or regulatory compliance.
 
+The [release review gate](./release-review-gate.md) records the pending
+qualified-human review package for any future public release.
+
 ## Default Privacy Posture
 
 Swing Sync must process swing video locally by default. Raw swing video and
@@ -13,11 +16,11 @@ frame pixels must not be uploaded, sent to model providers, or shared with
 remote services unless a future feature adds a separate, explicit opt-in flow
 for that action.
 
-The current application implements local file selection and local Pose
-Landmarker inference for sampled video frames. It does not implement camera
-capture, raw-video or landmark persistence, exports, remote sharing, or remote
-model APIs. The current consent acknowledgement is a local scaffold, not a
-durable legal or privacy record.
+The current application implements local file selection, local Pose Landmarker
+inference, and user-initiated local Swing Card PNG, print/PDF, and prompt-copy
+workflows. It does not implement camera capture, raw-video or landmark
+persistence, remote sharing, or remote model APIs. The current consent
+acknowledgement is a local scaffold, not a durable legal or privacy record.
 
 ## Data Classes
 

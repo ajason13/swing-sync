@@ -10,6 +10,7 @@ const currentDocs = {
   "docs/deployment.md": readFileSync("docs/deployment.md", "utf8"),
   "docs/safety-terms.md": readFileSync("docs/safety-terms.md", "utf8"),
   "docs/privacy-architecture.md": readFileSync("docs/privacy-architecture.md", "utf8"),
+  "docs/release-review-gate.md": readFileSync("docs/release-review-gate.md", "utf8"),
   "index.html": readFileSync("index.html", "utf8")
 };
 
@@ -30,8 +31,284 @@ function without(value: string, requiredText: string) {
 }
 
 describe("docs claim verification", () => {
-  it("accepts the current approved public docs", () => {
+  it("accepts the current configured public docs and pending release gate", () => {
     expect(errorsFor()).toEqual([]);
+  });
+
+  it("fails when the canonical release-gate file is missing", () => {
+    expect(errorsFor({ "docs/release-review-gate.md": null })).toContain(
+      "docs/release-review-gate.md: required file is missing"
+    );
+  });
+
+  it("fails when the canonical release-gate file is empty", () => {
+    expect(errorsFor({ "docs/release-review-gate.md": "   \n" })).toContain(
+      "docs/release-review-gate.md: required file is empty"
+    );
+  });
+
+  it("fails when the release-gate draft, pending, blocked, or outcome status is missing", () => {
+    const gate = currentDocs["docs/release-review-gate.md"];
+    const cases = [
+      ["DRAFT — HUMAN REVIEW PACKAGE", "releaseGateDraft"],
+      ["Current outcome: PENDING", "releaseGateOutcome"],
+      [
+        "PUBLIC RELEASE BLOCKED — HUMAN SIGN-OFF NOT RECORDED",
+        "releaseGateBlocked"
+      ]
+    ] as const;
+
+    for (const [requiredText, stringKey] of cases) {
+      expect(
+        errorsFor({
+          "docs/release-review-gate.md": without(gate, requiredText)
+        })
+      ).toContain(
+        `docs/release-review-gate.md: missing canonical ${stringKey} string`
+      );
+    }
+  });
+
+  it("fails when the SS-002 legal-review blocker is removed", () => {
+    const blocker =
+      "SS-002 qualified legal review of the assumption-of-risk and\n" +
+      "release-of-liability language is not completed and blocks public release.";
+
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          blocker
+        )
+      })
+    ).toContain(
+      "docs/release-review-gate.md: missing canonical releaseGateSs002Blocker string"
+    );
+  });
+
+  it("fails when a release-gate operational heading or supporting link is removed", () => {
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          "### Reopening Rules"
+        )
+      })
+    ).toContain(
+      'docs/release-review-gate.md: missing required heading "### Reopening Rules"'
+    );
+
+    expect(
+      errorsFor({
+        "docs/safety-terms.md": without(
+          currentDocs["docs/safety-terms.md"],
+          "./release-review-gate.md"
+        )
+      })
+    ).toContain(
+      "docs/safety-terms.md: missing required link ./release-review-gate.md"
+    );
+  });
+
+  it("fails when canonical blocked-status control text is duplicated in a supporting document", () => {
+    const duplicate =
+      `${currentDocs["README.md"]}\n\n` +
+      "PUBLIC RELEASE BLOCKED — HUMAN SIGN-OFF NOT RECORDED";
+
+    expect(errorsFor({ "README.md": duplicate })).toEqual(
+      expect.arrayContaining([
+        "README.md: duplicates canonical blocked-status anchor owned by docs/release-review-gate.md",
+        "docs/release-review-gate.md: canonical blocked-status anchor must be uniquely owned across configured public docs (found 2)"
+      ])
+    );
+  });
+
+  it("fails on premature completed-review or public-release-clearance assertions", () => {
+    const gate = currentDocs["docs/release-review-gate.md"];
+    const assertions = [
+      "Legal review is complete.",
+      "Privacy review has passed.",
+      "Safety review is cleared.",
+      "Public release is cleared."
+    ];
+
+    for (const assertion of assertions) {
+      expect(
+        errorsFor({
+          "docs/release-review-gate.md": `${gate}\n\n${assertion}`
+        })
+      ).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("premature current human-review approval")
+        ])
+      );
+    }
+  });
+
+  it("fails on recorded sign-off, completed review, and public-release approval assertions", () => {
+    const gate = currentDocs["docs/release-review-gate.md"];
+    const assertions = [
+      "Human sign-off is recorded.",
+      "Legal review completed.",
+      "Public release approved.",
+      "Cleared for public release.",
+      "All required reviews are complete."
+    ];
+
+    for (const assertion of assertions) {
+      expect(
+        errorsFor({
+          "docs/release-review-gate.md": `${gate}\n\n${assertion}`
+        })
+      ).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("premature current human-review approval")
+        ])
+      );
+    }
+  });
+
+  it("fails on premature current approval in a supporting public document and reports its path", () => {
+    const content =
+      `${currentDocs["docs/safety-terms.md"]}\n\n` +
+      "Human sign-off is recorded.";
+
+    expect(errorsFor({ "docs/safety-terms.md": content })).toContain(
+      'docs/safety-terms.md: premature current human-review approval assertion "human sign-off is recorded"'
+    );
+  });
+
+  it("fails when a supporting document says legal review is approved and reports its injected path", () => {
+    const content =
+      `${currentDocs["CONTRIBUTING.md"]}\n\n` +
+      "Legal review is approved.";
+
+    expect(errorsFor({ "CONTRIBUTING.md": content })).toContain(
+      'CONTRIBUTING.md: premature current human-review approval assertion "legal review is approved"'
+    );
+  });
+
+  it("fails when a supporting document says legal review approved without a copula", () => {
+    const content =
+      `${currentDocs["CONTRIBUTING.md"]}\n\n` +
+      "Legal review approved.";
+
+    expect(errorsFor({ "CONTRIBUTING.md": content })).toContain(
+      'CONTRIBUTING.md: premature current human-review approval assertion "legal review approved"'
+    );
+  });
+
+  it("allows negated no-copula legal-review approval statements", () => {
+    const content =
+      `${currentDocs["CONTRIBUTING.md"]}\n\n` +
+      "No legal review approved. Legal review not approved.";
+
+    expect(errorsFor({ "CONTRIBUTING.md": content })).toEqual([]);
+  });
+
+  it("accepts exactly one canonical PENDING current outcome and no supporting declarations", () => {
+    expect(errorsFor()).toEqual([]);
+  });
+
+  it("fails when a supporting document declares an approved current outcome and reports its value", () => {
+    const content =
+      `${currentDocs["README.md"]}\n\n` +
+      "**Current outcome: APPROVED FOR NAMED SCOPE**";
+
+    expect(errorsFor({ "README.md": content })).toContain(
+      'README.md: current outcome declaration is reserved for docs/release-review-gate.md (found "APPROVED FOR NAMED SCOPE")'
+    );
+  });
+
+  it("fails when a supporting document duplicates the PENDING current outcome", () => {
+    const content =
+      `${currentDocs["docs/privacy-architecture.md"]}\n\n` +
+      "**Current outcome: PENDING**";
+
+    expect(errorsFor({ "docs/privacy-architecture.md": content })).toContain(
+      'docs/privacy-architecture.md: current outcome declaration is reserved for docs/release-review-gate.md (found "PENDING")'
+    );
+  });
+
+  it("fails when an injected canonical document declares a contradictory approved current outcome", () => {
+    const content =
+      `${currentDocs["docs/release-review-gate.md"]}\n\n` +
+      "**Current outcome: APPROVED FOR NAMED SCOPE**";
+
+    expect(errorsFor({ "docs/release-review-gate.md": content })).toContain(
+      'docs/release-review-gate.md: current outcome must be declared exactly once as PENDING (found "PENDING", "APPROVED FOR NAMED SCOPE")'
+    );
+  });
+
+  it("fails when the canonical current outcome is non-PENDING", () => {
+    const content = currentDocs["docs/release-review-gate.md"].replace(
+      "Current outcome: PENDING",
+      "Current outcome: APPROVED FOR NAMED SCOPE"
+    );
+
+    expect(errorsFor({ "docs/release-review-gate.md": content })).toContain(
+      'docs/release-review-gate.md: current outcome must be declared exactly once as PENDING (found "APPROVED FOR NAMED SCOPE")'
+    );
+  });
+
+  it("allows an injected supporting document to say no legal review completed", () => {
+    const content =
+      `${currentDocs["docs/limitations.md"]}\n\n` +
+      "No legal review completed.";
+
+    expect(errorsFor({ "docs/limitations.md": content })).toEqual([]);
+  });
+
+  it("allows future outcome definitions that do not assert a current approval", () => {
+    const gate =
+      `${currentDocs["docs/release-review-gate.md"]}\n\n` +
+      "A future qualified reviewer may select APPROVED FOR NAMED SCOPE or APPROVED WITH CONDITIONS.";
+
+    expect(errorsFor({ "docs/release-review-gate.md": gate })).toEqual([]);
+  });
+
+  it("allows negated no-clearance language", () => {
+    const gate =
+      `${currentDocs["docs/release-review-gate.md"]}\n\n` +
+      "Legal review is not complete. Privacy review has not passed. " +
+      "Safety review is not cleared. No human sign-off is recorded. " +
+      "Legal review not completed. Public release not approved. " +
+      "Not cleared for public release. Not all required reviews are complete.";
+
+    expect(errorsFor({ "docs/release-review-gate.md": gate })).toEqual([]);
+  });
+
+  it("allows future outcome definitions, negations, and no-clearance language in every scanned public document", () => {
+    const safeText =
+      "A future reviewer may select APPROVED FOR NAMED SCOPE. " +
+      "Human sign-off is not recorded. Public release is not approved. " +
+      "No legal, privacy, safety, trademark, or public-release clearance is recorded.";
+    const scannedPaths = [
+      "docs/release-review-gate.md",
+      "README.md",
+      "CONTRIBUTING.md",
+      "docs/limitations.md",
+      "docs/safety-terms.md",
+      "docs/privacy-architecture.md",
+      "docs/deployment.md"
+    ] as const;
+
+    for (const filePath of scannedPaths) {
+      expect(
+        errorsFor({
+          [filePath]: `${currentDocs[filePath]}\n\n${safeText}`
+        })
+      ).toEqual([]);
+    }
+  });
+
+  it("tolerates normalized whitespace in the unique blocked-status anchor", () => {
+    const gate = currentDocs["docs/release-review-gate.md"].replace(
+      "PUBLIC RELEASE BLOCKED — HUMAN SIGN-OFF NOT RECORDED",
+      "PUBLIC   RELEASE BLOCKED —\n  HUMAN SIGN-OFF NOT RECORDED"
+    );
+
+    expect(errorsFor({ "docs/release-review-gate.md": gate })).toEqual([]);
   });
 
   it("rejects missing required public docs", () => {
