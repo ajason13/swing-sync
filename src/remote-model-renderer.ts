@@ -17,7 +17,8 @@ export function renderRemoteModelReviewPanel(): string {
         <span class="stage-status">Off by default</span>
       </div>
       <p>Remote model review is optional and requires a separately reviewed provider before any data can leave this device. Manual Swing Card export and Copy prompt do not require provider configuration.</p>
-      <dl class="remote-model-disclosure" aria-label="Remote model data disclosure">
+      <div role="group" aria-label="Remote model data disclosure">
+      <dl class="remote-model-disclosure">
         <div>
           <dt>Provider registry</dt>
           <dd>${providerAvailable ? "Reviewed provider configured." : "No reviewed provider is configured for this story."}</dd>
@@ -31,8 +32,9 @@ export function renderRemoteModelReviewPanel(): string {
           <dd>${modelBlockedOutboundDataClasses.map(formatRemoteDataClass).join(", ")}</dd>
         </div>
       </dl>
-      <button class="secondary-action" type="button" disabled data-remote-model-send>Remote review unavailable</button>
-      <p class="action-note" data-remote-model-status role="status">Remote model review is unavailable until a provider is separately reviewed and configured.</p>
+      </div>
+      <button class="secondary-action" type="button" disabled data-remote-model-send aria-describedby="remote-model-status">Remote review unavailable</button>
+      <p class="action-note" id="remote-model-status" data-remote-model-status>Remote model review is unavailable until a provider is separately reviewed and configured.</p>
     </section>
   `;
 }

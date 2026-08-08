@@ -1,6 +1,1686 @@
+# SS-019 Focused Claude Final-Audit Re-review Source Packet — B-NEW1
+
+Generated on 2026-07-25 for the uncommitted `ss-019-accessibility-design-hardening` worktree. Paste `docs/ss-019-claude-audit-rereview-prompt.md` first, then this packet immediately after it. Together they are one standalone focused re-review handoff.
+
+## Baseline identity
+
+The immutable pre-fix baseline is `docs/ss-019-claude-audit-source-packet.md`, a 31-block packet generated from repository baseline `b4db367bedcc0f7aefcbb55878ec7ec1a0f549a1`. Its exact current SHA-256 is `e718f05e6acc6a6be6cc3dfdfa39eeb3ce398f73dd62abbca10aeebc5de93bdc`; it is preserved byte-for-byte. Fix-only deltas below are mechanically derived by applying its exact serialized per-file diffs to that baseline, then comparing the resulting pre-fix version to the frozen current file.
+
+## Completeness and omission rationale
+
+This packet includes the two complete B-NEW1 fix-only diffs, focused post-audit coordination/evidence diffs, and complete current runtime/test/cross-module/status/manual/audit/context/Node files needed for a narrow adversarial decision. The explicit absence record covers the protected boundaries.
+
+Unrelated unchanged SS-019 source/tests are omitted because this is a follow-up limited to B-NEW1 plus cross-cutting focus/status/boundary risk; their complete pre-fix implementation evidence remains in the immutable original 31-block packet. Historical QA-planning prompts, packets, raw responses, specifications, and research artifacts are omitted as preserved history. The original immutable packet is not duplicated. This re-review prompt and packet are omitted from their own packet to avoid circularity. The intentional untracked agent prompts remain preserved and omitted: post-ss-011, post-ss-012, post-ss-014, post-ss-015, post-ss-018, ss-004, ss-006, ss-007, and ss-008 new-Codex-session prompts.
+
+## Packet Manifest
+
+| Kind | Path | Lines | Bytes | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| Complete fix-only diff | `git diff (original-packet pre-fix → current) -- src/analysis-lifecycle.ts` | 35 | 1636 | `88a9e4c934b5a6ac70a419f8e8c28e6b3971cca4656e6f8bcba4568845f59c05` |
+| Complete fix-only diff | `git diff (original-packet pre-fix → current) -- test/unit/analysis-lifecycle.test.ts` | 63 | 2851 | `9b79d6a0edb1d260480880cee7d2334d0f8f410fba733deba981f0cfc1cefe5c` |
+| Complete post-audit coordination diff | `CONTEXT.md` | 77 | 4162 | `95c88d374702a58e291e2666c22d7768e3c94a6dc13cfce87e82729af2b5baee` |
+| Complete post-audit evidence diff | `docs/ss-019-manual-accessibility-qa.md` | 13 | 798 | `7141940549e88c6c550b6f89dae299aef09ca2787291cfacd2f06f7c9fc88a3b` |
+| Complete post-audit coordination diff | `docs/ss-019-claude-audit-response.md` | 46 | 1798 | `55a6646ac283dd13ee89ee5e599179789d4f3e2a0ac6492161447c4436cce086` |
+| Complete current file | `src/analysis-lifecycle.ts` | 134 | 5063 | `84d6bc6dcc65628cbfc7c82975321ce73110c5f255dc4940f1e1dcdb03d81f14` |
+| Complete current file | `test/unit/analysis-lifecycle.test.ts` | 395 | 16762 | `c31d8599aca667c07da98dbae87b44795beb7f0185f3a6966ba3a1edd157e285` |
+| Complete current file | `src/app-events.ts` | 212 | 10413 | `7fd4fc9aad374990da1d84e92940b80ec577edd50b7594a11a3f5942631b9700` |
+| Complete current file | `src/app-renderer.ts` | 245 | 13474 | `3558462f56dcccbed38f30bb0dcc48f6c2535b15ddf9e5f409e6f3ccef11d859` |
+| Complete current file | `src/phase-review-renderer.ts` | 132 | 7095 | `6c1f324199127b5546ff53dfdcc8d41728fb163cd0de76d8ee8f795c56dda34d` |
+| Complete current file | `docs/ss-019-manual-accessibility-qa.md` | 98 | 11638 | `da70ee65fac0d29fe664ee463956ae8d93caf7ec2a93686108aeb5deb18782f8` |
+| Complete current file | `docs/ss-019-claude-audit-response.md` | 41 | 1535 | `cca1556626277f3102ce008fc5d1472f5c01149e04031e70a3cff6cb1f19a043` |
+| Complete current file | `CONTEXT.md` | 3816 | 218829 | `f54284d655a7d12eff60ea521e642b07e34d632d9712dd6a8ba94f6c30aeacaa` |
+| Complete current file | `.nvmrc` | 1 | 3 | `f14b4987904bcb5814e4459a057ed4d20f58a633152288a761214dcd28780b56` |
+| Explicit absent-change record | `B-NEW1 protected-boundary delta` | 1 | 341 | `11f56a933df9f61769cbaee82453e94f5ad49434ed17827c02f2d78d0d5d958c` |
+
+Readiness requires exactly 15 manifest rows and 15 unique sequential BEGIN/END evidence blocks. Re-extract every raw block, compare its bytes, line count, byte count, SHA-256, kind, and path against the manifest and its declared verification basis. Reject missing, reordered, duplicated, summarized, truncated, hash-mismatched, or fence-colliding evidence.
+
+### 01 Complete fix-only diff: git diff (original-packet pre-fix → current) -- src/analysis-lifecycle.ts
+
+Lines: 35  
+Bytes: 1636  
+SHA-256: `88a9e4c934b5a6ac70a419f8e8c28e6b3971cca4656e6f8bcba4568845f59c05`  
+Verification basis: exact fix-only delta derived from original packet block 04
+
+<!-- BEGIN EXACT BLOCK: 01 Complete fix-only diff: git diff (original-packet pre-fix → current) -- src/analysis-lifecycle.ts -->
+````````````````````````````````````````````````
+diff --git a/src/analysis-lifecycle.ts b/src/analysis-lifecycle.ts
+index ad6b7f0..20d6b31 100644
+--- a/src/analysis-lifecycle.ts
++++ b/src/analysis-lifecycle.ts
+@@ -98,7 +98,9 @@ export class AnalysisLifecycle {
+     if (state === "completed" && this.frameController) {
+       completeProcessingWithOutputs(this.options.state, this.frameController);
+     }
+-    updateProcessingProgressUi(this.options.root, this.options.state);
++    if (this.options.state.activeStep === "processing") {
++      updateProcessingProgressUi(this.options.root, this.options.state);
++    }
+     if (
+       (state === "completed" || state === "failed") &&
+       this.options.state.activeStep === "processing" &&
+@@ -111,13 +113,17 @@ export class AnalysisLifecycle {
+   private handleProcessingProgress(token: symbol, completed: number, total: number): void {
+     if (token !== this.activeCallbackToken) return;
+     setProcessingProgress(this.options.state, completed, total);
+-    updateProcessingProgressUi(this.options.root, this.options.state);
++    if (this.options.state.activeStep === "processing") {
++      updateProcessingProgressUi(this.options.root, this.options.state);
++    }
+   }
+ 
+   private handleProcessingOutput(token: symbol, output: SampledFrameOutput): void {
+     if (token !== this.activeCallbackToken) return;
+     recordProcessingOutput(this.options.state, output);
+-    updateProcessingProgressUi(this.options.root, this.options.state);
++    if (this.options.state.activeStep === "processing") {
++      updateProcessingProgressUi(this.options.root, this.options.state);
++    }
+   }
+ 
+   private clearControllerHandles(): void {
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 01 Complete fix-only diff: git diff (original-packet pre-fix → current) -- src/analysis-lifecycle.ts -->
+
+### 02 Complete fix-only diff: git diff (original-packet pre-fix → current) -- test/unit/analysis-lifecycle.test.ts
+
+Lines: 63  
+Bytes: 2851  
+SHA-256: `9b79d6a0edb1d260480880cee7d2334d0f8f410fba733deba981f0cfc1cefe5c`  
+Verification basis: exact fix-only delta derived from original packet block 14
+
+<!-- BEGIN EXACT BLOCK: 02 Complete fix-only diff: git diff (original-packet pre-fix → current) -- test/unit/analysis-lifecycle.test.ts -->
+````````````````````````````````````````````````
+diff --git a/test/unit/analysis-lifecycle.test.ts b/test/unit/analysis-lifecycle.test.ts
+index 9603d43..b3a836e 100644
+--- a/test/unit/analysis-lifecycle.test.ts
++++ b/test/unit/analysis-lifecycle.test.ts
+@@ -144,6 +144,58 @@ describe("analysis lifecycle ownership", () => {
+     expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+   });
+ 
++  it("keeps same-token trailing processing callbacks from overwriting confirmed review DOM", () => {
++    const state = createInitialAppState();
++    selectWorkflowStep(state, "processing");
++    const root = new ProcessingRoot();
++    const requestRender = vi.fn();
++    const applyAccessibilityIntent = vi.fn();
++    const lifecycle = new AnalysisLifecycle({
++      root: root as unknown as ParentNode,
++      state,
++      requestRender,
++      applyAccessibilityIntent
++    });
++    const token = Symbol("current");
++    Object.assign(lifecycle as unknown as {
++      activeCallbackToken: symbol;
++      frameController: { getOutputs(): [] };
++    }, {
++      activeCallbackToken: token,
++      frameController: { getOutputs: () => [] }
++    });
++    const callbacks = lifecycle as unknown as {
++      handleProcessingState(token: symbol, state: "completed"): void;
++      handleProcessingProgress(token: symbol, complete: number, total: number): void;
++      handleProcessingOutput(token: symbol, output: SampledFrameOutput): void;
++    };
++
++    callbacks.handleProcessingState(token, "completed");
++    expect(root.status.textContent).toBe("Local frame processing completed.");
++
++    selectWorkflowStep(state, "review");
++    root.reviewStatus.textContent =
++      "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here.";
++    const confirmedReviewStatus = root.reviewStatus.textContent;
++    const querySelector = vi.spyOn(root, "querySelector");
++    applyAccessibilityIntent.mockClear();
++
++    callbacks.handleProcessingProgress(token, 7, 8);
++    callbacks.handleProcessingOutput(token, {
++      pose: { landmarks: [Array.from({ length: 33 }, () => ({}))] }
++    } as unknown as SampledFrameOutput);
++    callbacks.handleProcessingState(token, "completed");
++
++    expect(state.processingState).toBe("completed");
++    expect(state.extractedFrameCount).toBe(7);
++    expect(state.totalFrameCount).toBe(8);
++    expect(state.latestLandmarkCount).toBe(33);
++    expect(root.reviewStatus.textContent).toBe(confirmedReviewStatus);
++    expect(querySelector).not.toHaveBeenCalled();
++    expect(requestRender).not.toHaveBeenCalled();
++    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
++  });
++
+   it("keeps current loading processing cancelled and closed callbacks partial without focus or global announcements", () => {
+     const state = createInitialAppState();
+     selectWorkflowStep(state, "processing");
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 02 Complete fix-only diff: git diff (original-packet pre-fix → current) -- test/unit/analysis-lifecycle.test.ts -->
+
+### 03 Complete post-audit coordination diff: CONTEXT.md
+
+Lines: 77  
+Bytes: 4162  
+SHA-256: `95c88d374702a58e291e2666c22d7768e3c94a6dc13cfce87e82729af2b5baee`  
+Verification basis: post-audit durable-state delta from original packet block 02
+
+<!-- BEGIN EXACT BLOCK: 03 Complete post-audit coordination diff: CONTEXT.md -->
+````````````````````````````````````````````````
+diff --git a/CONTEXT.md b/CONTEXT.md
+index 3b3887d..5adce37 100644
+--- a/CONTEXT.md
++++ b/CONTEXT.md
+@@ -1,6 +1,6 @@
+ # Swing Sync Context
+ 
+-Last updated: 2026-07-21
++Last updated: 2026-07-25
+ 
+ ## Current State
+ 
+@@ -29,10 +29,11 @@ Last updated: 2026-07-21
+   `ss-019-accessibility-design-hardening`.
+ - Implementation status: uncommitted SS-019 runtime, accessibility,
+   responsive-design, unit, smoke, and manual-QA changes are present on the
+-  story branch. Full Node 22 verification passes at 24 files / 217 unit tests
+-  and 48 desktop/mobile smoke tests. Focused `deep-researcher` re-review passed,
+-  closing all nine initial findings and R1/R2; the complete final Claude audit
+-  prompt and packet are ready for the independent review.
++  story branch. Full Node 22 verification now passes at 24 files / 218 unit
++  tests and 48 desktop/mobile smoke tests. Claude final audit returned FAIL
++  with accepted sole blocker B-NEW1; the approved minimal fix is implemented,
++  independently reviewed, and awaiting focused Claude re-review before PR
++  preparation.
+ - Remaining visible non-Done backlog tasks: SS-019 through SS-022, created
+   from the manual app-readiness gap review on 2026-07-03.
+ 
+@@ -492,6 +493,48 @@ SS-019 final implementation-audit handoff on 2026-07-21:
+ - Next owner: Claude for the independent final implementation audit. Do not
+   prepare a PR until Claude returns PASS and explicitly clears PR preparation.
+ 
++SS-019 final-audit result and lead disposition on 2026-07-25:
++
++- Claude final audit returned FAIL with `B-NEW1`. The lead architect accepted
++  it as the sole blocker; Handshake Status remains `4. Final Audit (Claude)`,
++  branch remains `ss-019-accessibility-design-hardening`, and Pull Request
++  remains empty.
++- Approved minimal fix only: preserve same-token state/progress/output
++  recording, but gate every `updateProcessingProgressUi` DOM call in
++  `handleProcessingState`, `handleProcessingProgress`, and
++  `handleProcessingOutput` to `activeStep === "processing"`; add a named
++  same-token completed-review regression test. No selector, protected-copy,
++  dependency, observability, telemetry, remote, or privacy/safety-claim change
++  is authorized.
++- Deferred non-blocking recommendations: static source-string inventory
++  cleanup, CSS pseudo-element assistive-technology note, and an awaited-close
++  loading indicator. They are outside the accepted blocker fix.
++- Next owner: builder for the minimal fix and its targeted verification, then
++  Claude for focused re-review. PR preparation remains blocked pending focused
++  PASS and explicit clearance.
++- Feedback retention: when selectors can exist in mutually exclusive views,
++  partial DOM updaters must verify current-view ownership before mutation; the
++  primary executable retention is the named same-token completed-review
++  regression test.
++- Model/effort metadata exception remains: delegated agents expose no
++  verifiable pinned model identifier or reasoning-effort metadata. No silent
++  model, effort, or role substitution is claimed.
++- Builder implemented the accepted B-NEW1 repair only in
++  `src/analysis-lifecycle.ts` and `test/unit/analysis-lifecycle.test.ts`:
++  same-token state/progress/output recording remains intact while every
++  `updateProcessingProgressUi` call is gated to `activeStep === "processing"`.
++  The named regression proves trailing same-token callbacks preserve state but
++  do not query or overwrite a completed review DOM.
++- Lead verification passed under Node `v22.22.3`: focused lifecycle suite 3
++  files / 32 tests, full unit suite 24 files / 218 tests, full smoke suite 48
++  desktop/mobile Chromium tests, build, compliance, safety, privacy, docs, and
++  `git diff --check`. Read-only deep-researcher review PASS is advisory input,
++  not Claude sign-off.
++- Focused Claude handoff: paste
++  `docs/ss-019-claude-audit-rereview-prompt.md`, then
++  `docs/ss-019-claude-audit-rereview-source-packet.md`. Next owner is Claude;
++  status remains `4. Final Audit (Claude)` and PR remains empty.
++
+ ## SS-018 Coordination
+ 
+ SS-018 is privacy-, safety-boundary-, frontend-runtime-, refactor-,
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 03 Complete post-audit coordination diff: CONTEXT.md -->
+
+### 04 Complete post-audit evidence diff: docs/ss-019-manual-accessibility-qa.md
+
+Lines: 13  
+Bytes: 798  
+SHA-256: `7141940549e88c6c550b6f89dae299aef09ca2787291cfacd2f06f7c9fc88a3b`  
+Verification basis: post-audit evidence-count delta from original packet block 29
+
+<!-- BEGIN EXACT BLOCK: 04 Complete post-audit evidence diff: docs/ss-019-manual-accessibility-qa.md -->
+````````````````````````````````````````````````
+diff --git a/docs/ss-019-manual-accessibility-qa.md b/docs/ss-019-manual-accessibility-qa.md
+index 8b9799f..d8e641a 100644
+--- a/docs/ss-019-manual-accessibility-qa.md
++++ b/docs/ss-019-manual-accessibility-qa.md
+@@ -15,7 +15,7 @@ statement.
+ - Automated environment: Node `v22.22.3`, npm `10.9.8`.
+ - Automated commands actually completed:
+   - Full unit: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:unit'`
+-    — PASS, 24 files and 217 tests.
++    — PASS, 24 files and 218 tests after the focused B-NEW1 repair.
+   - Full browser smoke: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:smoke'`
+     — PASS, 48 tests across desktop and mobile Chromium projects.
+   - Build: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run build'`
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 04 Complete post-audit evidence diff: docs/ss-019-manual-accessibility-qa.md -->
+
+### 05 Complete post-audit coordination diff: docs/ss-019-claude-audit-response.md
+
+Lines: 46  
+Bytes: 1798  
+SHA-256: `55a6646ac283dd13ee89ee5e599179789d4f3e2a0ac6492161447c4436cce086`  
+Verification basis: new durable audit response; absent from pre-fix baseline
+
+<!-- BEGIN EXACT BLOCK: 05 Complete post-audit coordination diff: docs/ss-019-claude-audit-response.md -->
+````````````````````````````````````````````````
+diff --git a/docs/ss-019-claude-audit-response.md b/docs/ss-019-claude-audit-response.md
+index e69de29..94954b3 100644
+--- a/docs/ss-019-claude-audit-response.md
++++ b/docs/ss-019-claude-audit-response.md
+@@ -0,0 +1,41 @@
++# SS-019 Final Claude Audit Response and Lead Disposition
++
++Date recorded: 2026-07-25
++
++## Verdict and classification
++
++Claude's final implementation audit returned **FAIL**. The lead architect
++accepted **B-NEW1** as the sole blocker.
++
++## Accepted blocker: B-NEW1
++
++Same-token processing callbacks can arrive after navigation to the review view.
++State, progress, and output must still be recorded for the active token, but
++`updateProcessingProgressUi` must not query or mutate DOM outside the active
++processing view. The minimum accepted repair gates each such DOM update in
++`handleProcessingState`, `handleProcessingProgress`, and
++`handleProcessingOutput` on `activeStep === "processing"`, and adds a named
++same-token completed-review regression test.
++
++## Deferred non-blocking recommendations
++
++- Static source-string inventory cleanup.
++- CSS pseudo-element assistive-technology risk note.
++- Awaited-close loading indicator.
++
++These items are deferred; they do not expand B-NEW1 or the current acceptance
++criteria.
++
++## Boundary disposition
++
++No safety, privacy, local-first raw-media, consent, remote-review, protected
++copy, selector, dependency, licensing, model/provider, observability,
++telemetry, service-worker, persistence, or exported-data drift was found or
++authorized.
++
++## Gate
++
++The B-NEW1 repair is implemented and independently reviewed as advisory input.
++The story remains `4. Final Audit (Claude)` with Pull Request empty. Claude
++focused re-review must return PASS and explicitly clear PR preparation before
++any PR work begins.
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 05 Complete post-audit coordination diff: docs/ss-019-claude-audit-response.md -->
+
+### 06 Complete current file: src/analysis-lifecycle.ts
+
+Lines: 134  
+Bytes: 5063  
+SHA-256: `84d6bc6dcc65628cbfc7c82975321ce73110c5f255dc4940f1e1dcdb03d81f14`  
+Verification basis: current runtime fix surface
+
+<!-- BEGIN EXACT BLOCK: 06 Complete current file: src/analysis-lifecycle.ts -->
+````````````````````````````````````````````````
+import { updateProcessingProgressUi } from "./app-renderer";
+import type { AccessibilityIntent, RenderRequest } from "./app-accessibility";
+import type { AppState } from "./app-state";
+import {
+  completeProcessingWithOutputs,
+  recordProcessingOutput,
+  resetPhaseReview,
+  resetProcessingCounters,
+  selectWorkflowStep,
+  setProcessingProgress,
+  setProcessingState
+} from "./app-state";
+import { createBrowserFrameController } from "./browser-frame-processing";
+import type {
+  FrameProcessingController,
+  FrameProcessingState,
+  SampledFrameOutput
+} from "./frame-processing";
+
+export interface AnalysisLifecycleOptions {
+  root: ParentNode;
+  state: AppState;
+  requestRender(request?: RenderRequest): void;
+  applyAccessibilityIntent(intent: AccessibilityIntent): void;
+}
+
+export class AnalysisLifecycle {
+  private frameController: FrameProcessingController | undefined;
+  private abortFrameController: ((code: string) => void) | undefined;
+  private activeCallbackToken: symbol | undefined;
+
+  constructor(private readonly options: AnalysisLifecycleOptions) {}
+
+  hasActiveController(): boolean {
+    return !!this.frameController;
+  }
+
+  async startActive(): Promise<void> {
+    const video = this.options.root.querySelector<HTMLVideoElement>("#analysis-video");
+    const selectedVideo = this.options.state.selectedVideo;
+    if (!video || !selectedVideo) return;
+
+    resetProcessingCounters(this.options.state);
+    resetPhaseReview(this.options.state);
+    const token = Symbol("analysis-controller");
+    this.activeCallbackToken = token;
+    const browserController = createBrowserFrameController(video, selectedVideo, {
+      onState: (state, code) => this.handleProcessingState(token, state, code),
+      onProgress: (completed, total) => this.handleProcessingProgress(token, completed, total),
+      onOutput: (output) => this.handleProcessingOutput(token, output)
+    });
+    this.frameController = browserController.controller;
+    this.abortFrameController = browserController.abort;
+    await this.frameController.start();
+  }
+
+  async stopActive(): Promise<void> {
+    const controller = this.frameController;
+    this.activeCallbackToken = undefined;
+    resetPhaseReview(this.options.state);
+    await controller?.cancel();
+    if (this.frameController === controller) this.clearControllerHandles();
+    setProcessingState(this.options.state, "idle");
+    selectWorkflowStep(this.options.state, "capture");
+    const message = "Local analysis stopped and volatile resources were released.";
+    this.options.requestRender({
+      focusKey: "stage-heading",
+      visibleStatusText: message,
+      announcement: message
+    });
+  }
+
+  async closeActive(): Promise<void> {
+    const controller = this.frameController;
+    this.activeCallbackToken = undefined;
+    resetPhaseReview(this.options.state);
+    await controller?.close();
+    if (this.frameController === controller) this.clearControllerHandles();
+    setProcessingState(this.options.state, "idle");
+  }
+
+  async retryActive(): Promise<void> {
+    // Retry progress is surfaced through the processing partial-update path.
+    resetPhaseReview(this.options.state);
+    this.options.applyAccessibilityIntent({ focusKey: "stage-heading" });
+    await this.frameController?.retry();
+  }
+
+  abortWithNetworkBlocked(): void {
+    if (["loading", "processing"].includes(this.options.state.processingState)) {
+      this.abortFrameController?.("UNEXPECTED_NETWORK_BLOCKED");
+    }
+  }
+
+  private handleProcessingState(token: symbol, state: FrameProcessingState, code?: string): void {
+    if (token !== this.activeCallbackToken) return;
+    setProcessingState(this.options.state, state, code);
+    if (state === "completed" && this.frameController) {
+      completeProcessingWithOutputs(this.options.state, this.frameController);
+    }
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
+    if (
+      (state === "completed" || state === "failed") &&
+      this.options.state.activeStep === "processing" &&
+      token === this.activeCallbackToken
+    ) {
+      this.options.applyAccessibilityIntent({ focusKey: "stage-heading" });
+    }
+  }
+
+  private handleProcessingProgress(token: symbol, completed: number, total: number): void {
+    if (token !== this.activeCallbackToken) return;
+    setProcessingProgress(this.options.state, completed, total);
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
+  }
+
+  private handleProcessingOutput(token: symbol, output: SampledFrameOutput): void {
+    if (token !== this.activeCallbackToken) return;
+    recordProcessingOutput(this.options.state, output);
+    if (this.options.state.activeStep === "processing") {
+      updateProcessingProgressUi(this.options.root, this.options.state);
+    }
+  }
+
+  private clearControllerHandles(): void {
+    this.frameController = undefined;
+    this.abortFrameController = undefined;
+    this.activeCallbackToken = undefined;
+  }
+}
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 06 Complete current file: src/analysis-lifecycle.ts -->
+
+### 07 Complete current file: test/unit/analysis-lifecycle.test.ts
+
+Lines: 395  
+Bytes: 16762  
+SHA-256: `c31d8599aca667c07da98dbae87b44795beb7f0185f3a6966ba3a1edd157e285`  
+Verification basis: current named regression and lifecycle coverage
+
+<!-- BEGIN EXACT BLOCK: 07 Complete current file: test/unit/analysis-lifecycle.test.ts -->
+````````````````````````````````````````````````
+import { describe, expect, it, vi } from "vitest";
+import { AnalysisLifecycle } from "../../src/analysis-lifecycle";
+import { createInitialAppState, selectWorkflowStep, setProcessingState } from "../../src/app-state";
+import type { SampledFrameOutput } from "../../src/frame-processing";
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+class ProcessingRoot {
+  readonly status = { textContent: "", hidden: false };
+  readonly summary = { textContent: "", hidden: false };
+  readonly retry = { textContent: "", hidden: false };
+  readonly review = { textContent: "", hidden: false };
+  readonly reviewStatus = { textContent: "", hidden: false };
+
+  querySelector(selector: string) {
+    return {
+      "#processing-status": this.status,
+      "[data-pose-summary]": this.summary,
+      "[data-retry-analysis]": this.retry,
+      "[data-review-phases]": this.review,
+      "#phase-review-status": this.reviewStatus
+    }[selector] ?? null;
+  }
+}
+
+describe("analysis lifecycle ownership", () => {
+  it("keeps network-blocked abort scoped to active local processing", () => {
+    const state = createInitialAppState();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender: () => undefined,
+      applyAccessibilityIntent: () => undefined
+    });
+    const abort = vi.fn();
+    Object.assign(lifecycle as unknown as { abortFrameController?: (code: string) => void }, {
+      abortFrameController: abort
+    });
+
+    setProcessingState(state, "idle");
+    lifecycle.abortWithNetworkBlocked();
+    expect(abort).not.toHaveBeenCalled();
+
+    setProcessingState(state, "loading");
+    lifecycle.abortWithNetworkBlocked();
+    expect(abort).toHaveBeenCalledWith("UNEXPECTED_NETWORK_BLOCKED");
+  });
+
+  it("clears lifecycle-owned controller handles and syncs app-state idle on close without rendering", async () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const close = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent
+    });
+    Object.assign(
+      lifecycle as unknown as {
+        frameController?: { close: () => Promise<void> };
+        abortFrameController?: (code: string) => void;
+      },
+      {
+        frameController: { close },
+        abortFrameController: vi.fn()
+      }
+    );
+    setProcessingState(state, "processing");
+
+    await lifecycle.closeActive();
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(lifecycle.hasActiveController()).toBe(false);
+    expect(state.processingState).toBe("idle");
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+  });
+
+  it("keeps stopped announcement owned by stop and close cleanup silent until the caller destination render", async () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const cancel = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: {} as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent: vi.fn()
+    });
+    Object.assign(lifecycle as unknown as { frameController?: { cancel: () => Promise<void> } }, {
+      frameController: { cancel }
+    });
+    selectWorkflowStep(state, "processing");
+    setProcessingState(state, "processing");
+
+    await lifecycle.stopActive();
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(lifecycle.hasActiveController()).toBe(false);
+    expect(state.activeStep).toBe("capture");
+    expect(state.processingState).toBe("idle");
+    expect(requestRender).toHaveBeenCalledWith({
+      focusKey: "stage-heading",
+      visibleStatusText: "Local analysis stopped and volatile resources were released.",
+      announcement: "Local analysis stopped and volatile resources were released."
+    });
+
+    requestRender.mockClear();
+    Object.assign(lifecycle as unknown as { frameController?: { close: () => Promise<void> } }, {
+      frameController: { close: vi.fn() }
+    });
+    await lifecycle.closeActive();
+    expect(requestRender).not.toHaveBeenCalled();
+    requestRender({ focusKey: "stage-heading", announcement: "Capture or upload opened." });
+    expect(requestRender).toHaveBeenCalledOnce();
+  });
+
+  it("keeps progress ticks partial without global announcements or focus changes", () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: { querySelector: () => null } as unknown as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent
+    });
+    const token = Symbol("current");
+    Object.assign(lifecycle as unknown as { activeCallbackToken: symbol }, { activeCallbackToken: token });
+    (lifecycle as unknown as { handleProcessingProgress(token: symbol, complete: number, total: number): void })
+      .handleProcessingProgress(token, 3, 8);
+    (lifecycle as unknown as { handleProcessingOutput(token: symbol, output: SampledFrameOutput): void })
+      .handleProcessingOutput(token, {
+        pose: { landmarks: [Array.from({ length: 33 }, () => ({}))] }
+      } as unknown as SampledFrameOutput);
+    expect(state.extractedFrameCount).toBe(3);
+    expect(state.latestLandmarkCount).toBe(33);
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+  });
+
+  it("keeps same-token trailing processing callbacks from overwriting confirmed review DOM", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "processing");
+    const root = new ProcessingRoot();
+    const requestRender = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: root as unknown as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent
+    });
+    const token = Symbol("current");
+    Object.assign(lifecycle as unknown as {
+      activeCallbackToken: symbol;
+      frameController: { getOutputs(): [] };
+    }, {
+      activeCallbackToken: token,
+      frameController: { getOutputs: () => [] }
+    });
+    const callbacks = lifecycle as unknown as {
+      handleProcessingState(token: symbol, state: "completed"): void;
+      handleProcessingProgress(token: symbol, complete: number, total: number): void;
+      handleProcessingOutput(token: symbol, output: SampledFrameOutput): void;
+    };
+
+    callbacks.handleProcessingState(token, "completed");
+    expect(root.status.textContent).toBe("Local frame processing completed.");
+
+    selectWorkflowStep(state, "review");
+    root.reviewStatus.textContent =
+      "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here.";
+    const confirmedReviewStatus = root.reviewStatus.textContent;
+    const querySelector = vi.spyOn(root, "querySelector");
+    applyAccessibilityIntent.mockClear();
+
+    callbacks.handleProcessingProgress(token, 7, 8);
+    callbacks.handleProcessingOutput(token, {
+      pose: { landmarks: [Array.from({ length: 33 }, () => ({}))] }
+    } as unknown as SampledFrameOutput);
+    callbacks.handleProcessingState(token, "completed");
+
+    expect(state.processingState).toBe("completed");
+    expect(state.extractedFrameCount).toBe(7);
+    expect(state.totalFrameCount).toBe(8);
+    expect(state.latestLandmarkCount).toBe(33);
+    expect(root.reviewStatus.textContent).toBe(confirmedReviewStatus);
+    expect(querySelector).not.toHaveBeenCalled();
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+  });
+
+  it("keeps current loading processing cancelled and closed callbacks partial without focus or global announcements", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "processing");
+    const root = new ProcessingRoot();
+    const requestRender = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: root as unknown as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent
+    });
+    const token = Symbol("current");
+    Object.assign(lifecycle as unknown as { activeCallbackToken: symbol }, { activeCallbackToken: token });
+    const callback = lifecycle as unknown as {
+      handleProcessingState(token: symbol, state: "loading" | "processing" | "cancelled" | "closed"): void;
+    };
+
+    const cases = [
+      {
+        state: "loading",
+        status: "Loading the local pose model in a background worker.",
+        reviewStatus: "Phase review requires local pose model loading and processing to complete."
+      },
+      {
+        state: "processing",
+        status: "Processing a local video frame.",
+        reviewStatus: "Phase review requires local video frame processing to complete."
+      },
+      {
+        state: "cancelled",
+        status: "Local frame processing cancelled.",
+        reviewStatus: "Phase review is unavailable because local processing was cancelled."
+      },
+      {
+        state: "closed",
+        status: "Local pose session closed.",
+        reviewStatus: "Phase review is unavailable because the local pose session was closed."
+      }
+    ] as const;
+
+    for (const current of cases) {
+      callback.handleProcessingState(token, current.state);
+      expect(state.processingState).toBe(current.state);
+      expect(root.status.textContent).toBe(current.status);
+      expect(root.reviewStatus.textContent).toBe(current.reviewStatus);
+      expect(root.retry.hidden).toBe(true);
+      expect(root.review.hidden).toBe(true);
+    }
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+  });
+
+  it("focuses the processing heading and uses only scoped status for current completed and failed terminal states", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "processing");
+    const requestRender = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: { querySelector: () => null } as unknown as ParentNode,
+      state,
+      requestRender,
+      applyAccessibilityIntent
+    });
+    const token = Symbol("current");
+    Object.assign(lifecycle as unknown as { activeCallbackToken: symbol; frameController: { getOutputs(): [] } }, {
+      activeCallbackToken: token,
+      frameController: { getOutputs: () => [] }
+    });
+    const terminal = lifecycle as unknown as { handleProcessingState(token: symbol, state: "completed" | "failed", code?: string): void };
+    terminal.handleProcessingState(token, "completed");
+    terminal.handleProcessingState(token, "failed", "LOCAL_FAILURE");
+    expect(applyAccessibilityIntent).toHaveBeenNthCalledWith(1, { focusKey: "stage-heading" });
+    expect(applyAccessibilityIntent).toHaveBeenNthCalledWith(2, { focusKey: "stage-heading" });
+    expect(requestRender).not.toHaveBeenCalled();
+  });
+
+  it("does not steal focus for late terminal callbacks outside the processing view", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "review");
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: { querySelector: () => null } as unknown as ParentNode,
+      state,
+      requestRender: vi.fn(),
+      applyAccessibilityIntent
+    });
+    const token = Symbol("current");
+    Object.assign(lifecycle as unknown as { activeCallbackToken: symbol }, { activeCallbackToken: token });
+    (lifecycle as unknown as { handleProcessingState(token: symbol, state: "failed"): void })
+      .handleProcessingState(token, "failed");
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+  });
+
+  it("binds terminal callback focus to the originating active controller token", () => {
+    const state = createInitialAppState();
+    selectWorkflowStep(state, "processing");
+    setProcessingState(state, "processing");
+    const applyAccessibilityIntent = vi.fn();
+    const lifecycle = new AnalysisLifecycle({
+      root: { querySelector: () => null } as unknown as ParentNode,
+      state,
+      requestRender: vi.fn(),
+      applyAccessibilityIntent
+    });
+    const activeToken = Symbol("active");
+    const staleToken = Symbol("stale");
+    Object.assign(lifecycle as unknown as { activeCallbackToken: symbol; frameController: { getOutputs(): [] } }, {
+      activeCallbackToken: activeToken,
+      frameController: { getOutputs: () => [] }
+    });
+    const terminal = lifecycle as unknown as { handleProcessingState(token: symbol, state: "failed"): void };
+    terminal.handleProcessingState(staleToken, "failed");
+    expect(state.processingState).toBe("processing");
+    expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+    terminal.handleProcessingState(activeToken, "failed");
+    expect(state.processingState).toBe("failed");
+    expect(applyAccessibilityIntent).toHaveBeenCalledOnce();
+  });
+
+  it("retries without replacing the video DOM and moves focus once", async () => {
+    const state = createInitialAppState();
+    const requestRender = vi.fn();
+    const applyAccessibilityIntent = vi.fn();
+    const retry = vi.fn();
+    const lifecycle = new AnalysisLifecycle({ root: {} as ParentNode, state, requestRender, applyAccessibilityIntent });
+    Object.assign(lifecycle as unknown as { frameController: { retry(): Promise<void> } }, {
+      frameController: { retry }
+    });
+    await lifecycle.retryActive();
+    expect(retry).toHaveBeenCalledOnce();
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(applyAccessibilityIntent).toHaveBeenCalledOnce();
+  });
+
+  it("invalidates the active callback token before awaited stop or close so racing terminal callbacks are inert", async () => {
+    for (const operation of ["stop", "close"] as const) {
+      const state = createInitialAppState();
+      selectWorkflowStep(state, "processing");
+      setProcessingState(state, "processing");
+      const gate = deferred();
+      const requestRender = vi.fn();
+      const applyAccessibilityIntent = vi.fn();
+      const lifecycle = new AnalysisLifecycle({
+        root: { querySelector: () => null } as unknown as ParentNode,
+        state,
+        requestRender,
+        applyAccessibilityIntent
+      });
+      const token = Symbol(operation);
+      const cleanup = () => gate.promise;
+      Object.assign(lifecycle as unknown as {
+        activeCallbackToken: symbol;
+        frameController: { cancel(): Promise<void>; close(): Promise<void> };
+      }, {
+        activeCallbackToken: token,
+        frameController: { cancel: cleanup, close: cleanup }
+      });
+      const pending = operation === "stop" ? lifecycle.stopActive() : lifecycle.closeActive();
+      const callbacks = lifecycle as unknown as {
+        handleProcessingState(token: symbol, state: "failed"): void;
+        handleProcessingProgress(token: symbol, complete: number, total: number): void;
+        handleProcessingOutput(token: symbol, output: SampledFrameOutput): void;
+      };
+      callbacks.handleProcessingState(token, "failed");
+      callbacks.handleProcessingProgress(token, 7, 8);
+      callbacks.handleProcessingOutput(token, {
+        pose: { landmarks: [Array.from({ length: 33 }, () => ({}))] }
+      } as unknown as SampledFrameOutput);
+      expect(state.processingState).toBe("processing");
+      expect(state.extractedFrameCount).toBe(0);
+      expect(state.latestLandmarkCount).toBe(0);
+      expect(applyAccessibilityIntent).not.toHaveBeenCalled();
+      gate.resolve();
+      await pending;
+      expect(state.processingState).toBe("idle");
+      expect(requestRender).toHaveBeenCalledTimes(operation === "stop" ? 1 : 0);
+    }
+  });
+
+  it("keeps closeActive cleanup render-free for navigation picker replacement and beforeunload", async () => {
+    for (const owner of ["navigation", "picker replacement", "beforeunload"]) {
+      const state = createInitialAppState();
+      const requestRender = vi.fn();
+      const applyAccessibilityIntent = vi.fn();
+      const lifecycle = new AnalysisLifecycle({ root: {} as ParentNode, state, requestRender, applyAccessibilityIntent });
+      const close = vi.fn();
+      Object.assign(lifecycle as unknown as { frameController: { close(): Promise<void> } }, {
+        frameController: { close }
+      });
+      await lifecycle.closeActive();
+      expect(close, owner).toHaveBeenCalledOnce();
+      expect(requestRender, owner).not.toHaveBeenCalled();
+      expect(applyAccessibilityIntent, owner).not.toHaveBeenCalled();
+    }
+  });
+});
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 07 Complete current file: test/unit/analysis-lifecycle.test.ts -->
+
+### 08 Complete current file: src/app-events.ts
+
+Lines: 212  
+Bytes: 10413  
+SHA-256: `7fd4fc9aad374990da1d84e92940b80ec577edd50b7594a11a3f5942631b9700`  
+Verification basis: cross-module focus/status ownership context
+
+<!-- BEGIN EXACT BLOCK: 08 Complete current file: src/app-events.ts -->
+````````````````````````````````````````````````
+import type { AnalysisLifecycle } from "./analysis-lifecycle";
+import type { AccessibilityIntent, RenderRequest } from "./app-accessibility";
+import {
+  confirmPhaseReview,
+  rebuildPhaseReviewState,
+  selectKeyframe,
+  selectLocalVideo,
+  selectWorkflowStep,
+  setPhaseConfirmation,
+  setPhaseDeclaration,
+  setPhaseDraftAssignment,
+  type AppState
+} from "./app-state";
+import type { SafetyConsentStore } from "./consent-state";
+import { declarationValue } from "./phase-review-renderer";
+import { copySwingCardPrompt, downloadSwingCard, printSwingCard } from "./swing-card-actions";
+import { getNextWorkflowStep, getWorkflowStep, type WorkflowStepId } from "./workflow";
+
+export interface AppEventsDependencies {
+  state: AppState;
+  consent: SafetyConsentStore;
+  lifecycle: AnalysisLifecycle;
+  requestRender(request?: RenderRequest): void;
+  applyAccessibilityIntent(intent: AccessibilityIntent): void;
+}
+
+export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependencies): void {
+  const { state, consent, lifecycle, requestRender, applyAccessibilityIntent } = dependencies;
+
+  root.querySelector<HTMLInputElement>("#safety-consent")?.addEventListener("change", (event) => {
+    consent.setSafetyConsent((event.currentTarget as HTMLInputElement).checked);
+    const accepted = consent.hasSafetyConsent();
+    const message = accepted
+      ? "Safety acknowledgement recorded locally."
+      : "Safety acknowledgement is required before analysis.";
+    requestRender({ focusKey: "safety-consent", announcement: message });
+  });
+
+  root.querySelector<HTMLButtonElement>("#analysis-button")?.addEventListener("click", () => {
+    if (!consent.hasSafetyConsent()) {
+      const message = "Please acknowledge the safety terms before starting analysis.";
+      requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });
+      return;
+    }
+    if (!state.selectedVideo) {
+      const message = "Choose a local video before starting analysis.";
+      requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });
+      return;
+    }
+    selectWorkflowStep(state, "processing");
+    const message = "Loading approved local pose assets. No video data leaves this device.";
+    requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
+    void lifecycle.startActive();
+  });
+
+  root.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const nextStep = button.dataset.step as WorkflowStepId;
+      const opensCompletedReview =
+        state.activeStep === "processing" && state.processingState === "completed" && nextStep === "review";
+      const preservesReviewData =
+        ["review", "export"].includes(state.activeStep) && ["review", "export"].includes(nextStep);
+      if (
+        ["processing", "review", "export"].includes(state.activeStep) &&
+        nextStep !== state.activeStep &&
+        !opensCompletedReview &&
+        !preservesReviewData
+      ) {
+        await lifecycle.closeActive();
+      }
+      selectWorkflowStep(state, nextStep);
+      const message = `${getWorkflowStep(state.activeStep).label} opened.`;
+      requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
+    });
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-next-step]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, getNextWorkflowStep(state.activeStep).id);
+    const message = `${getWorkflowStep(state.activeStep).label} opened.`;
+    requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-video-picker]")?.addEventListener("click", () => {
+    root.querySelector<HTMLInputElement>("#video-file")?.click();
+  });
+
+  const fileInput = root.querySelector<HTMLInputElement>("#video-file");
+  fileInput?.addEventListener("change", async (event) => {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    await lifecycle.closeActive();
+    selectLocalVideo(state, file);
+    const message = "Local video selected. It has not been analyzed or persisted.";
+    requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });
+  });
+  fileInput?.addEventListener("cancel", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
+  fileInput?.addEventListener("focus", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
+  fileInput?.addEventListener("focusin", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
+
+  root.querySelector<HTMLButtonElement>("[data-placeholder-action='camera']")?.addEventListener("click", () => {
+    const message = "Camera capture remains out of scope. Choose a local video file.";
+    requestRender({ focusKey: "camera-placeholder", visibleStatusText: message, announcement: message });
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-cancel-analysis]")?.addEventListener("click", () => {
+    void lifecycle.stopActive();
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-retry-analysis]")?.addEventListener("click", () => {
+    void lifecycle.retryActive();
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-review-phases]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, "review");
+    const message = "Review the provisional phase labels before future measurements become available.";
+    requestRender({ focusKey: "phase-review-heading", visibleStatusText: message, announcement: message });
+  });
+
+  root.querySelector<HTMLSelectElement>("#phase-view")?.addEventListener("change", (event) => {
+    const before = phaseSemanticKey(state);
+    setPhaseDeclaration(state, "view", declarationValue((event.currentTarget as HTMLSelectElement).value, "view"));
+    rebuildPhaseReviewState(state);
+    requestRender(phaseRenderRequest("phase-declaration:view", before, state));
+  });
+  root.querySelector<HTMLSelectElement>("#phase-handedness")?.addEventListener("change", (event) => {
+    const before = phaseSemanticKey(state);
+    setPhaseDeclaration(
+      state,
+      "handedness",
+      declarationValue((event.currentTarget as HTMLSelectElement).value, "handedness")
+    );
+    rebuildPhaseReviewState(state);
+    requestRender(phaseRenderRequest("phase-declaration:handedness", before, state));
+  });
+  root.querySelector<HTMLSelectElement>("#phase-mirrored")?.addEventListener("change", (event) => {
+    const before = phaseSemanticKey(state);
+    setPhaseDeclaration(state, "mirrored", declarationValue((event.currentTarget as HTMLSelectElement).value, "mirrored"));
+    rebuildPhaseReviewState(state);
+    requestRender(phaseRenderRequest("phase-declaration:mirrored", before, state));
+  });
+  root.querySelector<HTMLInputElement>("#phase-setup")?.addEventListener("change", (event) => {
+    const before = phaseSemanticKey(state);
+    setPhaseDeclaration(state, "setup", (event.currentTarget as HTMLInputElement).checked ? "confirmed" : "undeclared");
+    rebuildPhaseReviewState(state);
+    requestRender(phaseRenderRequest("phase-setup", before, state));
+  });
+  root.querySelectorAll<HTMLSelectElement>("[data-phase-index]").forEach((select) => {
+    select.addEventListener("change", () => {
+      setPhaseDraftAssignment(state, Number(select.dataset.phaseIndex), Number(select.value));
+      requestRender({ focusKey: `phase-assignment:${Number(select.dataset.phaseIndex)}` as RenderRequest["focusKey"] });
+    });
+  });
+  root.querySelector<HTMLInputElement>("#phase-confirmation")?.addEventListener("change", (event) => {
+    setPhaseConfirmation(state, (event.currentTarget as HTMLInputElement).checked);
+    requestRender({ focusKey: "phase-confirmation" });
+  });
+  root.querySelector<HTMLButtonElement>("[data-confirm-phase-review]")?.addEventListener("click", () => {
+    const before = phaseSemanticKey(state);
+    confirmPhaseReview(state);
+    const after = phaseSemanticKey(state);
+    const message = after === "confirmed" ? "Phase review confirmed." : "Phase review could not be confirmed.";
+    requestRender({
+      focusKey: "phase-review-heading",
+      ...(before !== after || after !== "confirmed" ? { visibleStatusText: message, announcement: message } : {})
+    });
+  });
+  root.querySelector<HTMLButtonElement>("[data-open-export]")?.addEventListener("click", () => {
+    selectWorkflowStep(state, "export");
+    const message = "Swing Card export opened.";
+    requestRender({ focusKey: "swing-card-heading", visibleStatusText: message, announcement: message });
+  });
+  root.querySelectorAll<HTMLButtonElement>("[data-keyframe-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectKeyframe(state, Number(button.dataset.keyframeIndex));
+      requestRender({ focusKey: `keyframe:${Number(button.dataset.keyframeIndex)}` as RenderRequest["focusKey"] });
+    });
+  });
+  root.querySelector<HTMLButtonElement>("[data-download-swing-card]")?.addEventListener("click", () => {
+    void downloadSwingCard(state, requestRender);
+  });
+  root.querySelector<HTMLButtonElement>("[data-print-swing-card]")?.addEventListener("click", () => {
+    void printSwingCard(root, state, requestRender);
+  });
+  root.querySelector<HTMLButtonElement>("[data-copy-swing-card-prompt]")?.addEventListener("click", () => {
+    void copySwingCardPrompt(state, requestRender);
+  });
+}
+
+type PhaseSemanticKey = "unsupported-input" | "review-required" | "confirmed";
+
+function phaseSemanticKey(state: AppState): PhaseSemanticKey {
+  if (state.phaseReviewState?.readyForFutureMetrics) return "confirmed";
+  return state.phaseReviewState?.automaticProposal.evidenceStatus === "review-required"
+    ? "review-required"
+    : "unsupported-input";
+}
+
+function phaseMessage(key: PhaseSemanticKey): string {
+  return key === "confirmed"
+    ? "Phase review confirmed."
+    : key === "review-required"
+      ? "Swing phase suggestions are ready for review."
+      : "Required video declarations and a supported eight-sample run are needed.";
+}
+
+function phaseRenderRequest(focusKey: RenderRequest["focusKey"], before: PhaseSemanticKey, state: AppState): RenderRequest {
+  const after = phaseSemanticKey(state);
+  return {
+    focusKey,
+    ...(before !== after ? { visibleStatusText: phaseMessage(after), announcement: phaseMessage(after) } : {})
+  };
+}
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 08 Complete current file: src/app-events.ts -->
+
+### 09 Complete current file: src/app-renderer.ts
+
+Lines: 245  
+Bytes: 13474  
+SHA-256: `3558462f56dcccbed38f30bb0dcc48f6c2535b15ddf9e5f409e6f3ccef11d859`  
+Verification basis: cross-module partial DOM updater context
+
+<!-- BEGIN EXACT BLOCK: 09 Complete current file: src/app-renderer.ts -->
+````````````````````````````````````````````````
+import type { AppState } from "./app-state";
+import { selectCanBeginAnalysis } from "./app-state";
+import type { FrameProcessingState } from "./frame-processing";
+import { phaseDefinitions } from "./phase-review";
+import { renderPhaseReview } from "./phase-review-renderer";
+import { renderRemoteModelReviewPanel } from "./remote-model-renderer";
+import { escapeHtml, formatSwingCardWarning } from "./render-utils";
+import { deriveSwingCardContentWarnings } from "./swing-card-generator";
+import { getWorkflowStep, workflowSteps } from "./workflow";
+
+export function renderApp(root: HTMLElement, state: AppState, consentAccepted: boolean, statusMessage?: string): void {
+  const step = getWorkflowStep(state.activeStep);
+  const currentStatus =
+    statusMessage ??
+    (consentAccepted
+      ? state.selectedVideo
+        ? "Local video selected. Begin analysis when ready."
+        : "Consent recorded locally. Choose a local video to begin analysis."
+      : "First analysis is blocked until this acknowledgement is checked.");
+
+  root.innerHTML = `
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="Swing Sync home">Swing Sync</a>
+        <span class="local-badge">Local-first analysis</span>
+      </header>
+      <main class="workspace">
+        <section class="workflow" aria-labelledby="workflow-heading">
+          <div class="workflow-intro">
+            <div><p class="eyebrow">New analysis</p><h1 id="workflow-heading">Capture or choose your swing</h1></div>
+            <p>Raw swing video stays on your device. No feature will send it elsewhere without a separate, explicit opt-in step you initiate.</p>
+          </div>
+          <nav class="step-nav" aria-label="Analysis workflow">
+            ${workflowSteps
+              .map(
+                (item, index) => `
+                  <button class="step-button ${item.id === state.activeStep ? "is-active" : ""}" type="button"
+                    data-step="${item.id}" data-focus-key="workflow-step:${item.id}" aria-current="${item.id === state.activeStep ? "step" : "false"}">
+                    <span class="step-number">${index + 1}</span><span>${item.shortLabel}</span>
+                  </button>`
+              )
+              .join("")}
+          </nav>
+          <section class="stage" aria-labelledby="stage-heading">
+            <div class="stage-heading">
+              <div><p class="placeholder-kicker">Local workflow</p><h2 id="stage-heading" tabindex="-1" data-focus-key="stage-heading">${step.label}</h2></div>
+              <span class="stage-status">${step.status}</span>
+            </div>
+            <p class="stage-description">${step.description}</p>
+            ${renderWorkflowPanel(state, consentAccepted)}
+          </section>
+        </section>
+        <aside class="consent-panel" aria-labelledby="consent-heading">
+          <p class="eyebrow">Required before first analysis</p>
+          <h2 id="consent-heading">Safety acknowledgement</h2>
+          <p>Swing Sync is for educational use only. It is not medical advice, pain diagnosis, rehabilitation guidance, or professional athletic instruction.</p>
+          <ul>
+            <li>Golf practice and swing changes involve injury risk.</li>
+            <li>Stop if you feel pain, dizziness, numbness, weakness, or unusual discomfort.</li>
+            <li>Consult qualified medical or coaching professionals for personal concerns.</li>
+          </ul>
+          <label class="consent-check">
+            <input id="safety-consent" type="checkbox" data-focus-key="safety-consent" ${consentAccepted ? "checked" : ""} />
+            <span>I understand Swing Sync is educational only and that golf practice involves physical risk I accept responsibility for.</span>
+          </label>
+          <p class="privacy-note">Only this acknowledgement is stored locally. It is not a durable or legally audited consent record.</p>
+          <p class="status" id="app-visible-status">${currentStatus}</p>
+        </aside>
+      </main>
+    </div>
+  `;
+}
+
+export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): string {
+  if (state.activeStep === "capture") {
+    return `
+      <div class="capture-options" role="group" aria-label="Local video source">
+        <button class="source-option" type="button" data-placeholder-action="camera" data-focus-key="camera-placeholder">
+          <span class="source-option__title">Use camera</span>
+          <span>Camera capture is not part of this story</span>
+        </button>
+        <button class="source-option" type="button" data-video-picker data-focus-key="video-picker">
+          <span class="source-option__title">Choose a video</span>
+          <span>${state.selectedVideo ? escapeHtml(state.selectedVideo.name) : "Select a local video file"}</span>
+        </button>
+        <input id="video-file" class="visually-hidden" type="file" accept="video/*" tabindex="-1" aria-label="Choose a local video file" />
+      </div>
+      <div class="action-row">
+        <button id="analysis-button" class="primary-action" type="button" data-focus-key="analysis-start" aria-describedby="app-visible-status" ${
+          selectCanBeginAnalysis(state, consentAccepted) ? "" : "disabled"
+        }>
+          Begin analysis
+        </button>
+        <p class="action-note">The selected video and decoded frames remain volatile and local.</p>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "processing") {
+    return `
+      <div class="processing-placeholder ${state.processingState === "failed" ? "is-failed" : ""}" role="group" aria-label="Local pose processing">
+        <div class="processing-mark" aria-hidden="true"></div>
+        <div>
+          <strong id="processing-status" role="status" aria-live="polite" aria-atomic="true">${processingStatusText(state.processingState, state.poseStatusCode)}</strong>
+          <p data-pose-summary>${processingSummaryText(state)}</p>
+        </div>
+      </div>
+      <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
+      <div class="action-row">
+        <button class="secondary-action" type="button" data-cancel-analysis data-focus-key="stop-analysis">Stop local analysis</button>
+        <button class="secondary-action" type="button" data-retry-analysis data-focus-key="retry-analysis" hidden>Retry local analysis</button>
+        <button class="primary-action" type="button" data-review-phases data-focus-key="review-phases" aria-describedby="phase-review-status" ${
+          state.processingState === "completed" ? "" : "hidden"
+        }>Review phase labels</button>
+        <p class="action-note" id="phase-review-status">${processingReviewStatusText(state.processingState, state.poseStatusCode)}</p>
+      </div>
+    `;
+  }
+
+  if (state.activeStep === "review") {
+    if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
+    return `
+      <div class="review-placeholder" role="group" aria-label="Review placeholder">
+        <div class="swing-frame"><span>Video and pose preview</span></div>
+        <dl class="metric-list">
+          <div><dt>Tempo</dt><dd>--</dd></div>
+          <div><dt>Balance</dt><dd>--</dd></div>
+          <div><dt>Rotation</dt><dd>--</dd></div>
+        </dl>
+      </div>
+      <button class="secondary-action" type="button" data-next-step data-focus-key="workflow-next">Preview export state</button>
+    `;
+  }
+
+  if (state.phaseOutputs.length === 0) {
+    return `
+      <section class="export-placeholder" aria-labelledby="export-placeholder-heading">
+        <p class="placeholder-kicker">Local Swing Card</p>
+        <h3 id="export-placeholder-heading">Swing Card unavailable</h3>
+        <p>Complete local analysis before creating a Swing Card. Raw swing video is not included in Swing Card exports.</p>
+      </section>
+      <button class="secondary-action" type="button" disabled aria-describedby="phase-review-status">Export is not available yet</button>
+      <p class="action-note" id="phase-review-status">A valid, confirmed phase review is required before export is available.</p>
+    `;
+  }
+
+  return renderSwingCardExport(state);
+}
+
+export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {
+  const status = root.querySelector<HTMLElement>("#processing-status");
+  const summary = root.querySelector<HTMLElement>("[data-pose-summary]");
+  const retry = root.querySelector<HTMLButtonElement>("[data-retry-analysis]");
+  const review = root.querySelector<HTMLButtonElement>("[data-review-phases]");
+  const reviewStatus = root.querySelector<HTMLElement>("#phase-review-status");
+
+  if (status) status.textContent = processingStatusText(state.processingState, state.poseStatusCode);
+  if (summary) summary.textContent = processingSummaryText(state);
+  if (retry) retry.hidden = state.processingState !== "failed";
+  if (review) review.hidden = state.processingState !== "completed";
+  if (reviewStatus) reviewStatus.textContent = processingReviewStatusText(state.processingState, state.poseStatusCode);
+}
+
+function renderSwingCardExport(state: AppState): string {
+  const phaseReady = state.phaseReviewState?.readyForFutureMetrics ?? false;
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes: phaseDefinitions.map((phase) => ({
+      phaseId: phase.id,
+      phaseLabel: phase.label,
+      preview: undefined,
+      overlay: undefined
+    })),
+    metricPayload: undefined,
+    phaseReviewConfirmed: phaseReady
+  });
+
+  return `
+    <section class="swing-card-panel" aria-labelledby="swing-card-heading">
+      <div class="swing-card-panel__header">
+        <div>
+          <p class="placeholder-kicker">Local Swing Card</p>
+          <h3 id="swing-card-heading" tabindex="-1" data-focus-key="swing-card-heading">Downloadable summary</h3>
+        </div>
+        <span class="stage-status">Manual sharing</span>
+      </div>
+      <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included.</p>
+      <div class="swing-card-summary" role="group" aria-label="Swing Card contents">
+        <div><strong>${state.phaseOutputs.length}</strong><span>local keyframes</span></div>
+        <div><strong>PNG</strong><span>download</span></div>
+        <div><strong>Print</strong><span>save as PDF where supported</span></div>
+      </div>
+      <ul class="swing-card-warning-list" aria-label="Swing Card warnings">
+        ${warnings.map((warning) => `<li>${escapeHtml(formatSwingCardWarning(warning))}</li>`).join("")}
+      </ul>
+      <div class="action-row swing-card-actions">
+        <button class="primary-action" type="button" data-download-swing-card data-focus-key="swing-card-download" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Download PNG</button>
+        <button class="secondary-action" type="button" data-print-swing-card data-focus-key="swing-card-print" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Print / Save as PDF</button>
+        <button class="secondary-action" type="button" data-copy-swing-card-prompt data-focus-key="swing-card-copy" ${state.swingCardBusy ? 'disabled aria-describedby="swing-card-action-status"' : ""}>Copy prompt</button>
+        <p class="action-note" id="swing-card-action-status" data-swing-card-status tabindex="-1" data-focus-key="swing-card-status">${escapeHtml(state.swingCardStatus)}</p>
+      </div>
+      <div class="swing-card-print-host" data-swing-card-print-host aria-hidden="true"></div>
+      ${renderRemoteModelReviewPanel()}
+    </section>
+  `;
+}
+
+function processingStatusText(state: FrameProcessingState, code?: string): string {
+  return state === "loading"
+    ? "Loading the local pose model in a background worker."
+    : state === "processing"
+      ? "Processing a local video frame."
+      : state === "completed"
+        ? "Local frame processing completed."
+        : state === "failed"
+          ? `Local pose analysis stopped (${code ?? "UNKNOWN_ERROR"}).`
+          : state === "cancelled"
+            ? "Local frame processing cancelled."
+            : state === "closed"
+              ? "Local pose session closed."
+              : "Preparing local pose analysis.";
+}
+
+function processingReviewStatusText(state: FrameProcessingState, code?: string): string {
+  return state === "completed"
+    ? "Local processing output is ready for phase review."
+    : state === "failed"
+      ? `Phase review is unavailable because local pose analysis stopped (${code ?? "UNKNOWN_ERROR"}). Retry local analysis.`
+      : state === "cancelled"
+        ? "Phase review is unavailable because local processing was cancelled."
+        : state === "closed"
+          ? "Phase review is unavailable because the local pose session was closed."
+          : state === "loading"
+            ? "Phase review requires local pose model loading and processing to complete."
+            : state === "processing"
+              ? "Phase review requires local video frame processing to complete."
+              : "Phase review requires completed local processing output.";
+}
+
+function processingSummaryText(state: AppState): string {
+  return `${state.extractedFrameCount} of ${state.totalFrameCount} video frames processed.${
+    state.latestLandmarkCount > 0
+      ? ` ${state.latestLandmarkCount} normalized landmarks retained in the latest result.`
+      : ""
+  }`;
+}
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 09 Complete current file: src/app-renderer.ts -->
+
+### 10 Complete current file: src/phase-review-renderer.ts
+
+Lines: 132  
+Bytes: 7095  
+SHA-256: `6c1f324199127b5546ff53dfdcc8d41728fb163cd0de76d8ee8f795c56dda34d`  
+Verification basis: review DOM/status surface guarded by B-NEW1
+
+<!-- BEGIN EXACT BLOCK: 10 Complete current file: src/phase-review-renderer.ts -->
+````````````````````````````````````````````````
+import type { AppState } from "./app-state";
+import { overlayStatusText } from "./keyframe-overlay-renderer";
+import { isValidCorrection, phaseDefinitions, type PhaseDeclarations } from "./phase-review";
+
+export function renderPhaseReview(state: AppState): string {
+  const proposal = state.phaseReviewState?.automaticProposal;
+  const reviewRequired = proposal?.evidenceStatus === "review-required";
+  const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
+  const warning =
+    ready
+      ? "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here."
+      : proposal?.evidenceStatus === "unsupported-input"
+      ? "Select every required declaration and provide a supported active eight-sample run."
+      : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
+
+  return `
+    <section class="phase-review" aria-labelledby="phase-review-heading">
+      ${renderKeyframeOverlayReview(state)}
+      <div class="phase-warning" id="phase-review-status">
+        <h3 id="phase-review-heading" tabindex="-1" data-focus-key="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</h3>
+        <p>${warning}</p>
+      </div>
+      <fieldset class="phase-declarations">
+        <legend>Required video declarations</legend>
+        ${renderDeclarationSelect("phase-view", "View", state.phaseDeclarations.view, "phase-declaration:view", [
+          ["undeclared", "Select view"],
+          ["face-on", "Face-on side view"]
+        ])}
+        ${renderDeclarationSelect("phase-handedness", "Handedness", state.phaseDeclarations.handedness, "phase-declaration:handedness", [
+          ["undeclared", "Select handedness"],
+          ["right", "Right-handed"],
+          ["left", "Left-handed"]
+        ])}
+        ${renderDeclarationSelect("phase-mirrored", "Horizontally mirrored", state.phaseDeclarations.mirrored, "phase-declaration:mirrored", [
+          ["undeclared", "Select mirrored status"],
+          ["no", "No"],
+          ["yes", "Yes"]
+        ])}
+        <label class="phase-setup-confirmation">
+          <input id="phase-setup" type="checkbox" data-focus-key="phase-setup" ${state.phaseDeclarations.setup === "confirmed" ? "checked" : ""} />
+          <span>I confirm this is one trimmed, complete swing with the golfer substantially full-body visible and the camera reasonably stable.</span>
+        </label>
+      </fieldset>
+      <div class="phase-assignment-list" role="group" aria-label="Swing phase assignments">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const selected = state.phaseDraft[index]?.sampleIndex ?? index;
+            const controlId = `phase-assignment-${index}`;
+            return `
+              <div class="phase-assignment">
+                <div><h3>${phase.label}</h3><small>Ordered phase ${index + 1}</small></div>
+                <label class="visually-hidden" for="${controlId}">${phase.label} sample</label>
+                <select id="${controlId}" data-phase-index="${index}" data-focus-key="phase-assignment:${index}" ${reviewRequired && !ready ? "" : "disabled"}>
+                  ${phaseDefinitions
+                    .map(
+                      (_, sampleIndex) =>
+                        `<option value="${sampleIndex}" ${sampleIndex === selected ? "selected" : ""}>Sample ${sampleIndex + 1}</option>`
+                    )
+                    .join("")}
+                </select>
+              </div>`;
+          })
+          .join("")}
+      </div>
+      <label class="phase-confirmation">
+        <input id="phase-confirmation" type="checkbox" data-focus-key="phase-confirmation" ${state.phaseConfirmation ? "checked" : ""} ${
+          reviewRequired && !ready ? "" : "disabled"
+        } />
+        <span>I reviewed these provisional labels. They may not represent each exact swing event.</span>
+      </label>
+      <div class="action-row">
+        <button class="primary-action" type="button" data-confirm-phase-review data-focus-key="phase-confirm" aria-describedby="phase-review-status" ${
+          reviewRequired && state.phaseConfirmation && isValidCorrection(state.phaseDraft) && !ready ? "" : "disabled"
+        }>Confirm phase review</button>
+        <button class="secondary-action" type="button" data-open-export data-focus-key="open-export">Open Swing Card export</button>
+        <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderKeyframeOverlayReview(state: AppState): string {
+  const selectedOutput = state.phaseOutputs[state.selectedKeyframeIndex] ?? state.phaseOutputs[0];
+  const selectedPhase = phaseDefinitions[selectedOutput?.index ?? 0] ?? phaseDefinitions[0];
+  const overlayStatus = overlayStatusText(state.latestOverlayResult?.status);
+
+  return `
+    <section class="keyframe-review" aria-labelledby="keyframe-review-heading">
+      <div class="keyframe-review__heading">
+        <div>
+          <p class="placeholder-kicker">Annotated keyframes</p>
+          <h3 id="keyframe-review-heading">${selectedPhase.label}</h3>
+        </div>
+        <span class="stage-status">Annotated still</span>
+      </div>
+      <div class="keyframe-canvas-wrap">
+        <canvas class="keyframe-canvas" data-keyframe-canvas role="img" aria-label="Annotated keyframe: ${selectedPhase.label}" aria-describedby="keyframe-overlay-status"></canvas>
+      </div>
+      <p class="action-note" id="keyframe-overlay-status" data-overlay-status role="status" aria-live="polite" aria-atomic="true">${overlayStatus}</p>
+      <div class="keyframe-strip" role="group" aria-label="Select keyframe">
+        ${phaseDefinitions
+          .map((phase, index) => {
+            const isSelected = state.selectedKeyframeIndex === index;
+            return `<button class="keyframe-button ${isSelected ? "is-selected" : ""}" type="button" data-keyframe-index="${index}" data-focus-key="keyframe:${index}" aria-pressed="${isSelected ? "true" : "false"}">
+              <span>${index + 1}</span>
+              <strong>${phase.label}</strong>
+            </button>`;
+          })
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderDeclarationSelect(
+  id: string,
+  label: string,
+  selected: string,
+  focusKey: string,
+  options: readonly (readonly [string, string])[]
+): string {
+  return `<label for="${id}">${label}<select id="${id}" aria-label="${label}" data-focus-key="${focusKey}">${options
+    .map(([value, text]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${text}</option>`)
+    .join("")}</select></label>`;
+}
+
+export function declarationValue<K extends keyof PhaseDeclarations>(
+  value: string,
+  _key: K
+): PhaseDeclarations[K] {
+  return value as PhaseDeclarations[K];
+}
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 10 Complete current file: src/phase-review-renderer.ts -->
+
+### 11 Complete current file: docs/ss-019-manual-accessibility-qa.md
+
+Lines: 98  
+Bytes: 11638  
+SHA-256: `da70ee65fac0d29fe664ee463956ae8d93caf7ec2a93686108aeb5deb18782f8`  
+Verification basis: current manual-risk/evidence record
+
+<!-- BEGIN EXACT BLOCK: 11 Complete current file: docs/ss-019-manual-accessibility-qa.md -->
+````````````````````````````````````````````````
+# SS-019 Manual Accessibility QA Record
+
+Date prepared: 2026-07-21
+
+Status: Manual execution pending. This document records automated evidence,
+the required manual scenarios, and residual risk. It is not a conformance
+statement.
+
+## Build under review
+
+- Repository base SHA: `b4db367bedcc0f7aefcbb55878ec7ec1a0f549a1`.
+- Implementation state: uncommitted SS-019 working tree on
+  `ss-019-accessibility-design-hardening`; no implementation commit SHA exists
+  yet. Replace this line with the tested implementation SHA before final audit.
+- Automated environment: Node `v22.22.3`, npm `10.9.8`.
+- Automated commands actually completed:
+  - Full unit: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:unit'`
+    — PASS, 24 files and 218 tests after the focused B-NEW1 repair.
+  - Full browser smoke: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run test:smoke'`
+    — PASS, 48 tests across desktop and mobile Chromium projects.
+  - Build: `/bin/zsh -lc 'source "$HOME/.nvm/nvm.sh" && nvm use && npm run build'`
+    — PASS, 26 modules transformed; third-party notices generated.
+  - `npm run compliance:verify` — PASS.
+  - `npm run safety:verify` — PASS.
+  - `npm run privacy:verify` — PASS.
+  - `npm run docs:verify` — PASS.
+  - `git diff --check` — PASS.
+
+The 320 CSS-pixel automated path first verifies geometry in a real
+`LOCAL_MODEL_INIT_FAILED` state, then reloads into a clean lifecycle and runs a
+successful review, confirmation, and export path. Retry recovery is covered by
+a separate passing smoke test. Neither automated path is manual AT evidence.
+
+## Manual environment fields
+
+No manual browser or assistive-technology run has been executed. For every
+future run, record all fields below rather than inferring a PASS from automated
+tests.
+
+| Field | Current value |
+| --- | --- |
+| Tested implementation commit SHA | Unavailable; implementation is uncommitted |
+| Date | Not run |
+| OS and version | Not run / not recorded |
+| Browser and version | Not run / not recorded |
+| Viewport or physical device | Not run |
+| Zoom | Not run |
+| Text-spacing override | Not run |
+| Input method | Playwright keyboard/mouse emulation completed; no manual input run |
+| Assistive technology and version | VoiceOver unavailable/not run; NVDA unavailable/not run |
+| Evidence reference | Full unit, smoke, build, and verifier output summarized above; no manual screenshot, recording, or observation |
+
+## Scenario ledger
+
+“Pending” means the expected behavior is implemented and may have automated
+coverage, but a human has not verified it in the stated browser/AT setup.
+
+| Workflow step / scenario | Expected result | Actual result and evidence | Residual risk / affected user / impact / workaround | Disposition |
+| --- | --- | --- | --- | --- |
+| Complete keyboard traversal: capture, consent, native picker, processing, review, confirmation, export, and Swing Card actions | Logical order, no keyboard trap, focus follows the approved target matrix | Pending manual. The full desktop/mobile Chromium smoke keyboard and Swing Card action path passed; bounded focus and event unit tests passed | Browser-native chooser and rerender timing can differ; keyboard and switch users; high impact; use visible controls and retry focus manually | Verify before sign-off |
+| Visible two-layer focus on links, buttons, inputs, selects, and programmatic headings/status | White 2px inner outline at 2px offset plus dark outer ring; no obscured target | Pending manual. Exact tokens, geometry source, and contrast matrix have unit coverage | OS/browser rendering and clipping remain unobserved; keyboard users; medium-high impact | Verify before sign-off |
+| VoiceOver announcements and landmarks | One main landmark; polite global/scoped ownership; no duplicate or missing announcements | Unavailable/not run. No VoiceOver version or browser combination was tested | Announcement timing varies by Safari/VoiceOver; screen-reader users; high impact; visible status remains available | Required manual run |
+| NVDA announcements and landmarks | Same ownership and meaningful headings/groups in a supported Windows browser | Unavailable/not run. No Windows/NVDA environment was available | NVDA/browser combinations may expose different names or timing; screen-reader users; high impact | Required when environment is available |
+| Consent guard and consent state change | Global announcer speaks once; visible `#app-visible-status` is accurate and non-live; focus returns to consent | Pending manual. Typed event and renderer ownership unit coverage passed | Storage failure and rapid toggles may change perceived timing; screen-reader users; medium impact | Verify before sign-off |
+| Processing loading, progress, completion, failure, stop, and retry | `#processing-status` is the only scoped processing live region; numeric ticks do not chatter; terminal focus is current-token-only; stop uses the global owner once | Pending manual. Lifecycle partial-update, stale-token, stop, retry, and idempotency unit tests passed | Real worker timing and AT speech queue behavior remain untested; screen-reader and cognitive users; high impact | Verify before sign-off |
+| Phase validation and confirmation | Global announcement occurs only when semantic key changes among `unsupported-input`, `review-required`, and `confirmed`; same-state rerenders are silent | Pending manual. Typed semantic-key implementation and event inventory are automated | A user may miss a repeated unchanged warning after moving elsewhere; visible `#phase-review-status` remains available | Adopt; verify timing |
+| Duplicate announcements: consent, terminal completed/failed, phase validation/confirmation, download, print, copy | Exactly one declared live owner per event | Pending manual. Announcement inventory and typed action requests passed unit tests | AT may repeat names/status due to browser heuristics even with one DOM owner; screen-reader users; medium-high impact | Verify before sign-off |
+| Native chooser cancel and focus return in each browser/AT | Cancel returns to visible `Choose a video`; hidden input focus redirects; successful selection returns to picker | Pending manual. Named success, cancel, and defensive-focus unit/smoke coverage is present | Native chooser cancel events and focus behavior vary by browser/OS; keyboard users; high impact | Required per tested browser |
+| Disabled Begin, review/confirm, export, remote review, and busy Swing Card controls in browse mode | Each exposes its exact unique visible `aria-describedby` prerequisite/status | Pending manual. Renderer relationships are asserted in unit tests | Disabled-control descriptions are announced inconsistently across AT browse modes; screen-reader users; high impact | Required VoiceOver/NVDA check |
+| Named structures: Local video source, Local pose processing, Review placeholder, Swing Card contents, Swing phase assignments, Select keyframe | Each generic container exposes its approved group name | Pending manual. Exhaustive labelled-generic inventory and renderer assertions passed | Role/name presentation varies by AT navigation mode; screen-reader users; medium impact | Verify before sign-off |
+| Swing Card unavailable section and Remote model data disclosure | Labelled section is named by `Swing Card unavailable`; remote wrapper is a group and nested `.remote-model-disclosure` remains a native `dl` | Pending manual. Exact semantics and protected selector assertions passed | Nested group/list verbosity is browser/AT-dependent; screen-reader users; medium impact | Verify before sign-off |
+| Annotated canvas | Canvas exposes its protected image name and scoped overlay description | Pending manual. Role/name/description relationships are automated | Pose geometry has no complete nonvisual equivalent; blind users; high impact; use textual phase/status information only | Defer complete equivalence; document limitation |
+| 200% and 400% zoom or equivalent 320 CSS-pixel reflow | No page-level two-dimensional scroll, clipping, overlap, or unusable required control | Pending manual zoom verification. Automated 320px long-text, real-failure, and clean successful review, confirmation, and export geometry checks passed | Font metrics, browser zoom, and localization-like expansion remain unobserved; low-vision users; high impact | Required manual run |
+| WCAG text-spacing override | Content and controls reflow without loss or overlap | Unavailable/not run | Custom text spacing can expose fixed-height issues; low-vision/dyslexic users; high impact | Required manual run |
+| Forced colors/high contrast | System focus and semantic boundaries remain visible; no `forced-color-adjust: none` | Pending physical Windows High Contrast verification. Playwright forced-colors emulation and CSS checks passed | Emulation is not equivalent to Windows High Contrast on a physical system; low-vision users; high impact | Required when supported |
+| Exact contrast surfaces and 44px scoped targets | All twelve approved token/surface pairs remain at least 3:1; practical interactive controls are at least 44 by 44 CSS pixels | Pending manual measurement. Exact token matrix passed unit computation | Device scaling and native form-control metrics may vary; motor/low-vision users; medium-high impact | Verify representative browsers |
+| Long consent/status/error/prerequisite text and failed-processing distinctions | Text wraps; failure remains readable and distinguishable without color alone | Pending manual inspection. Automated 320px wrapping, failure, prerequisite, review, and export assertions passed | Extremely long translated/error strings were not manually inspected; cognitive/low-vision users; medium impact | Verify before sign-off |
+| Desktop and actual mobile interaction | Desktop and physical mobile show no clipping/overlap and preserve focus/touch usability | Unavailable/not run on a physical mobile device; no desktop manual observation recorded | Mobile browser chrome, virtual keyboard, and touch target behavior remain unknown; mobile users; high impact | Required representative device run |
+| Swing Card export panel, print preview, local download, and copy statuses | On-screen panel is readable; print/download/copy report accurate local status and restore initiating focus | Pending manual. Typed action focus/announcement tests passed; print preview and generated file were not manually inspected | Print drivers, download UI, clipboard permissions, and long export content vary; keyboard/screen-reader users; medium-high impact | Verify before sign-off |
+
+## Approved non-blocking implementation notes
+
+1. Awaited close preserves the old rendered view while controller cleanup is
+   pending. Navigation and replacement-video callers render the destination
+   exactly once only after cleanup settles. This prevents a premature render
+   and stale callback mutation, but a slow cleanup can leave the old view
+   visible briefly; manual testing should confirm the interval is understandable.
+2. Phase announcements are intentionally keyed to semantic transitions, not
+   every rerender. Repeated `unsupported-input`, `review-required`, or
+   `confirmed` states remain silent to prevent chatter; the current visible
+   warning remains available for review.
+
+## Scope statement
+
+SS-019 does not establish WCAG certification, legal compliance, universal
+assistive-technology compatibility, or complete nonvisual equivalence. No
+manual scenario may be marked PASS until its environment, expected and actual
+result, evidence reference, and any defect or residual risk are recorded.
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 11 Complete current file: docs/ss-019-manual-accessibility-qa.md -->
+
+### 12 Complete current file: docs/ss-019-claude-audit-response.md
+
+Lines: 41  
+Bytes: 1535  
+SHA-256: `cca1556626277f3102ce008fc5d1472f5c01149e04031e70a3cff6cb1f19a043`  
+Verification basis: current final-audit classification and disposition
+
+<!-- BEGIN EXACT BLOCK: 12 Complete current file: docs/ss-019-claude-audit-response.md -->
+````````````````````````````````````````````````
+# SS-019 Final Claude Audit Response and Lead Disposition
+
+Date recorded: 2026-07-25
+
+## Verdict and classification
+
+Claude's final implementation audit returned **FAIL**. The lead architect
+accepted **B-NEW1** as the sole blocker.
+
+## Accepted blocker: B-NEW1
+
+Same-token processing callbacks can arrive after navigation to the review view.
+State, progress, and output must still be recorded for the active token, but
+`updateProcessingProgressUi` must not query or mutate DOM outside the active
+processing view. The minimum accepted repair gates each such DOM update in
+`handleProcessingState`, `handleProcessingProgress`, and
+`handleProcessingOutput` on `activeStep === "processing"`, and adds a named
+same-token completed-review regression test.
+
+## Deferred non-blocking recommendations
+
+- Static source-string inventory cleanup.
+- CSS pseudo-element assistive-technology risk note.
+- Awaited-close loading indicator.
+
+These items are deferred; they do not expand B-NEW1 or the current acceptance
+criteria.
+
+## Boundary disposition
+
+No safety, privacy, local-first raw-media, consent, remote-review, protected
+copy, selector, dependency, licensing, model/provider, observability,
+telemetry, service-worker, persistence, or exported-data drift was found or
+authorized.
+
+## Gate
+
+The B-NEW1 repair is implemented and independently reviewed as advisory input.
+The story remains `4. Final Audit (Claude)` with Pull Request empty. Claude
+focused re-review must return PASS and explicitly clear PR preparation before
+any PR work begins.
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 12 Complete current file: docs/ss-019-claude-audit-response.md -->
+
+### 13 Complete current file: CONTEXT.md
+
+Lines: 3816  
+Bytes: 218829  
+SHA-256: `f54284d655a7d12eff60ea521e642b07e34d632d9712dd6a8ba94f6c30aeacaa`  
+Verification basis: complete durable current project state
+
+<!-- BEGIN EXACT BLOCK: 13 Complete current file: CONTEXT.md -->
+````````````````````````````````````````````````
 # Swing Sync Context
 
-Last updated: 2026-07-28
+Last updated: 2026-07-25
 
 ## Current State
 
@@ -24,18 +1704,16 @@ Last updated: 2026-07-28
 - Active handshake status: `4. Final Audit (Claude)`. Notion was successfully
   moved to this configured board value and refetched for confirmation on
   2026-07-21.
-- Active Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20).
+- Active Pull Request: none.
 - Authorized story branch, now created at the confirmed baseline:
   `ss-019-accessibility-design-hardening`.
-- Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
-  (`feat: harden accessibility and responsive design`), pushed on the story
-  branch. The exact reviewed commit spans 43 files. Full Node 22 verification
-  passes at 24 files / 218 unit tests and 48 desktop/mobile smoke tests.
-  Claude focused re-review returned PASS, closed B-NEW1, and explicitly cleared
-  PR preparation. The final verifier fix is test-only and locally verified for
-  the 320 CSS-pixel keyframe geometry failure; `src/styles.css` is restored
-  byte-for-byte to pre-experiment `b1a82c6`. PR #20 remains open and unmerged
-  pending Linux CI and focused Claude re-review before merge.
+- Implementation status: uncommitted SS-019 runtime, accessibility,
+  responsive-design, unit, smoke, and manual-QA changes are present on the
+  story branch. Full Node 22 verification now passes at 24 files / 218 unit
+  tests and 48 desktop/mobile smoke tests. Claude final audit returned FAIL
+  with accepted sole blocker B-NEW1; the approved minimal fix is implemented,
+  independently reviewed, and awaiting focused Claude re-review before PR
+  preparation.
 - Remaining visible non-Done backlog tasks: SS-019 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
@@ -536,101 +2214,6 @@ SS-019 final-audit result and lead disposition on 2026-07-25:
   `docs/ss-019-claude-audit-rereview-prompt.md`, then
   `docs/ss-019-claude-audit-rereview-source-packet.md`. Next owner is Claude;
   status remains `4. Final Audit (Claude)` and PR remains empty.
-- Preferred free-plan focused handoff: single-paste
-  `docs/ss-019-claude-audit-rereview-compact.md` (8 exact evidence blocks,
-  26,198 bytes, SHA-256
-  `9f65d37449bfb614e9433b4f7a35126f8e856577fb759a6bb17bff5618767cc0`).
-  It preserves provenance to the immutable original 31-block packet and the
-  full focused packet while omitting full CONTEXT and unrelated files. The
-  prior two-file focused prompt is superseded for paste use only; all prior
-  packets remain byte-for-byte preserved.
-- Preferred fresh-session route, due old-thread/free-plan rate limiting: first
-  paste `docs/ss-019-claude-new-session-prompt.md`, receive its exact READY
-  reply, then paste the compact artifact as the second and only evidence
-  message. Claude must not request historical packets unless the compact
-  artifact fails its eight-block mechanical check. Status remains
-  `4. Final Audit (Claude)`, Pull Request remains empty, and next owner remains
-  Claude.
-
-SS-019 focused final-audit re-review PASS on 2026-07-28:
-
-- Claude mechanically verified the compact handoff's eight blocks, returned
-  PASS, and exactly `CLEARED FOR PR PREPARATION`. Raw verbatim response:
-  `docs/ss-019-claude-audit-rereview-raw-response.md`.
-- B-NEW1 is closed: same-token state/progress/output recording remains active,
-  while all three `updateProcessingProgressUi` calls are gated to the active
-  processing view. No blockers or protected-boundary drift were found.
-- Non-blocking future hardening: consider moving the duplicated view guard to a
-  shared updater enforcement point. The static source-string inventory cleanup,
-  CSS pseudo-element AT-risk note, and awaited-close loading indicator remain
-  deferred. The 3/32, 24/218, and 48 verification summary is declarative in
-  the compact packet rather than independently re-verifiable there; this is
-  non-blocking.
-- Claude route/model metadata is user-reported as Sonnet medium/high free-plan
-  access. It is not a runtime attestation or verifiable reasoning-effort pin.
-- Clearance authorizes PR preparation, but status remains
-  `4. Final Audit (Claude)` and Pull Request remains empty until PR creation
-  and later merge state are separately synchronized. Next owner: builder/lead
-  for PR preparation.
-
-SS-019 PR preparation state on 2026-07-28:
-
-- PR #20: https://github.com/ajason13/swing-sync/pull/20. The implementation
-  and audit evidence are committed at
-  `ba564f368df654c07b1a73ad91aa46762cfa9721`; this is the exact 43-file commit
-  reviewed by the cleared focused audit.
-- Claude PASS and `CLEARED FOR PR PREPARATION` remain valid. Handshake remains
-  `4. Final Audit (Claude)` until PR/merge state is separately synchronized.
-  Pull Request is open and unmerged. Required CI fails reproducibly on runs
-  `30369511639` and `30369792132`: 46/48 smoke tests pass, but desktop and
-  mobile `keeps real failure review and confirmed export usable at 320 CSS
-  pixels` report `keyframe:4` clipped at `119×48.6875`. All preceding
-  license/SBOM/build/compliance steps pass. A third run, `30371137617`, on
-  commit `797023d` fails the same 2/48 case despite the exact 52px CSS height;
-  layout slack did not resolve it and the CSS change is being reverted to the
-  audited state. Lead approved a test-only correction: retain raw
-  scroll/client+overflow diagnostics, classify overflow as clipped only when
-  the computed axis overflow is non-visible, and add behavioral visible-vs-
-  hidden overflow regression using the same collector. The final test-only fix
-  now passes under Node `v22.22.3`: named helper 2/2, named 320 case 2/2, and
-  isolated full smoke 50/50, plus build, compliance, safety, privacy, docs, and
-  diff checks. `src/styles.css` is restored byte-for-byte to pre-experiment
-  `b1a82c6`. Linux CI and focused Claude re-review remain required before
-  merge.
-- Next owner: builder/lead for CI review and PR readiness. Observability,
-  dependency, protected-copy, selector, local-first, and manual-execution
-  posture remain unchanged.
-
-SS-019 PR #20 CI failure state on 2026-07-28:
-
-- PR #20 remains open and unmerged; it includes audited implementation commit
-  `ba564f368df654c07b1a73ad91aa46762cfa9721`, coordination commit `b1a82c6`,
-  and failed CSS experiment `797023d`. Handshake remains `4. Final Audit
-  (Claude)`. Run `30371137617` on `797023d` fails the same 2/48 320px keyframe
-  case despite the exact 52px CSS height. The final pending commit will revert
-  CSS and add the test-only verifier/CONTEXT correction; do not infer a PR HEAD
-  hash until it is committed.
-- Lead revised the correction to test-only verifier semantics: preserve raw
-  scroll/client+overflow diagnostics; classify overflow as clipped only when
-  the computed axis overflow is non-visible; add a behavioral visible-vs-hidden
-  overflow regression using the same collector. The completed final fix is
-  test-only and locally passes under Node `v22.22.3`: named helper 2/2, named
-  320 case 2/2, isolated full smoke 50/50, build, compliance, safety, privacy,
-  docs, and diff checks. `src/styles.css` is restored byte-for-byte to
-  pre-experiment `b1a82c6`. Linux CI and focused Claude re-review remain
-  required before merge. The existing audit clearance applies only to the
-  audited commit, not this later test change.
-
-SS-019 feedback-retention note on 2026-07-28:
-
-- `git diff --check` does not inspect untracked files. Before committing
-  intended untracked audit artifacts, separately inventory and whitespace-check
-  all non-evidence files; preserve mechanically verified packet bytes and
-  document narrow path exclusions only for intentional Markdown hard breaks or
-  serialized diff whitespace in immutable evidence. Never normalize an audited
-  packet after hash/sign-off: regeneration requires manifest re-verification
-  and, when review evidence changes, re-review. This does not relax whitespace
-  checks for runtime, tests, or ordinary docs.
 
 ## SS-018 Coordination
 
@@ -3911,3 +5494,31 @@ Remaining SS-002 pre-release gate:
 - Any connected model or coaching prompt must avoid medical diagnosis, pain triage, or aggressive mechanical prescriptions.
 - Observability: SS-002 adds no runtime logging, telemetry, remote calls, or raw
   video handling. Consent acknowledgement is local-only browser state.
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 13 Complete current file: CONTEXT.md -->
+
+### 14 Complete current file: .nvmrc
+
+Lines: 1  
+Bytes: 3  
+SHA-256: `f14b4987904bcb5814e4459a057ed4d20f58a633152288a761214dcd28780b56`  
+Verification basis: required Node version
+
+<!-- BEGIN EXACT BLOCK: 14 Complete current file: .nvmrc -->
+````````````````````````````````````````````````
+22
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 14 Complete current file: .nvmrc -->
+
+### 15 Explicit absent-change record: B-NEW1 protected-boundary delta
+
+Lines: 1  
+Bytes: 341  
+SHA-256: `11f56a933df9f61769cbaee82453e94f5ad49434ed17827c02f2d78d0d5d958c`  
+Verification basis: declared absence record
+
+<!-- BEGIN EXACT BLOCK: 15 Explicit absent-change record: B-NEW1 protected-boundary delta -->
+````````````````````````````````````````````````
+No dependency, lockfile, bundle, license-policy, notice, SBOM, service-worker, telemetry, analytics, remote logging, cloud diagnostics, provider/model, remote-sharing, protected-copy, or selector change is included in the B-NEW1 repair. The only runtime/test fix files are src/analysis-lifecycle.ts and test/unit/analysis-lifecycle.test.ts.
+````````````````````````````````````````````````
+<!-- END EXACT BLOCK: 15 Explicit absent-change record: B-NEW1 protected-boundary delta -->
