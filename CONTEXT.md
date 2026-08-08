@@ -16,7 +16,7 @@ Last updated: 2026-08-08
   `SS-020 Prepare human legal/privacy/safety release review gate`.
 - Active branch: `ss-020-release-review-gate`, created from refreshed `main`
   commit `0509999e7de5e609787fe53e8bdac2747aa0be64`.
-- SS-020 handshake status: `1. Spec Drafting (Gemini)`.
+- SS-020 handshake status: `4. Final Audit (Claude)`.
 - SS-019 handshake status: `5. Done`.
 - Latest Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20),
   merged on 2026-08-08.
@@ -149,9 +149,30 @@ Implementation-ready transition on 2026-08-08:
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
   Observability remains unchanged; no runtime telemetry, logging, diagnostics,
   or behavior is authorized.
-- Notion is now `3. In Development (ChatGPT)`; branch remains
-  `ss-020-release-review-gate` and Pull Request remains empty. Claude final
-  audit, explicit PR-preparation clearance, PR creation, merge, and post-merge
+- Implementation is recorded at `eb9b7cb` (`docs: add SS-020 release review
+  gate`) after the approved baseline commits `845a532`, `03f18d4`, `913718c`,
+  and `a802532`. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and
+  Codex research is `PASS`; these are engineering gate inputs, not Claude or
+  qualified-human approval.
+- The independent-audit handoff is ready at
+  `docs/handoffs/ss-020-claude-final-audit-prompt.md` with its companion
+  `docs/handoffs/ss-020-claude-final-audit-source-packet.md`. The source packet
+  enumerates the complete focused diff from baseline
+  `0509999e7de5e609787fe53e8bdac2747aa0be64` for all 13 changed tracked files,
+  including this context, research/specification records, the superseded Gemini
+  prompt, and the eight approved implementation files. It must be pasted with
+  the prompt because Claude Chat has no repository access.
+- Verification on Node `22.22.3` passed: targeted `docs-claims` 36/36,
+  `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
+  `npm run compliance:verify`, `npm run build`, and `git diff --check`.
+  Runtime observability is intentionally unchanged: no telemetry, analytics,
+  logging, diagnostics, providers, persistence, data flow, or deployment
+  behavior changed.
+- Notion is now `4. Final Audit (Claude)`; branch remains
+  `ss-020-release-review-gate` and Pull Request remains empty. Claude must
+  return `PASS` and explicitly permit PR preparation before a PR may be
+  prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
+  re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
   release gate is deliberately not a package-merge prerequisite, and no human,
   legal, privacy, safety, trademark, medical, compliance, or release approval
