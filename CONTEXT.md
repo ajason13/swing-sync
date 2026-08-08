@@ -36,12 +36,15 @@ Last updated: 2026-08-08
 ## SS-020 Coordination
 
 SS-020 is legal-, privacy-, safety-, medical-scope-, trademark-, and
-release-governance-sensitive. It is operating in Gated Delivery Mode. Gemini
-owns the required sensitive-story research/specification input, Codex owns
-repository implementation and verification, Claude owns independent final
-adversarial audit, and qualified human reviewers own future legal, privacy,
-safety, trademark, and public-release decisions. Specialist and research
-outputs are advice requiring lead-architect disposition.
+release-governance-sensitive. It is operating in Gated Delivery Mode. The
+board's `1. Spec Drafting (Gemini)` label is retained for legacy compatibility,
+but the current owner is Codex as Deep Researcher and Specification Drafter.
+Gemini may supplement only; the human decision is that Gemini free-plan Deep
+Research is unavailable. Codex owns repository implementation and verification,
+Claude owns independent final adversarial audit, and qualified human reviewers
+own future legal, privacy, safety, trademark, and public-release decisions.
+Specialist and research outputs are advice requiring lead-architect
+disposition.
 
 Kickoff state on 2026-08-08:
 
@@ -58,23 +61,32 @@ Kickoff state on 2026-08-08:
   `ss-020-release-review-gate`, Handshake Status `0. Backlog`, Pull Request
   empty, and Task Type `Research`. The task was then moved to
   `1. Spec Drafting (Gemini)` with the branch retained and Pull Request empty.
-- No tracked SS-020 Gemini research, specification, or prompt artifact existed
-  at kickoff. The self-contained browser-chat handoff is now
-  `docs/ss-020-gemini-research-prompt.md`. Builder edits remain blocked until
-  Gemini responds and the lead architect records Adopt/Revise/Defer/Reject
-  dispositions and approves scope, acceptance mapping, document ownership,
-  and verification.
-- The narrow docs-only governance exception is conditionally applicable only
-  to omit a separate preimplementation Claude QA-planning round: this story
-  changes no runtime, dependency, data flow, provider, deployment, or exported
-  data behavior; material current external facts must be checked against
-  primary sources with URLs and 2026-08-08 access dates; and independent final
-  Claude audit remains required. The exception does not waive Gemini input,
-  lead approval, final Claude audit, or future qualified-human release review.
-- Required later gates are: Gemini response; lead disposition and approved
-  implementation-ready scope; Codex documentation/verifier implementation and
-  Node 22 verification; Claude final adversarial audit and explicit PR
-  preparation decision; PR creation; merge; and post-merge synchronization.
+- Initial kickoff records are committed at
+  `845a5324d98f01406c14f21732556ebc1184f679` (`docs: start SS-020 release
+  review research`). `docs/ss-020-gemini-research-prompt.md` is historical and
+  superseded for paste use; do not wait for or solicit a Gemini response as an
+  implementation gate. Codex Deep Researcher/Specification Drafter now owns
+  research and the candidate specification. The Lead Architect remains the
+  disposition authority; Builder edits have not started.
+- Role pins: Lead Architect approves delivery mode, scope, acceptance mapping,
+  document ownership, and verification; Codex Deep Researcher/Specification
+  Drafter verifies primary sources and drafts the specification; Builder later
+  implements only the approved scope; Workflow Coordinator records durable
+  state without changing technical direction; Claude independently audits the
+  final package; qualified humans alone may provide legal/privacy/safety,
+  trademark, or release clearance.
+- The narrow docs-only governance exception is used to omit a separate
+  preimplementation Claude QA-planning round: this story changes no runtime,
+  dependency, data flow, provider, deployment, or exported-data behavior;
+  material current external facts must be checked against primary sources with
+  URLs and 2026-08-08 access dates; and independent final Claude audit remains
+  required. The exception does not waive lead approval, final Claude audit, or
+  future qualified-human release review.
+- Required later gates are: Codex research/specification and Lead Architect
+  disposition with approved implementation-ready scope; Codex documentation/
+  verifier implementation and Node 22 verification; Claude final adversarial
+  audit and explicit PR-preparation decision; PR creation; merge; and
+  post-merge synchronization.
   Qualified-human legal/privacy/safety sign-off remains a future public-release
   gate and must not be represented as completed by this story or Claude.
 - Runtime observability is intentionally unchanged because SS-020 is
@@ -86,10 +98,11 @@ Kickoff state on 2026-08-08:
   preserved byte-for-byte and out of scope. No dependency, licensing, bundle,
   notices, or SBOM surface has changed.
 - Pull Request: none. Claude audit: not started. Human release review/sign-off:
-  not started. Next owner: Gemini. Minimum next action: return the requested
-  SS-020 research/specification response by pasting
-  `docs/ss-020-gemini-research-prompt.md` into Gemini browser chat, then provide
-  Gemini's complete response for lead disposition.
+  not started. Next owner: Codex Deep Researcher/Specification Drafter.
+  Minimum next action: complete Codex-owned primary-source research and
+  candidate specification, then obtain Lead Architect disposition. This
+  establishes an operational future human gate; it is not human, legal,
+  privacy, safety, trademark, medical, compliance, or release approval.
 
 ## SS-019 Coordination
 

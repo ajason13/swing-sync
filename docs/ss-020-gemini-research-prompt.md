@@ -1,8 +1,15 @@
 # SS-020 Gemini Research and Specification Prompt
 
-Paste this complete prompt into Gemini browser chat. Gemini has no filesystem,
-GitHub, or Notion access; the repository context needed for this research task
-is embedded below.
+> **SUPERSEDED — DO NOT PASTE.** On 2026-08-08, the human owner confirmed that
+> Gemini free-plan Deep Research is unavailable and directed Codex to own the
+> SS-020 research/specification phase under the current Multi-Agent SDLC
+> Framework. This file remains only as historical kickoff evidence. The
+> authoritative research and lead disposition are recorded in the SS-020 Codex
+> research/specification artifacts and `CONTEXT.md`.
+
+The text below was prepared for a Gemini browser-chat handoff before the route
+changed. It is preserved verbatim as historical evidence; do not use it as the
+current research or implementation baseline.
 
 ## Role
 
