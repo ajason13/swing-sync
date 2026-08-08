@@ -1,32 +1,23 @@
 # Swing Sync Context
 
-Last updated: 2026-07-28
+Last updated: 2026-08-08
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/19
-- Latest merge commit: `3e383bc21e7837a0b8fc057cb97fdd112375ed0b`
-- Current `main` includes PR #19 merge commit
-  `3e383bc21e7837a0b8fc057cb97fdd112375ed0b`. Local `main` was
-  fast-forwarded to `origin/main` by the PR #19 merge flow before this
-  post-merge context update.
-- Latest post-merge guidance/context commit:
-  `b4db367bedcc0f7aefcbb55878ec7ec1a0f549a1`. This change records the SS-018
-  merge state and is the confirmed SS-019 specification baseline.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/20
+- Latest merge commit: `6872897475786e41cc434374224236854bde2846`.
+- Current local `main` and `origin/main` include PR #20 merge commit
+  `6872897475786e41cc434374224236854bde2846`.
 - Current completed task:
-  `SS-018 Refactor frontend app shell into maintainable UI/state modules`
-- Active task:
   `SS-019 Perform accessibility and responsive design hardening`.
-- Active branch: `ss-019-accessibility-design-hardening`, created from
-  `b4db367bedcc0f7aefcbb55878ec7ec1a0f549a1`.
-- Active handshake status: `4. Final Audit (Claude)`. Notion was successfully
-  moved to this configured board value and refetched for confirmation on
-  2026-07-21.
-- Active Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20).
-- Authorized story branch, now created at the confirmed baseline:
-  `ss-019-accessibility-design-hardening`.
+- Active task: none. Next backlog task:
+  `SS-020 Prepare human legal/privacy/safety release review gate`.
+- Active branch: `main`.
+- SS-019 handshake status: `5. Done`.
+- Latest Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20),
+  merged on 2026-08-08.
 - Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
   (`feat: harden accessibility and responsive design`), pushed on the story
   branch. The exact reviewed commit spans 43 files. Full Node 22 verification
@@ -34,9 +25,10 @@ Last updated: 2026-07-28
   Claude focused re-review returned PASS, closed B-NEW1, and explicitly cleared
   PR preparation. The final verifier fix is test-only and locally verified for
   the 320 CSS-pixel keyframe geometry failure; `src/styles.css` is restored
-  byte-for-byte to pre-experiment `b1a82c6`. PR #20 remains open and unmerged
-  pending Linux CI and focused Claude re-review before merge.
-- Remaining visible non-Done backlog tasks: SS-019 through SS-022, created
+  byte-for-byte to pre-experiment `b1a82c6`. Linux CI run `30372254895` passed;
+  final focused Claude re-review returned PASS and exactly `CLEARED FOR MERGE`.
+  PR #20 merged as `6872897475786e41cc434374224236854bde2846`.
+- Remaining visible non-Done backlog tasks: SS-020 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
 
 ## SS-019 Coordination
@@ -595,8 +587,11 @@ SS-019 PR preparation state on 2026-07-28:
   now passes under Node `v22.22.3`: named helper 2/2, named 320 case 2/2, and
   isolated full smoke 50/50, plus build, compliance, safety, privacy, docs, and
   diff checks. `src/styles.css` is restored byte-for-byte to pre-experiment
-  `b1a82c6`. Linux CI and focused Claude re-review remain required before
-  merge.
+  `b1a82c6`. Linux CI run `30372254895` passes at
+  `038ce90ce4027199e710e1c81bc01aeedadbd8a0`; focused Claude re-review is the
+  sole remaining gate before merge. Compact post-clearance CI re-review handoff:
+  `docs/ss-019-claude-ci-rereview-compact.md` (3 exact blocks, 14,783 bytes,
+  SHA-256 `58aa2432c35f0005263ce2fd0eb7f00178f8e37433f588b13d48deb07c75e2b5`).
 - Next owner: builder/lead for CI review and PR readiness. Observability,
   dependency, protected-copy, selector, local-first, and manual-execution
   posture remain unchanged.
@@ -617,9 +612,29 @@ SS-019 PR #20 CI failure state on 2026-07-28:
   test-only and locally passes under Node `v22.22.3`: named helper 2/2, named
   320 case 2/2, isolated full smoke 50/50, build, compliance, safety, privacy,
   docs, and diff checks. `src/styles.css` is restored byte-for-byte to
-  pre-experiment `b1a82c6`. Linux CI and focused Claude re-review remain
-  required before merge. The existing audit clearance applies only to the
-  audited commit, not this later test change.
+  pre-experiment `b1a82c6`. Linux CI run `30372254895` passes at
+  `038ce90ce4027199e710e1c81bc01aeedadbd8a0`; focused Claude re-review is the
+  sole remaining gate before merge. The existing audit clearance applies only
+  to the audited commit, not this later test change.
+
+SS-019 final audit and merge state on 2026-08-08:
+
+- Final focused Claude re-review mechanically verified all three manifest
+  blocks in `docs/ss-019-claude-ci-rereview-compact.md`, returned PASS, found
+  no blockers or protected-boundary drift, and exactly `CLEARED FOR MERGE`.
+  The review accepted the visible-versus-clipped overflow collector semantics
+  and the Linux 50/50 browser evidence at
+  `038ce90ce4027199e710e1c81bc01aeedadbd8a0`.
+- PR #20 merged into `main` as
+  `6872897475786e41cc434374224236854bde2846` on 2026-08-08. Local `main` and
+  `origin/main` were synchronized to that merge commit before this update.
+- SS-019 is `5. Done` in Notion. The next visible backlog task is SS-020 on
+  branch `ss-020-release-review-gate`; no SS-020 branch or implementation work
+  has started.
+- Runtime observability, dependencies, protected copy/selectors, local-first
+  behavior, consent, remote sharing, persistence, service-worker behavior,
+  exported data, provider/model posture, and manual-execution claims remain
+  unchanged. Deferred non-blockers remain future work.
 
 SS-019 feedback-retention note on 2026-07-28:
 
