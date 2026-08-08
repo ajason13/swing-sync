@@ -251,9 +251,9 @@ current disposition.
 
 ### Existing strengths
 
-- `scripts/verify-docs-claims.js` uses a shared declarative
-  `docsClaimConfig`, named cross-file checks, prohibited-claim categories,
-  allowed negated disclaimers, and an injected file reader.
+- `scripts/verify-docs-claims.js` uses shared declarative `files`,
+  `requiredStrings`, and `crossFileChecks` registries, prohibited-claim
+  categories, allowed negated disclaimers, and an injected file reader.
 - `test/unit/docs-claims.test.ts` covers current positive behavior; missing
   documents/headings/strings/links; placement; reordered/whitespace formatting;
   missing, empty, or unextractable cross-file values; embedded delimiters; and
