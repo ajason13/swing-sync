@@ -104,6 +104,61 @@ Kickoff state on 2026-08-08:
   establishes an operational future human gate; it is not human, legal,
   privacy, safety, trademark, medical, compliance, or release approval.
 
+Implementation-ready transition on 2026-08-08:
+
+- Codex research is committed at `03f18d4a0d8f9953bd6db54c393594a1b35a62c1`
+  (`docs: record SS-020 Codex research`); the independently reviewed Lead
+  Architect approval is committed at
+  `913718c9c4de6b36a14cb81e3567c92654fc3da2`
+  (`docs: approve SS-020 implementation scope`) and returned exact
+  `APPROVED FOR BUILDER`. The research-routing and Architect write-delegate
+  attempts stalled; the primary Codex research/specification fallback was
+  followed by independent Lead Architect review and disposition. This records
+  an availability exception, not a silent role or technical-direction change.
+- Approved artifacts: `docs/ss-020-research-notes.md`,
+  `docs/ss-020-research-disposition.md`, and
+  `docs/ss-020-preimplementation-spec.md`. The historical
+  `docs/ss-020-gemini-research-prompt.md` remains superseded for paste use.
+- Lead dispositions: Adopt one canonical, currently blocked release-review
+  package; traceable claim inventory, evidence taxonomy, qualified-reviewer
+  checklist, open-decision/source register, SS-002 legal blocker, scoped future
+  outcomes, and declarative verifier coverage. Revise approval, privacy,
+  trademark-search, and stale export wording into bounded factual or
+  reviewer-scoped language. Defer actual human signatures and decisions,
+  jurisdiction/territory/audience/business/host/trademark choices, SS-021,
+  SS-022, and other runtime-copy changes. Reject any automated or AI clearance,
+  SS-002 draft rewrite, absolute/professional claims, runtime/data/deployment
+  changes, parallel verifier, or changes to historical packets/protected files.
+- Builder is authorized only for these eight files:
+  `docs/release-review-gate.md`, `README.md`, `CONTRIBUTING.md`,
+  `docs/limitations.md`, `docs/safety-terms.md`,
+  `docs/privacy-architecture.md`, `scripts/verify-docs-claims.js`, and
+  `test/unit/docs-claims.test.ts`. The sole approved factual correction is the
+  bounded current-behavior export paragraph in `docs/privacy-architecture.md`;
+  it is not privacy approval. Any other tracked surface or runtime, dependency,
+  licensing, bundle, notice, SBOM, deployment, or data-flow change stops work
+  for renewed Lead Architect approval.
+- Verifier contract: extend only the existing declarative
+  `files`/`requiredStrings`/`crossFileChecks` registries and injected reader in
+  `scripts/verify-docs-claims.js`; add named adversarial unit cases for missing
+  files, formatting changes, empty values, embedded delimiters, fail-closed
+  paths, and positive paths. Do not add a policy parser or parallel verifier.
+- Builder must use Node 22 and record exact results for
+  `npm run test:unit -- docs-claims --reporter=verbose`, `npm run docs:verify`,
+  `npm run safety:verify`, `npm run privacy:verify`,
+  `npm run compliance:verify`, `npm run build`, and `git diff --check`.
+  Observability remains unchanged; no runtime telemetry, logging, diagnostics,
+  or behavior is authorized.
+- Notion is now `3. In Development (ChatGPT)`; branch remains
+  `ss-020-release-review-gate` and Pull Request remains empty. Claude final
+  audit, explicit PR-preparation clearance, PR creation, merge, and post-merge
+  synchronization remain separate later gates. The future qualified-human
+  release gate is deliberately not a package-merge prerequisite, and no human,
+  legal, privacy, safety, trademark, medical, compliance, or release approval
+  has occurred.
+- Exactly nine intentional untracked `docs/agent-guidance/` files remain
+  preserved byte-for-byte and out of scope.
+
 ## SS-019 Coordination
 
 SS-019 is accessibility-, frontend-runtime-, user-facing-behavior-,
