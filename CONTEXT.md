@@ -152,9 +152,10 @@ Implementation-ready transition on 2026-08-08:
 - The corrected immutable audit candidate is
   `e365204ecb763cf36f6663ac88e8f272744bf0fa`, pushed at
   `origin/ss-020-release-review-gate`; the prior remote-missing evidence is
-  resolved. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and Codex
-  research is `PASS`; these are engineering gate inputs, not Claude or
-  qualified-human approval.
+  resolved. Current branch HEAD is `ce3306d058f89920824bc2c9eb241f823c44d743`.
+  Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and Codex research
+  is `PASS`; these are engineering gate inputs, not Claude or qualified-human
+  approval.
 - Claude Stage 01 governance response is recorded at
   `docs/handoffs/ss-020-claude-audit-01-response.md` (1,997 bytes; SHA-256
   `b94d483af413576cf2b50c3560f51b8696f928a0413e29833b439bcc75336fac`). It
@@ -166,8 +167,28 @@ Implementation-ready transition on 2026-08-08:
   `docs/handoffs/ss-020-claude-audit-01-rereview.md` is Lead `APPROVED`
   (7,337 bytes; SHA-256
   `d9aff25f70b1c16704549dbf72999b7cba8b14264ddc275cf0e4abc3cd344077`).
-  Only the required Claude fresh-chat response is pending; Stages 02–05 remain
-  unauthorized and PR preparation remains blocked.
+- Its immutable Claude response is
+  `docs/handoffs/ss-020-claude-audit-01-rereview-response.md` (4,218 bytes;
+  SHA-256 `36b926edf64114ceff3f7bf717a1950767780e06a86738169923a702c555e018`).
+  It returned `PASS` for candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, with B1 `RESOLVED`, no blockers,
+  and no missing evidence. Stage 01 `PASS` is operative. Lead rejected Claude
+  N1 as a false inference: a clean clone correctly sees six tracked
+  `docs/agent-guidance/` files but cannot observe the originating worktree's
+  nine additional protected local-only untracked files; the local preservation
+  statement is accurate. N1 is not a candidate defect, blocker, missing
+  evidence, or supplement. The refreshed packet set is Lead `APPROVED`:
+  `02` 8,859 bytes, blob `4f750d35ee9a8a3e54e6b9fcfe423559a0a5aa25`, SHA-256
+  `318fbd4756ba7b94f1e4646616ac833120ec743cc871f300b90873487951d0c9`; `03`
+  8,989 bytes, blob `1a46ec9a0dc81005a800c03120884f261aa9ce2b`, SHA-256
+  `d1f56dd913e5ee51f9b052c9855491a58e55c280d0cbfe94a9a74bee3fd4176`; `04`
+  8,781 bytes, blob `141b4f3e007ffe73778280092a82a9cb550eaf3f`, SHA-256
+  `db8bef38ffbeaba81a8c892a2a3baae8e1614dba68813d8de73c2851fbd1d5ad`; and
+  `05` 9,182 bytes, blob `8e8f8bff71a966f8b58458828be0dcc22f7ae08d`, SHA-256
+  `f2f13b4dd78fa6848ca058568dc309a5ef08c0a6fbd9378ca932e2b2bbb30794`.
+  Scoped packaging and push are authorized. Stage 02 is authorized only after
+  that packaging push; Stages 03–05 are sequentially gated, and PR preparation
+  remains prohibited.
 - Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
@@ -175,10 +196,11 @@ Implementation-ready transition on 2026-08-08:
   logging, diagnostics, providers, persistence, data flow, or deployment
   behavior changed.
 - Notion is now `4. Final Audit (Claude)`; branch remains
-  `ss-020-release-review-gate` and Pull Request remains empty; the five-stage
-  audit cannot proceed beyond failed Stage 01 and PR preparation is blocked.
-  Claude must return
-  `PASS` and explicitly permit PR preparation before a PR may be
+  `ss-020-release-review-gate` and Pull Request remains empty. Stage 01 PASS is
+  operative and the refreshed packet set is Lead `APPROVED`; Stage 02 is
+  authorized only after packaging push, then Stages 03–05 are sequentially
+  gated. PR preparation remains prohibited. Claude must return `PASS` and
+  explicitly permit PR preparation before a PR may be
   prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
   re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
