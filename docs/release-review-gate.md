@@ -337,6 +337,9 @@ SS-020 changes no runtime behavior or copy, export format/data class, provider,
 model, SDK, dependency, lockfile, licensing policy, notice, SBOM, bundle,
 persistence, service worker, remote sharing, cloud storage, deployment,
 telemetry, analytics, logging, diagnostics, or runtime observability. Historical
-audit/source packets, `docs/handoffs/*`, and the protected
-`docs/agent-guidance/` files remain unchanged and outside automated
-normalization.
+audit/source packets that predate the current SS-020 staged handoff remain
+unchanged and outside automated normalization. The current SS-020 staged
+handoff artifacts are audit-delivery evidence only; they do not alter policy or
+runtime behavior and do not constitute legal, privacy, safety, medical,
+trademark, compliance, or public-release clearance. The protected
+`docs/agent-guidance/` files remain unchanged.
