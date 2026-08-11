@@ -265,6 +265,17 @@ Implementation-ready transition on 2026-08-08:
   `PASS` results, with no blockers or missing evidence, are required before
   Stage 04 preflight. The original 4,715-byte 03 micro draft is non-operative
   and must not be submitted or committed.
+- Stage 03A is packaged and pushed for the required external Claude handoff:
+  packet commit `d62bf5789979f5edd0c6611be039c22e935286af`, packet
+  `docs/handoffs/ss-020-claude-audit-03a-public-claims-privacy-micro.md`
+  (3,944 UTF-8 bytes, blob `b40131cf78d088f53a524151ed441fa1b82dc2eb`,
+  SHA-256 `1a79f2c0d2169a202beb1c0f7ecea5d1e23772e5e9ca62823e6d29250b9c8e3c`).
+  Its separately committed delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-03a-delivery-manifest.md` at
+  `5bec48dbc1ce42a2dc0f9f046a8b35dc00be0a73`. Send the small identity record
+  first and the exact packet second in one fresh Claude chat. No Stage 03
+  verdict exists yet; the task remains `4. Final Audit (Claude)`, with no PR
+  and no clearance claim.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
