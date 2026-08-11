@@ -149,10 +149,11 @@ Implementation-ready transition on 2026-08-08:
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
   Observability remains unchanged; no runtime telemetry, logging, diagnostics,
   or behavior is authorized.
-- The audited implementation/candidate identity is immutable canonical repair
-  commit `4e5dd4029da053ebb145b0a15416cbd5450b8fb1`, following prior
-  `66a4eab`. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and
-  Codex research is `PASS`; these are engineering gate inputs, not Claude or
+- The corrected immutable audit candidate is
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, pushed at
+  `origin/ss-020-release-review-gate`; the prior remote-missing evidence is
+  resolved. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and Codex
+  research is `PASS`; these are engineering gate inputs, not Claude or
   qualified-human approval.
 - Claude Stage 01 governance response is recorded at
   `docs/handoffs/ss-020-claude-audit-01-response.md` (1,997 bytes; SHA-256
@@ -161,10 +162,12 @@ Implementation-ready transition on 2026-08-08:
   Adopted blocker B1: the operational Accessibility checklist/evidence/owner
   is missing, as is explicit accessibility blocking/reopening coverage. The
   correction is applied; the Lead is `APPROVED` and independent research is
-  `ADOPT`. Focused Stage 01 re-review is pending. Stage 04 is affected and
-  pending because the correction changes verifier/tests; Stages 02–05 are not
-  authorized to run. The unpushed remote-candidate note is missing evidence,
-  not a blocker.
+  `ADOPT`. Compact focused re-review artifact
+  `docs/handoffs/ss-020-claude-audit-01-rereview.md` is Lead `APPROVED`
+  (7,337 bytes; SHA-256
+  `d9aff25f70b1c16704549dbf72999b7cba8b14264ddc275cf0e4abc3cd344077`).
+  Only the required Claude fresh-chat response is pending; Stages 02–05 remain
+  unauthorized and PR preparation remains blocked.
 - Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
