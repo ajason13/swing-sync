@@ -86,6 +86,73 @@ describe("docs claim verification", () => {
     );
   });
 
+  it("fails when the accessibility checklist decision anchor is removed", () => {
+    const anchor =
+      "| Are the candidate accessibility evidence, remaining manual risks, and exact public/UI accessibility and limitation wording appropriate for the named scope without implying certification or compliance? | Accessibility reviewer and release owner | SS-019 named automated/manual results, remaining-risk record, and exact candidate UI/public copy | Accessibility reviewer and release owner | Blocking | Pending |";
+
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          anchor
+        )
+      })
+    ).toContain(
+      "docs/release-review-gate.md: missing canonical releaseGateAccessibilityChecklist string"
+    );
+  });
+
+  it("fails when the Accessibility PENDING domain-row anchor is removed", () => {
+    const anchor =
+      "| Accessibility | `PENDING` | Not recorded | Not recorded | Not recorded | Not recorded |";
+
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          anchor
+        )
+      })
+    ).toContain(
+      "docs/release-review-gate.md: missing canonical releaseGateAccessibilityPending string"
+    );
+  });
+
+  it("fails when the accessibility blocking-condition anchor is removed", () => {
+    const anchor =
+      "- candidate accessibility evidence or the accountable accessibility reviewer\n" +
+      "  decision is missing or unresolved;";
+
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          anchor
+        )
+      })
+    ).toContain(
+      "docs/release-review-gate.md: missing canonical releaseGateAccessibilityBlocker string"
+    );
+  });
+
+  it("fails when the accessibility reopening-rule anchor is removed", () => {
+    const anchor =
+      "- accessibility public copy, UI/interaction behavior, or candidate evidence\n" +
+      "  changes, including semantics/names, keyboard/focus, announcements, reflow,\n" +
+      "  nonvisual operation, or assistive-technology scope;";
+
+    expect(
+      errorsFor({
+        "docs/release-review-gate.md": without(
+          currentDocs["docs/release-review-gate.md"],
+          anchor
+        )
+      })
+    ).toContain(
+      "docs/release-review-gate.md: missing canonical releaseGateAccessibilityReopening string"
+    );
+  });
+
   it("fails when a release-gate operational heading or supporting link is removed", () => {
     expect(
       errorsFor({

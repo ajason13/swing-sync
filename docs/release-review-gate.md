@@ -154,6 +154,7 @@ without the accountable reviewer and release owner recording a scoped decision.
 | Are licenses, notices, fixtures, model assets, SDK/provider evidence, and exact distribution artifacts complete? | Licensing reviewer | SBOM, lockfile, notice/model/fixture records, built artifact | Licensing reviewer and release owner | Blocking | Pending |
 | What legal entity/business model, monetization, distribution channels, host, security headers, support policy, and incident/contact ownership apply? | Release owner with legal/security/privacy reviewers | Business/release plan, host evidence, support/incident plan | Release owner and affected reviewers | Blocking | Pending |
 | Are historical `docs/ss-*` and `docs/handoffs/*` evidence files included in the public publication boundary, and what context is required? | Release owner with legal/privacy/safety/trademark reviewers | Complete tracked manifests for both namespaces and repository/distribution plan | Release owner | Blocking if public | Pending |
+| Are the candidate accessibility evidence, remaining manual risks, and exact public/UI accessibility and limitation wording appropriate for the named scope without implying certification or compliance? | Accessibility reviewer and release owner | SS-019 named automated/manual results, remaining-risk record, and exact candidate UI/public copy | Accessibility reviewer and release owner | Blocking | Pending |
 
 ## Operational Gate Contract
 
@@ -277,6 +278,8 @@ Public release remains blocked when any of these conditions is true:
   contradictory public wording remains unresolved;
 - exact-version MediaPipe/provider evidence remains unresolved;
 - trademark/branding or repository-publication decisions are missing;
+- candidate accessibility evidence or the accountable accessibility reviewer
+  decision is missing or unresolved;
 - a required verifier, build, or independent audit fails;
 - the candidate changes or contains an unreviewed sensitive diff; or
 - a source or conditional decision is stale or expired.
@@ -291,6 +294,9 @@ Reopen the affected qualified-human review after any of these events:
 - runtime, data class, storage, deletion, export, remote sharing, provider,
   model, dependency, license, service-worker, logging, telemetry, or deployment
   changes;
+- accessibility public copy, UI/interaction behavior, or candidate evidence
+  changes, including semantics/names, keyboard/focus, announcements, reflow,
+  nonvisual operation, or assistive-technology scope;
 - a material provider term, source, standard, law, or guidance change; or
 - an incident, complaint, audit finding, expired condition, or post-review
   candidate diff.

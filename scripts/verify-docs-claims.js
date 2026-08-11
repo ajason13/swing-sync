@@ -41,6 +41,17 @@ const requiredStrings = {
   releaseGateSs002Blocker:
     "SS-002 qualified legal review of the assumption-of-risk and\n" +
     "release-of-liability language is not completed and blocks public release.",
+  releaseGateAccessibilityChecklist:
+    "| Are the candidate accessibility evidence, remaining manual risks, and exact public/UI accessibility and limitation wording appropriate for the named scope without implying certification or compliance? | Accessibility reviewer and release owner | SS-019 named automated/manual results, remaining-risk record, and exact candidate UI/public copy | Accessibility reviewer and release owner | Blocking | Pending |",
+  releaseGateAccessibilityPending:
+    "| Accessibility | `PENDING` | Not recorded | Not recorded | Not recorded | Not recorded |",
+  releaseGateAccessibilityBlocker:
+    "- candidate accessibility evidence or the accountable accessibility reviewer\n" +
+    "  decision is missing or unresolved;",
+  releaseGateAccessibilityReopening:
+    "- accessibility public copy, UI/interaction behavior, or candidate evidence\n" +
+    "  changes, including semantics/names, keyboard/focus, announcements, reflow,\n" +
+    "  nonvisual operation, or assistive-technology scope;",
   releaseGateSourceDate: "Accessed: 2026-08-08",
   releaseGateCodeFact: "Code/test-enforced fact",
   releaseGateDesignIntent: "Documented design intent",
@@ -222,6 +233,10 @@ const files = {
       "releaseGateNoClearance",
       "releaseGateHumanBoundary",
       "releaseGateSs002Blocker",
+      "releaseGateAccessibilityChecklist",
+      "releaseGateAccessibilityPending",
+      "releaseGateAccessibilityBlocker",
+      "releaseGateAccessibilityReopening",
       "releaseGateSourceDate",
       "releaseGateCodeFact",
       "releaseGateDesignIntent",

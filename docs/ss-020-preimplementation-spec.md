@@ -257,6 +257,11 @@ Cover:
 - licenses, notices, model/provider evidence, release entity/business model,
   distribution channels, host/security headers, support, and incident/contact
   ownership;
+- whether candidate accessibility evidence, remaining manual risks, and exact
+  public/UI accessibility and limitation wording are appropriate for the named
+  scope without implying certification or compliance; assign the Accessibility
+  reviewer and release owner, and require SS-019 named automated/manual results,
+  the remaining-risk record, and exact candidate UI/public copy;
 - publication boundary for historical repository evidence.
 
 ### 6. Operational gate contract
@@ -314,6 +319,8 @@ Blocking conditions:
   trademark, or contradictory public wording;
 - unresolved MediaPipe/provider evidence;
 - missing trademark/publication decision;
+- missing or unresolved candidate accessibility evidence or accountable
+  accessibility-reviewer decision;
 - failed required verifier/build/audit;
 - changed candidate or unreviewed sensitive diff;
 - stale/expired source or conditional approval.
@@ -326,6 +333,9 @@ Reopening rules:
 - runtime, data class, storage, deletion, export, remote sharing, provider,
   model, dependency, license, service-worker, logging, telemetry, or deployment
   changes;
+- accessibility public copy, UI/interaction behavior, or candidate evidence
+  changes, including semantics/names, keyboard/focus, announcements, reflow,
+  nonvisual operation, or assistive-technology scope;
 - material provider terms, source, standard, law, or guidance change;
 - incident, complaint, audit finding, expired condition, or post-review diff.
 
@@ -354,6 +364,9 @@ Required declarative registrations:
   document;
 - add its top status strings, evidence-taxonomy labels, SS-002 blocker,
   operational headings, source date, and no-clearance boundary;
+- add exact required-string anchors for the accessibility checklist decision,
+  the `Accessibility` domain's `PENDING` row, the accessibility blocking
+  condition, and the accessibility reopening rule;
 - require README, CONTRIBUTING, limitations, safety, and privacy documents to
   link to `./docs/release-review-gate.md` or the correct relative equivalent;
 - keep the existing standard prohibited-claim scan on its current configured
@@ -390,6 +403,14 @@ In `test/unit/docs-claims.test.ts`, add or rename tests with clear names proving
 - fails when the canonical release-gate file is empty;
 - fails when the draft/pending/blocked banner or current outcome is missing;
 - fails when the SS-002 legal-review blocker is removed;
+- fails with the named missing-canonical-string error when the accessibility
+  checklist anchor is removed;
+- fails with the named missing-canonical-string error when the Accessibility
+  `PENDING` domain-row anchor is removed;
+- fails with the named missing-canonical-string error when the accessibility
+  blocker anchor is removed;
+- fails with the named missing-canonical-string error when the accessibility
+  reopening anchor is removed;
 - fails when an operational heading or required supporting link is removed;
 - fails when canonical status/sign-off control text is duplicated in a
   supporting document;
@@ -409,7 +430,8 @@ same.
 
 1. Inventory: canonical traceable inventory plus publication-surface manifest.
 2. Human checklist: question/evidence/role/sign-off/blocking table and open-
-   decision register.
+   decision register, including the candidate accessibility evidence,
+   remaining-risk, exact-copy, accountable-reviewer, and release-owner decision.
 3. SS-002: explicit qualified-legal-review blocker in status, inventory,
    checklist, and verifier.
 4. Absolute claims: repository-wide research inventory, current public-doc
@@ -418,7 +440,9 @@ same.
    limitations, contributor, deployment, metadata, UI/export, licensing, and
    repository evidence.
 6. Operational gate: entry criteria, artifacts, outcomes, sign-off record,
-   blockers, and reopening rules with current `PENDING/BLOCKED` state.
+   blockers, and reopening rules—including accessibility evidence/decision and
+   accessibility copy/UI/interaction/evidence change controls—with current
+   `PENDING/BLOCKED` state.
 
 ## Verification plan
 

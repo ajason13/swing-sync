@@ -154,18 +154,18 @@ Implementation-ready transition on 2026-08-08:
   `66a4eab`. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and
   Codex research is `PASS`; these are engineering gate inputs, not Claude or
   qualified-human approval.
-- The independent-audit handoff is five fresh-chat artifacts: `01` governance,
-  `02` inventory coverage, `03` public claims/sources, `04` verifier/tests,
-  and `05` synthesis. Artifacts `01`–`04` target at most 20 KB each and cannot
-  permit PR preparation; `05` targets at most 8 KB before exact component
-  responses and only an exact synthesis `PASS` after four matching component
-  `PASS` results with no blockers may permit PR preparation. The current
-  pre-response manifest has 20 baseline-relative candidate paths: 15 existing
-  tracked paths plus five new staged-audit paths; all are intended for the
-  audit candidate. B1 clarification: the prior two-wrapper handoff is
-  historical and superseded; the five fresh-chat artifacts are the current
-  handoff. These targets do not guarantee any chat-platform behavior.
-- Full Node `22.22.3` verification passed: targeted `docs-claims` 36/36,
+- Claude Stage 01 governance response is recorded at
+  `docs/handoffs/ss-020-claude-audit-01-response.md` (1,997 bytes; SHA-256
+  `b94d483af413576cf2b50c3560f51b8696f928a0413e29833b439bcc75336fac`). It
+  returned `FAIL` for candidate `4e5dd4029da053ebb145b0a15416cbd5450b8fb1`.
+  Adopted blocker B1: the operational Accessibility checklist/evidence/owner
+  is missing, as is explicit accessibility blocking/reopening coverage. The
+  correction is applied; the Lead is `APPROVED` and independent research is
+  `ADOPT`. Focused Stage 01 re-review is pending. Stage 04 is affected and
+  pending because the correction changes verifier/tests; Stages 02–05 are not
+  authorized to run. The unpushed remote-candidate note is missing evidence,
+  not a blocker.
+- Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
   Runtime observability is intentionally unchanged: no telemetry, analytics,
@@ -173,14 +173,15 @@ Implementation-ready transition on 2026-08-08:
   behavior changed.
 - Notion is now `4. Final Audit (Claude)`; branch remains
   `ss-020-release-review-gate` and Pull Request remains empty; the five-stage
-  audit has not started and PR preparation is blocked. Claude must return
+  audit cannot proceed beyond failed Stage 01 and PR preparation is blocked.
+  Claude must return
   `PASS` and explicitly permit PR preparation before a PR may be
   prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
   re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
   release gate is deliberately not a package-merge prerequisite, and no human,
-  legal, privacy, safety, trademark, medical, compliance, or release approval
-  has occurred.
+  legal, privacy, safety, trademark, accessibility, medical, compliance, or
+  release clearance has occurred.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 
