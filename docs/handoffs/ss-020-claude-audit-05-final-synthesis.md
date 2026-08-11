@@ -8,11 +8,11 @@ legal advice, human sign-off, or clearance.
 ## Stage
 
 05/05 for immutable candidate `e365204ecb763cf36f6663ac88e8f272744bf0fa`.
-Run only after final compact responses for 02, 03, and 04 are saved and PASS.
+Run only after final responses for 02-MICRO, 03, and 04 are saved and PASS.
 
 ## Scope
 
-Synthesize the operative 01-REREVIEW PASS and future 02/03/04 PASS responses.
+Synthesize operative 01-REREVIEW/02-MICRO/03/04 PASS responses.
 Audit manifests, identities, bytes, hashes, verdicts, blockers, missing evidence,
 finding dispositions, conflicts, and packet total. Do not re-audit components.
 
@@ -45,8 +45,8 @@ scripts/verify-docs-claims.js
 test/unit/docs-claims.test.ts
 ```
 
-Packet manifest means the four prompts actually reviewed: 01-REREVIEW packet
-plus frozen 02/03/04 packet Git blobs and byte counts. Response manifest means
+Packet manifest means the four operative prompts: 01-REREVIEW, 02-MICRO, 03,
+and 04; 02-ORIGINAL is lineage only. Response manifest means
 the saved final response files plus exact response-body SHA-256/bytes/candidate/
 verdict. Finding manifest means Claude findings and Lead dispositions; it is not
 the candidate or packet manifest.
@@ -77,7 +77,8 @@ provider/dependency/deployment/observability or the human `PENDING/BLOCKED` gate
 ```text
 01-ORIGINAL|docs/handoffs/ss-020-claude-audit-01-governance.md|git:02fa51417e6166af4c56c440dd969601bb5d207b|19960 bytes|sha256:263b6118bd5762e6a3e3612038233dc23770e6c938a83a4f11e600df88f5a3c5
 01-REREVIEW|docs/handoffs/ss-020-claude-audit-01-rereview.md|git:cbe2bb5909adaa8c2a839e9672dce0b55f359f8d|7337 bytes|sha256:d9aff25f70b1c16704549dbf72999b7cba8b14264ddc275cf0e4abc3cd344077
-02|docs/handoffs/ss-020-claude-audit-02-inventory-coverage.md|git:4f750d35ee9a8a3e54e6b9fcfe423559a0a5aa25|8859 bytes|sha256:318fbd4756ba7b94f1e4646616ac833120ec743cc871f300b90873487951d0c9
+02-ORIGINAL|SUPERSEDED-USABILITY|no response|no verdict|docs/handoffs/ss-020-claude-audit-02-inventory-coverage.md|git:4f750d35ee9a8a3e54e6b9fcfe423559a0a5aa25|8859 bytes|sha256:318fbd4756ba7b94f1e4646616ac833120ec743cc871f300b90873487951d0c9
+02-MICRO|OPERATIVE|docs/handoffs/ss-020-claude-audit-02-inventory-coverage-micro.md|git:b9414408090f8f3072f3af256408d9d6745e3b25|4000 bytes|sha256:5d32698813203df036a6939c5cf6d94c828fb6b89562bc5fd629ac96f0b0ec01
 03|docs/handoffs/ss-020-claude-audit-03-public-claims-sources.md|git:1a46ec9a0dc81005a800c03120884f261aa9ce2b|8989 bytes|sha256:2d1f56dd913e5ee51f9b052c9855491a58e55c280d0cbfe94a9a74bee3fd4176
 04|docs/handoffs/ss-020-claude-audit-04-verifier-tests.md|git:141b4f3e007ffe73778280092a82a9cb550eaf3f|8781 bytes|sha256:db8bef38ffbeaba81a8c892a2a3baae8e1614dba68813d8de73c2851fbd1d5ad
 ```
@@ -109,7 +110,7 @@ PR PREPARATION NOT PERMITTED
 Future response entries, populated only from final saved compact bodies:
 
 ```text
-02|whole-file path:[PASTE]|blob:[PASTE]|bytes:[PASTE]|sha256:[PASTE]|body bytes:[PASTE <=2500]|body sha256:[PASTE]|candidate:e365204ecb763cf36f6663ac88e8f272744bf0fa|verdict:PASS|exact body:[PASTE]
+02-MICRO|whole-file path:docs/handoffs/ss-020-claude-audit-02-inventory-coverage-micro-response.md|blob:[PASTE]|bytes:[PASTE]|sha256:[PASTE]|body bytes:[PASTE <=1800]|body sha256:[PASTE]|candidate:e365204ecb763cf36f6663ac88e8f272744bf0fa|verdict:PASS|exact body:[PASTE]
 03|whole-file path:[PASTE]|blob:[PASTE]|bytes:[PASTE]|sha256:[PASTE]|body bytes:[PASTE <=2500]|body sha256:[PASTE]|candidate:e365204ecb763cf36f6663ac88e8f272744bf0fa|verdict:PASS|exact body:[PASTE]
 04|whole-file path:[PASTE]|blob:[PASTE]|bytes:[PASTE]|sha256:[PASTE]|body bytes:[PASTE <=2500]|body sha256:[PASTE]|candidate:e365204ecb763cf36f6663ac88e8f272744bf0fa|verdict:PASS|exact body:[PASTE]
 ```
@@ -120,7 +121,7 @@ Future response entries, populated only from final saved compact bodies:
 B1-RESPONSE|whole/body path:docs/handoffs/ss-020-claude-audit-01-response.md|git:adf9e862716d1ddeb57cbc31482217159ba62c32|whole/body bytes:1997|whole/body sha256:b94d483af413576cf2b50c3560f51b8696f928a0413e29833b439bcc75336fac|candidate:4e5dd4029da053ebb145b0a15416cbd5450b8fb1|verdict:FAIL
 B1|Lead ADOPT|fixed e365204ecb763cf36f6663ac88e8f272744bf0fa|01-REREVIEW PASS
 N1|01-REREVIEW non-blocker: clean clone cannot see nine additional local-only untracked files|Lead REJECT|reason: clean-clone absence cannot contradict preserved local-only untracked workspace files; not a candidate defect or unresolved supplement
-02|finding/disposition:[PASTE; none only if response says none]
+02-MICRO|finding/disposition:[PASTE; none only if response says none]
 03|finding/disposition:[PASTE; none only if response says none]
 04|finding/disposition:[PASTE; none only if response says none]
 ```
@@ -131,6 +132,8 @@ Before submission recompute all packet/response hashes and bytes, verify the
 exact 21-path candidate manifest, exact body equality, four PASS verdicts, and
 fully populated size <=20,000 bytes. Recorded candidate checks: targeted
 `40/40`, total `244/244`, docs/safety/privacy/compliance/build/diff-check PASS.
+Cap ledger: prepopulation `9632`; body maxima `1800+2500+2500=6800`; remaining
+identity/finding budget `3568`; hard cap `20000` UTF-8 bytes.
 
 ## Non-goals
 

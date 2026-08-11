@@ -186,11 +186,17 @@ Implementation-ready transition on 2026-08-08:
   `db8bef38ffbeaba81a8c892a2a3baae8e1614dba68813d8de73c2851fbd1d5ad`; and
   `05` 9,182 bytes, blob `8e8f8bff71a966f8b58458828be0dcc22f7ae08d`, SHA-256
   `f2f13b4dd78fa6848ca058568dc309a5ef08c0a6fbd9378ca932e2b2bbb30794`.
-  Scoped packaging and push completed at
-  `93232268f5152a4cda2686f75456191906e9a909`, which is also the remote
-  identity; the committed packet identities are unchanged. Stage 02 is now
-  `AUTHORIZED` as the sole next fresh Claude chat; Stages 03–05 remain
-  sequentially gated, and PR preparation remains prohibited.
+  The original 8,859-byte Stage 02 packet was rate-limited and yielded no
+  response or verdict; it is superseded for usability only. The immutable
+  candidate `e365204ecb763cf36f6663ac88e8f272744bf0fa` and its 21 paths are
+  unchanged. Lead approved operative `02-MICRO` (4,000 bytes, blob
+  `b9414408090f8f3072f3af256408d9d6745e3b25`, SHA-256
+  `5d32698813203df036a6939c5cf6d94c828fb6b89562bc5fd629ac96f0b0ec01`) and
+  updated `05` (9,632 bytes, blob `5d68c0724c4aec158a184792d05e6bab65e4f348`,
+  SHA-256 `9d9a76e1fe9df6cc7d0b2b290be2037d24d9549e4246bae99d5c222c10e5b743`).
+  Retry Stage 02 solely with `02-MICRO` after package/push; Stage 03 remains
+  gated by its exact result, followed by the remaining sequential gates. PR
+  preparation remains prohibited.
 - Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
@@ -199,11 +205,10 @@ Implementation-ready transition on 2026-08-08:
   behavior changed.
 - Notion is now `4. Final Audit (Claude)`; branch remains
   `ss-020-release-review-gate` and Pull Request remains empty. Stage 01 PASS is
-  operative and the refreshed packet set is packaged/pushed at
-  `93232268f5152a4cda2686f75456191906e9a909`; Stage 02 is `AUTHORIZED` as the
-  sole next fresh Claude chat, then Stages 03–05 are sequentially gated. PR
-  preparation remains prohibited. Claude must return `PASS` and explicitly
-  permit PR preparation before a PR may be
+  operative. Retry Stage 02 solely with Lead-approved `02-MICRO` after
+  package/push; Stage 03 is gated by that exact result, followed by the
+  remaining sequential gates. PR preparation remains prohibited. Claude must
+  return `PASS` and explicitly permit PR preparation before a PR may be
   prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
   re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
