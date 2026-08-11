@@ -186,9 +186,11 @@ Implementation-ready transition on 2026-08-08:
   `db8bef38ffbeaba81a8c892a2a3baae8e1614dba68813d8de73c2851fbd1d5ad`; and
   `05` 9,182 bytes, blob `8e8f8bff71a966f8b58458828be0dcc22f7ae08d`, SHA-256
   `f2f13b4dd78fa6848ca058568dc309a5ef08c0a6fbd9378ca932e2b2bbb30794`.
-  Scoped packaging and push are authorized. Stage 02 is authorized only after
-  that packaging push; Stages 03–05 are sequentially gated, and PR preparation
-  remains prohibited.
+  Scoped packaging and push completed at
+  `93232268f5152a4cda2686f75456191906e9a909`, which is also the remote
+  identity; the committed packet identities are unchanged. Stage 02 is now
+  `AUTHORIZED` as the sole next fresh Claude chat; Stages 03–05 remain
+  sequentially gated, and PR preparation remains prohibited.
 - Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
@@ -197,10 +199,11 @@ Implementation-ready transition on 2026-08-08:
   behavior changed.
 - Notion is now `4. Final Audit (Claude)`; branch remains
   `ss-020-release-review-gate` and Pull Request remains empty. Stage 01 PASS is
-  operative and the refreshed packet set is Lead `APPROVED`; Stage 02 is
-  authorized only after packaging push, then Stages 03–05 are sequentially
-  gated. PR preparation remains prohibited. Claude must return `PASS` and
-  explicitly permit PR preparation before a PR may be
+  operative and the refreshed packet set is packaged/pushed at
+  `93232268f5152a4cda2686f75456191906e9a909`; Stage 02 is `AUTHORIZED` as the
+  sole next fresh Claude chat, then Stages 03–05 are sequentially gated. PR
+  preparation remains prohibited. Claude must return `PASS` and explicitly
+  permit PR preparation before a PR may be
   prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
   re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
@@ -209,6 +212,8 @@ Implementation-ready transition on 2026-08-08:
   release clearance has occurred.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
+- Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
+  packaging.
 
 ## SS-019 Coordination
 
