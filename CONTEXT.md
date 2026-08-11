@@ -149,28 +149,32 @@ Implementation-ready transition on 2026-08-08:
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
   Observability remains unchanged; no runtime telemetry, logging, diagnostics,
   or behavior is authorized.
-- Implementation is recorded at `eb9b7cb` (`docs: add SS-020 release review
-  gate`) after the approved baseline commits `845a532`, `03f18d4`, `913718c`,
-  and `a802532`. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and
+- The audited implementation/candidate identity is immutable canonical repair
+  commit `4e5dd4029da053ebb145b0a15416cbd5450b8fb1`, following prior
+  `66a4eab`. Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and
   Codex research is `PASS`; these are engineering gate inputs, not Claude or
   qualified-human approval.
-- The independent-audit handoff is ready at
-  `docs/handoffs/ss-020-claude-final-audit-prompt.md` with its companion
-  `docs/handoffs/ss-020-claude-final-audit-source-packet.md`. The source packet
-  enumerates the complete focused diff from baseline
-  `0509999e7de5e609787fe53e8bdac2747aa0be64` for all 13 changed tracked files,
-  including this context, research/specification records, the superseded Gemini
-  prompt, and the eight approved implementation files. It must be pasted with
-  the prompt because Claude Chat has no repository access.
-- Verification on Node `22.22.3` passed: targeted `docs-claims` 36/36,
+- The independent-audit handoff is five fresh-chat artifacts: `01` governance,
+  `02` inventory coverage, `03` public claims/sources, `04` verifier/tests,
+  and `05` synthesis. Artifacts `01`–`04` target at most 20 KB each and cannot
+  permit PR preparation; `05` targets at most 8 KB before exact component
+  responses and only an exact synthesis `PASS` after four matching component
+  `PASS` results with no blockers may permit PR preparation. The current
+  pre-response manifest has 20 baseline-relative candidate paths: 15 existing
+  tracked paths plus five new staged-audit paths; all are intended for the
+  audit candidate. B1 clarification: the prior two-wrapper handoff is
+  historical and superseded; the five fresh-chat artifacts are the current
+  handoff. These targets do not guarantee any chat-platform behavior.
+- Full Node `22.22.3` verification passed: targeted `docs-claims` 36/36,
   `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
   `npm run compliance:verify`, `npm run build`, and `git diff --check`.
   Runtime observability is intentionally unchanged: no telemetry, analytics,
   logging, diagnostics, providers, persistence, data flow, or deployment
   behavior changed.
 - Notion is now `4. Final Audit (Claude)`; branch remains
-  `ss-020-release-review-gate` and Pull Request remains empty. Claude must
-  return `PASS` and explicitly permit PR preparation before a PR may be
+  `ss-020-release-review-gate` and Pull Request remains empty; the five-stage
+  audit has not started and PR preparation is blocked. Claude must return
+  `PASS` and explicitly permit PR preparation before a PR may be
   prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
   re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
   synchronization remain separate later gates. The future qualified-human
