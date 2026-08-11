@@ -253,6 +253,18 @@ Implementation-ready transition on 2026-08-08:
   PR, no clearance claim, and unchanged observability. PR preparation remains
   prohibited pending the remaining sequential final-audit gates and explicit
   permission.
+- Lead Architect approved an in-task Stage 03 evidence decomposition on
+  2026-08-11 to meet the browser-audit packet budget without weakening the
+  review: `03A-PUBLIC-CLAIMS-PRIVACY` owns AC3 and the public/privacy portion
+  of AC4; `03B-SOURCE-REGISTER-PROVIDER` owns the provider/source-register
+  portion of AC4 and depends on the exact 03A response-body hash. Both remain
+  bound to immutable candidate `e365204ecb763cf36f6663ac88e8f272744bf0fa` and
+  the exact 21-path manifest. They are component results, not separate tasks,
+  branches, candidates, PRs, or human-clearance decisions. Each prompt is
+  capped at 4,000 UTF-8 bytes and each response at 1,800 bytes; both exact
+  `PASS` results, with no blockers or missing evidence, are required before
+  Stage 04 preflight. The original 4,715-byte 03 micro draft is non-operative
+  and must not be submitted or committed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
