@@ -219,6 +219,40 @@ Implementation-ready transition on 2026-08-08:
   release gate is deliberately not a package-merge prerequisite, and no human,
   legal, privacy, safety, trademark, accessibility, medical, compliance, or
   release clearance has occurred.
+- Stage 02 `MICRO` provenance and identity-bridge disposition on 2026-08-11:
+  the locally captured response artifact is
+  `docs/handoffs/ss-020-claude-audit-02-inventory-coverage-micro-response.md`
+  (1,614 bytes; SHA-256
+  `1799e9468702431b5c4ce1fea60f60a3f9a291e1f99dcb95e4e3d73f8a7f0fb6`), while
+  Claude reports its original response was 1,560 bytes. This is a provenance
+  conflict; do not describe the saved artifact as byte-exact Claude output.
+  Claude's refusal is separately recorded at
+  `docs/handoffs/ss-020-claude-audit-02-micro-restatement-refusal.md` (1,588
+  bytes; SHA-256
+  `71b59f46a460fd24fe7f68ef498fb2912288cda42c944e4269fec4138d8c703a`).
+  The Lead treats the original Stage 02 substance—AC1/AC5 `PASS`, B1
+  `RESOLVED`, no blockers, and `NEXT_STAGE: 03`—as non-operative: it binds
+  `CANDIDATE` to packaging HEAD `244b8b6`, not immutable candidate `e365204`,
+  and its non-blocker remains recorded rather than removed. Stage 03 is
+  blocked. The sole next action was a same-chat, **new** Stage 02
+  identity-bridge analysis comparing `e365204` through `244b8b6`.
+- Claude's new Stage 02 `MICRO` identity-bridge response is recorded at
+  `docs/handoffs/ss-020-claude-audit-02-micro-identity-bridge-response.md`
+  (1,705 bytes; SHA-256
+  `ec795519aef658fdab60b79319459067d4e0aae946c2d0e8c68e3c1c0aa1e3ba`).
+  Claude independently verified `e365204` is an ancestor of `244b8b6`, that
+  their diff contains only `CONTEXT.md` and audit-handoff files, and that all
+  eight AC1/AC5/B1 reviewed surfaces are byte-identical. The response binds
+  `CANDIDATE_ID` to `e365204ecb763cf36f6663ac88e8f272744bf0fa`, reports AC1
+  `PASS`, AC5 `PASS`, B1 `RESOLVED`, `VERDICT: PASS`, no blockers or missing
+  evidence, and `NEXT_STAGE: MAY PROCEED TO STAGE 03`. Its non-blocker is
+  preserved verbatim: `CONTEXT.md` agent-guidance count discrepancy carried
+  from 01-rereview, unchanged, out of this stage's scope. Claude did not
+  affirm Notion or `CONTEXT.md` provenance recording.
+- Stage 03 is authorized. Keep status `4. Final Audit (Claude)`, the empty
+  PR, no clearance claim, and unchanged observability. PR preparation remains
+  prohibited pending the remaining sequential final-audit gates and explicit
+  permission.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
