@@ -395,6 +395,21 @@ Implementation-ready transition on 2026-08-08:
   candidate/base, focused files/diff, and verification evidence. 04B/05/PR
   remain blocked. No clearance, candidate, runtime, dependency, or
   observability state changed.
+- Lead approved a single lean Git-native `04-GIT-NATIVE` audit to replace the
+  remaining artificial 04A/04B microchain. It is committed/pushed for a fresh
+  Claude audit: prompt
+  `docs/handoffs/ss-020-claude-audit-04-git-native.md` at
+  `27019f4e4627b6453f2f988148e29d5c3fe07f3b` (3,369 UTF-8 bytes, blob
+  `ed8b529c97e9aafa64b994753f8c1ed68fd8186b`, SHA-256
+  `6b986a69ef0eb44908c041f2d885fc68c9663b6ea29cc43432215d70ede4fe50`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-04-git-native-delivery-manifest.md` at
+  `e4c47fe74977aa50f4f61421dc4e71c5a299054e`. It points Claude to the pushed
+  repository/branch, immutable candidate/base compare, four focused files,
+  acceptance/red-line scope, and recorded verification—not duplicated source.
+  Exact PASS with no blockers/missing evidence may proceed only to Stage 05;
+  no PR preparation or human-clearance claim is authorized. All prior Stage 04
+  packets/no-verdicts remain preserved and superseded for paste use.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
