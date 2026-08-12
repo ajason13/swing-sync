@@ -315,6 +315,17 @@ Implementation-ready transition on 2026-08-08:
   it requests no new analysis and no finding loss. Stage 04 preflight may be
   designed in parallel, but no Stage 04 audit packet may be submitted until
   the compact 03B result is captured within the cap.
+- Lead Architect independently approved **Stage 04 compact packaging only**:
+  an essential two-component evidence decomposition, `04A` verifier contract
+  (AC3/AC4/AC6 and B1 enforcement) and `04B` adversarial tests/execution
+  (AC1/AC3/AC4/AC6 and B1 test evidence, dependent on the exact 04A body
+  identity). The 8,781-byte legacy Stage 04 artifact remains immutable and
+  non-operative. Every component packet/response remains capped at 4,000/
+  1,800 UTF-8 bytes; no Stage 04 handoff may be submitted before the compact
+  03B result. This is an in-task audit-evidence decomposition, not a new task,
+  candidate, branch, PR, or clearance decision. Stage 05 remains separately
+  gated and will require a new compact synthesis after operative 04A/04B PASS
+  results.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
