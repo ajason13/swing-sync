@@ -301,6 +301,20 @@ Implementation-ready transition on 2026-08-08:
   and exact packet second in one fresh Claude chat. No 03B verdict exists yet;
   status stays `4. Final Audit (Claude)`, PR stays empty, and observability is
   unchanged.
+- Claude's initial 03B response reports candidate identity and AC4
+  provider/sources `PASS`, `VERDICT: PASS`, no blockers, no non-blockers, no
+  missing evidence, and `NEXT_STAGE: MAY PROCEED TO STAGE 04`; its captured
+  artifact is
+  `docs/handoffs/ss-020-claude-audit-03b-provider-sources-micro-response.md`
+  (2,350 UTF-8 bytes). It exceeds the 1,800-byte response hard cap, so it is
+  not yet an operative component result. Its structured body is 370 bytes,
+  SHA-256 `430df4158fb59128e8f918907808c27c5e88399011e016c6feef1421988334e5`.
+  The only permitted next action for that handoff is the same-chat compact
+  restatement at
+  `docs/handoffs/ss-020-claude-audit-03b-compact-restatement-request.md`;
+  it requests no new analysis and no finding loss. Stage 04 preflight may be
+  designed in parallel, but no Stage 04 audit packet may be submitted until
+  the compact 03B result is captured within the cap.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
