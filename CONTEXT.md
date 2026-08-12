@@ -382,6 +382,19 @@ Implementation-ready transition on 2026-08-08:
   All three exact PASS results (or a no-verdict/failure stop) are required
   before redesigned 04B work. Status remains `4. Final Audit (Claude)`, PR is
   empty, observability unchanged, and no clearance is claimed.
+- Claude returned `HANDOFF UNAVAILABLE—NO VERDICT` for 04A1, captured at
+  `docs/handoffs/ss-020-claude-audit-04a1-unavailable-response.md`. The exact
+  pasted excerpts were internally consistent, but Claude correctly could not
+  close enforcement completeness or observed execution evidence under the
+  packet's stated no-repository/no-shell assumption. This is not a candidate
+  finding. The live Multi-Agent SDLC Framework was rechecked on 2026-08-12 and
+  its `Claude Chat GitHub-context protocol — 2026-08-11` confirms Claude Chat
+  now has GitHub/Git access. The prior self-contained 04A1/04A2/04A3 approach
+  is superseded for paste use, not deleted; Lead must approve lean Git-native
+  handoffs pointing Claude to the pushed repository, branch, immutable
+  candidate/base, focused files/diff, and verification evidence. 04B/05/PR
+  remain blocked. No clearance, candidate, runtime, dependency, or
+  observability state changed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
