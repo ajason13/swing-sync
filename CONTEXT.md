@@ -358,6 +358,18 @@ Implementation-ready transition on 2026-08-08:
   04A packet for paste use and obtain Lead approval for compact packet(s) that
   embed actual focused source/execution evidence before any new Claude request.
   04B and Stage 05 remain blocked; PR preparation remains prohibited.
+- Lead Architect approved an evidence-first 04A replacement, not another
+  summary-only retry: three independent focused source-contract components,
+  `04A1` accessibility contract (B1/AC3/accessibility AC6), `04A2` premature
+  approval/no-clearance enforcement (AC4), and `04A3` pending outcome/canonical
+  ownership enforcement (AC6). Each must embed exact excerpts generated from
+  immutable candidate `e365204` plus compact named Node 22 test evidence,
+  explain that Claude Chat sees only pasted evidence, and permit
+  `HANDOFF UNAVAILABLE—NO VERDICT` rather than forcing a verdict. All three
+  exact, cap-compliant `PASS` results are required before redesigning 04B. The
+  prose-only prepared 04B packet is non-operative and must not be submitted.
+  This changes only audit packaging; candidate, runtime, observability,
+  dependencies, data flow, and human-clearance state remain unchanged.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
