@@ -12,7 +12,7 @@ docs/{limitations.md,privacy-architecture.md,release-review-gate.md,safety-terms
 {scripts/verify-docs-claims.js,test/unit/docs-claims.test.ts}
 ```
 
-Stage-02 prerequisite (exact result): `STAGE_ID=02-MICRO-IDENTITY-BRIDGE|CANDIDATE_ID=e365204ecb763cf36f6663ac88e8f272744bf0fa|PACKAGING_HEAD=244b8b6e3497b0fc3a008de5407fa458a7e015ac|AC1=PASS|AC5=PASS|B1=RESOLVED|VERDICT=PASS|BLOCKERS=none|MISSING=none|NEXT_STAGE=MAY PROCEED TO STAGE 03`. 03A must be PASS with no blockers/missing. `03A_RESPONSE_BODY_SHA256: <INSERT_AFTER_03A_RESPONSE_CAPTURE>`.
+Stage-02 prerequisite (exact result): `STAGE_ID=02-MICRO-IDENTITY-BRIDGE|CANDIDATE_ID=e365204ecb763cf36f6663ac88e8f272744bf0fa|PACKAGING_HEAD=244b8b6e3497b0fc3a008de5407fa458a7e015ac|AC1=PASS|AC5=PASS|B1=RESOLVED|VERDICT=PASS|BLOCKERS=none|MISSING=none|NEXT_STAGE=MAY PROCEED TO STAGE 03`. 03A is `PASS`, blockers/missing `none`; response-body SHA-256 `720f75ed560ab679e570a7b83bad16bbc50bfe88df1425690f0cf53e42261eeb`.
 
 Audit AC4 provider/version evidence. MediaPipe stays `Unresolved assumption|Yes|Pending`, bounded by exact `@mediapipe/tasks-vision@0.10.35`; `the current Web SDK does not include telemetry`; `future aggregated performance/usage telemetry is planned, without a planned opt-out, although outbound requests may be blocked`; `Do not claim tests prove all future SDK versions lack telemetry.` Infer no universal/future behavior, guarantee, duty, applicability, or clearance.
 
@@ -30,7 +30,7 @@ USPTO|https://www.uspto.gov/trademarks/search/federal-trademark-searching|search
 Apache|https://www.apache.org/licenses/LICENSE-2.0|license|not product/privacy/safety/branding/release review
 ```
 
-Coverage: AC4 MediaPipe/provider + source register only. Exclude AC1/2/3/5, 03A claims, 04 verifier, applicability/legal conclusions, implementation/PR/merge/release. Observability/runtime/provider/deployment unchanged. Node22: docs-claims 40/40; unit 244/244(24); docs/safety/privacy/compliance/build/diff-check PASS.
+Coverage: AC4 MediaPipe/provider + source register only. Exclude AC1/2/3/5, 03A claims, 04 verifier, applicability/legal conclusions, implementation/PR/merge/release. Observability/runtime/provider/deployment unchanged. Node22: docs-claims 40/40; unit 244/244(24); docs/safety/privacy/compliance/build/`git diff --check` PASS.
 
 Return one <=1800-byte block:
 ```text

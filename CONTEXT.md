@@ -276,6 +276,20 @@ Implementation-ready transition on 2026-08-08:
   first and the exact packet second in one fresh Claude chat. No Stage 03
   verdict exists yet; the task remains `4. Final Audit (Claude)`, with no PR
   and no clearance claim.
+- Claude returned operative `03A-MICRO` `PASS` for immutable candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`: AC3 `PASS`,
+  AC4 public/privacy `PASS`, no blockers, no missing evidence, and
+  `NEXT_STAGE: MAY PROCEED TO STAGE 03B`. The captured response is
+  `docs/handoffs/ss-020-claude-audit-03a-public-claims-privacy-micro-response.md`;
+  its structured response body is 566 bytes with SHA-256
+  `720f75ed560ab679e570a7b83bad16bbc50bfe88df1425690f0cf53e42261eeb`.
+  Preserve Claude's sole non-blocker: the 03A packet called out a nonexistent
+  `diff-check` npm script; Claude independently substituted the relevant
+  `git diff` scope check and found no protected-surface drift. This is a packet
+  wording/command-label correction only, not a candidate finding. The 03B
+  packet now carries the exact 03A body identity and spells the existing
+  `git diff --check` verification correctly. Stage 03B is the next external
+  gate; PR preparation remains prohibited and no clearance is claimed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
