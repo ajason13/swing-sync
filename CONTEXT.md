@@ -424,6 +424,21 @@ Implementation-ready transition on 2026-08-08:
   self-reference its own hash; Claude confirmed later packaging `27019f4`
   corrects it and it is not a candidate-level defect. Stage 05 Lead preflight
   is next. PR preparation remains prohibited; no clearance is claimed.
+- Lead approved the distinct final `05-GIT-NATIVE` lineage/PR-permission audit.
+  It is packaged/pushed for a fresh Claude Git audit: prompt
+  `docs/handoffs/ss-020-claude-audit-05-git-native.md` at
+  `54cea24c3112992867815f3aab517da68704a2a4` (3,806 UTF-8 bytes, blob
+  `bd5d7c8975555f8e1086d2a881d6dbebf4448602`, SHA-256
+  `299c97c44ce24f47d4e57e06b0f597bb0ca899c6022e0e37b5ea635bcd86f282`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-05-git-native-delivery-manifest.md` at
+  `ad4c4fb714f70ae45520e11f970761747980063d`. It directs Claude to audit
+  record head `8fd14458aff791edf46e3b3dda47c4a5343c6110`, all five operative
+  response bodies/identities, their findings/dispositions, and
+  candidate-to-audit-record packaging-only lineage. Only exact Stage 05 PASS
+  with `PR PREPARATION PERMITTED` may unlock engineering PR preparation; it
+  cannot grant any qualified-human release clearance. Status stays
+  `4. Final Audit (Claude)`, PR empty, and observability unchanged.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
