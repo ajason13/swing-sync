@@ -410,6 +410,20 @@ Implementation-ready transition on 2026-08-08:
   Exact PASS with no blockers/missing evidence may proceed only to Stage 05;
   no PR preparation or human-clearance claim is authorized. All prior Stage 04
   packets/no-verdicts remain preserved and superseded for paste use.
+- Claude returned operative `04-GIT-NATIVE` `PASS` for immutable candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, captured at
+  `docs/handoffs/ss-020-claude-audit-04-git-native-response.md`. It
+  independently cloned/inspected the candidate, reproduced Node 22 verification
+  (targeted `40/40`, full `244/244` across 24 files, docs/safety/privacy/
+  compliance/build/`git diff --check`), and reports AC1/AC3/AC4/AC6 `PASS`,
+  B1 `RESOLVED`, no blockers, no missing evidence, and `NEXT_STAGE: MAY
+  PROCEED TO STAGE 05`. Its structured response body is 791 bytes, SHA-256
+  `60f845e0cab0fb5029a5d81e70c9b8226e5c4f080190b101a8f52d6fbe051c93`.
+  Preserve its sole non-blocker: at candidate `e365204`, `CONTEXT.md` still
+  named earlier failed candidate `4e5dd402` because a commit cannot
+  self-reference its own hash; Claude confirmed later packaging `27019f4`
+  corrects it and it is not a candidate-level defect. Stage 05 Lead preflight
+  is next. PR preparation remains prohibited; no clearance is claimed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
