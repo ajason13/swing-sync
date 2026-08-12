@@ -315,6 +315,16 @@ Implementation-ready transition on 2026-08-08:
   it requests no new analysis and no finding loss. Stage 04 preflight may be
   designed in parallel, but no Stage 04 audit packet may be submitted until
   the compact 03B result is captured within the cap.
+- Claude's same-chat compact 03B restatement is now captured at
+  `docs/handoffs/ss-020-claude-audit-03b-compact-restatement-response.md`
+  (390 UTF-8 bytes; SHA-256
+  `0e81372afc3e4530f683b3fceecfa776fff0aab624751be381765e627f46dfe4`).
+  It is the sole operative 03B component result: candidate identity matches,
+  AC4 provider/sources `PASS`, verdict `PASS`, no blockers/non-blockers/
+  missing/future findings, and `NEXT_STAGE: MAY PROCEED TO STAGE 04`. The
+  2,350-byte initial response remains preserved but non-operative. Composite
+  Stage 03 now passes (03A and compact 03B); Stage 04 packaging may proceed,
+  while PR preparation remains prohibited and no clearance is claimed.
 - Lead Architect independently approved **Stage 04 compact packaging only**:
   an essential two-component evidence decomposition, `04A` verifier contract
   (AC3/AC4/AC6 and B1 enforcement) and `04B` adversarial tests/execution

@@ -1,0 +1,11 @@
+STAGE_ID: 03B-MICRO-COMPACT-RESTATEMENT
+CANDIDATE_ID: e365204ecb763cf36f6663ac88e8f272744bf0fa
+AC4_PROVIDER_SOURCES: PASS
+VERDICT: PASS
+BLOCKERS: none
+NON-BLOCKERS: none
+MISSING: none
+FUTURE: none
+NO-CLEARANCE: engineering provider/source audit only; no legal/privacy/safety/trademark/accessibility/release clearance granted
+NEXT_STAGE: MAY PROCEED TO STAGE 04
+PR PREPARATION NOT PERMITTED
