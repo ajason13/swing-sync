@@ -290,6 +290,17 @@ Implementation-ready transition on 2026-08-08:
   packet now carries the exact 03A body identity and spells the existing
   `git diff --check` verification correctly. Stage 03B is the next external
   gate; PR preparation remains prohibited and no clearance is claimed.
+- Stage 03B is packaged and pushed for a fresh, bounded Claude handoff:
+  packet commit `a735cbf4a705ef170bf9979eaf5797448104bb5b`, packet
+  `docs/handoffs/ss-020-claude-audit-03b-provider-sources-micro.md`
+  (3,974 UTF-8 bytes, blob `6b91fad3f74fd6d9288ea8fccb6dd87ce230c2b7`,
+  SHA-256 `4b7ae4233d27b4c606e6e80deb8991d36fce87c5a089a7297cb0725ae07c773c`).
+  Its delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-03b-delivery-manifest.md` at
+  `99196b62f0dc7d4a502e90e83508a975d3c238d8`. Send the identity record first
+  and exact packet second in one fresh Claude chat. No 03B verdict exists yet;
+  status stays `4. Final Audit (Claude)`, PR stays empty, and observability is
+  unchanged.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
