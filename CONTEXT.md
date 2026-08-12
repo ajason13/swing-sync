@@ -331,11 +331,23 @@ Implementation-ready transition on 2026-08-08:
   (AC1/AC3/AC4/AC6 and B1 test evidence, dependent on the exact 04A body
   identity). The 8,781-byte legacy Stage 04 artifact remains immutable and
   non-operative. Every component packet/response remains capped at 4,000/
-  1,800 UTF-8 bytes; no Stage 04 handoff may be submitted before the compact
-  03B result. This is an in-task audit-evidence decomposition, not a new task,
+  1,800 UTF-8 bytes; the compact 03B prerequisite is now satisfied. This is
+  an in-task audit-evidence decomposition, not a new task,
   candidate, branch, PR, or clearance decision. Stage 05 remains separately
   gated and will require a new compact synthesis after operative 04A/04B PASS
   results.
+- Stage 04A is packaged and pushed for the required fresh Claude handoff:
+  packet commit `cb53cf352ff72e9917969d9873f8553204241258`, packet
+  `docs/handoffs/ss-020-claude-audit-04a-verifier-contract-micro.md`
+  (3,439 UTF-8 bytes, blob `a6e84065f4ca9dfb57815a2fd88de204ea713f4c`,
+  SHA-256 `989faac5616e88ca6ba9267449850eca8238a9ad65588cfb3bc500b89a1c07d8`).
+  Its delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-04a-delivery-manifest.md` at
+  `e01875ea11ecc427772e49a8bf8dc99c1cb89753`. Send the small identity record
+  first and the exact packet second in one fresh Claude chat. 04B is prepared
+  but cannot be packaged or submitted until a cap-compliant exact 04A response
+  body exists. No Stage 04 verdict yet; status stays `4. Final Audit (Claude)`,
+  PR stays empty, observability is unchanged, and no clearance is claimed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
