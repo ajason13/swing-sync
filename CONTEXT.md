@@ -348,6 +348,16 @@ Implementation-ready transition on 2026-08-08:
   but cannot be packaged or submitted until a cap-compliant exact 04A response
   body exists. No Stage 04 verdict yet; status stays `4. Final Audit (Claude)`,
   PR stays empty, observability is unchanged, and no clearance is claimed.
+- Claude did **not** issue a 04A verdict. The captured refusal is
+  `docs/handoffs/ss-020-claude-audit-04a-unavailable-response.md`, classified
+  `HANDOFF UNAVAILABLE—NO VERDICT`: the browser-chat packet contained identity
+  metadata and prose assertions but no inspectable source, focused diff, test
+  output, or hashable artifact contents. Claude correctly declined to certify
+  the verifier/gate claims from summaries. This is a handoff-evidence defect,
+  not a candidate finding, clearance, or implementation failure. Supersede the
+  04A packet for paste use and obtain Lead approval for compact packet(s) that
+  embed actual focused source/execution evidence before any new Claude request.
+  04B and Stage 05 remain blocked; PR preparation remains prohibited.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
