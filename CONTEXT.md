@@ -370,6 +370,18 @@ Implementation-ready transition on 2026-08-08:
   prose-only prepared 04B packet is non-operative and must not be submitted.
   This changes only audit packaging; candidate, runtime, observability,
   dependencies, data flow, and human-clearance state remain unchanged.
+- Lead-approved evidence-bearing 04A1/04A2/04A3 packets are committed at
+  `7a916a2d4d2595b2ddc7cdab9bacc7da7f5fdb28`, generated from exact
+  `git show e365204:<path>` excerpts and fresh Node 22 targeted evidence
+  (`40/40`): 04A1 3,793 bytes, 04A2 3,795 bytes, and 04A3 3,799 bytes.
+  04A1 is ready for its fresh Claude audit with delivery manifest
+  `docs/handoffs/ss-020-claude-audit-04a1-delivery-manifest.md` committed at
+  `98612b157ff3808e11e8aa472623158853b0b25d`; its packet blob is
+  `81ace0cf4e23c4e9509caf3a694923a5360f2d0a`, SHA-256
+  `9d17417c1d6cde6134b0dcfefde009e9f63025e9b9838996d9be73a4f4cd4dfb`.
+  All three exact PASS results (or a no-verdict/failure stop) are required
+  before redesigned 04B work. Status remains `4. Final Audit (Claude)`, PR is
+  empty, observability unchanged, and no clearance is claimed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
