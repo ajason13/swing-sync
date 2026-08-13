@@ -54,6 +54,10 @@ export function createInitialAppState(): AppState {
   };
 }
 
+export function resetAppState(state: AppState): void {
+  Object.assign(state, createInitialAppState());
+}
+
 export function undeclaredPhaseDeclarations(): PhaseDeclarations {
   return {
     view: "undeclared",

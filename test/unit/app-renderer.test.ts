@@ -85,6 +85,10 @@ describe("app renderer contracts", () => {
     expect(root.innerHTML).toContain('accept="video/*" tabindex="-1" aria-label="Choose a local video file"');
     expect(root.innerHTML).not.toContain('id="video-file" aria-hidden="true"');
     expect(root.innerHTML).toContain('id="app-visible-status"');
+    expect(root.innerHTML).toContain('id="clear-local-data"');
+    expect(root.innerHTML).toContain("Local app data");
+    expect(root.innerHTML).toContain("not device-level erasure");
+    expect(root.innerHTML).toContain("browser or operating-system storage behavior may vary");
     expect(root.innerHTML).not.toMatch(/id="app-visible-status"[^>]*(?:role="status"|aria-live)/);
   });
 

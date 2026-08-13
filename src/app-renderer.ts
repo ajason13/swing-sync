@@ -64,6 +64,11 @@ export function renderApp(root: HTMLElement, state: AppState, consentAccepted: b
             <span>I understand Swing Sync is educational only and that golf practice involves physical risk I accept responsibility for.</span>
           </label>
           <p class="privacy-note">Only this acknowledgement is stored locally. It is not a durable or legally audited consent record.</p>
+          <section class="local-data-controls" aria-labelledby="local-data-heading">
+            <h3 id="local-data-heading">Local app data</h3>
+            <button id="clear-local-data" class="secondary-action clear-local-data" type="button" aria-describedby="clear-local-data-note">Clear local app data</button>
+            <p class="privacy-note" id="clear-local-data-note">This clears Swing Sync's registered local user state in this browser, including the safety acknowledgement and future app-owned analysis state if registered. It is not device-level erasure, and browser or operating-system storage behavior may vary. Downloaded files are outside this control.</p>
+          </section>
           <p class="status" id="app-visible-status">${currentStatus}</p>
         </aside>
       </main>

@@ -80,7 +80,8 @@ describe("app event binding", () => {
     const requestRender = vi.fn();
     const consent: SafetyConsentStore = {
       hasSafetyConsent: () => false,
-      setSafetyConsent: () => undefined
+      setSafetyConsent: () => undefined,
+      clearAppLocalData: () => "blocked"
     };
     const dependencies = {
       state: createInitialAppState(),
@@ -116,6 +117,7 @@ describe("app event binding", () => {
     const eventRenderOwners = [
       ["dependency contract", "requestRender(request?: RenderRequest): void;"],
       ["consent change", 'requestRender({ focusKey: "safety-consent", announcement: message });'],
+      ["clear local data", 'requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });'],
       ["consent guard", 'requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });'],
       ["video guard", 'requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });'],
       ["begin accepted", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
@@ -145,6 +147,7 @@ describe("app event binding", () => {
 
     const mappedCallsites = [
       ["consent", 'focusKey: "safety-consent", announcement: message'],
+      ["clear local data", 'clearAppLocalData?.() === "cleared"'],
       ["consent guard", 'focusKey: "safety-consent", visibleStatusText: message'],
       ["video guard", 'focusKey: "video-picker", visibleStatusText: message'],
       ["begin", 'focusKey: "stage-heading", visibleStatusText: message'],
@@ -201,6 +204,39 @@ describe("app event binding", () => {
     await changing;
     expect(requestRender).toHaveBeenCalledOnce();
     expect(requestRender).toHaveBeenCalledWith(expect.objectContaining({ focusKey: "video-picker" }));
+  });
+
+  it("clears persistent and volatile app state with one sanitized status, including blocked storage", async () => {
+    for (const [result, expected] of [
+      ["cleared", "Local Swing Sync user state was cleared in this browser."],
+      ["blocked", "Swing Sync could not clear all local app data in this browser."]
+    ] as const) {
+      const clearControl = new EventTargetStub();
+      const state = createInitialAppState();
+      state.selectedVideo = new File(["video"], "swing.mp4", { type: "video/mp4" });
+      const closeActive = vi.fn(async () => undefined);
+      const clearAppLocalData = vi.fn(() => result);
+      const requestRender = vi.fn();
+      bindAppEvents(new MapRoot({ "#clear-local-data": clearControl }) as unknown as ParentNode, {
+        state,
+        consent: { hasSafetyConsent: () => result === "cleared", setSafetyConsent: () => undefined, clearAppLocalData },
+        lifecycle: { closeActive } as never,
+        requestRender,
+        applyAccessibilityIntent: vi.fn()
+      });
+
+      await clearControl.dispatch("click");
+
+      expect(closeActive).toHaveBeenCalledOnce();
+      expect(clearAppLocalData).toHaveBeenCalledOnce();
+      expect(state.selectedVideo).toBeUndefined();
+      expect(state.activeStep).toBe("capture");
+      expect(requestRender).toHaveBeenCalledWith(expect.objectContaining({
+        focusKey: "safety-consent",
+        visibleStatusText: expect.stringContaining(expected),
+        announcement: expect.stringContaining(expected)
+      }));
+    }
   });
 
   it("returns focus to the picker on native chooser cancel without rendering", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createInitialAppState,
+  resetAppState,
   resetPhaseReview,
   selectCanBeginAnalysis,
   selectLocalVideo,
@@ -49,5 +50,18 @@ describe("app state transitions", () => {
     expect(state.selectedKeyframeIndex).toBe(0);
     expect(state.swingCardBusy).toBe(false);
     expect(state.swingCardStatus).toBe("Swing Card export is generated locally after review data exists.");
+  });
+
+  it("resets the full volatile analysis session for clear-local-data", () => {
+    const state = createInitialAppState();
+    selectLocalVideo(state, file());
+    selectWorkflowStep(state, "review");
+    setProcessingState(state, "completed");
+    state.phaseConfirmation = true;
+    state.latestLandmarkCount = 33;
+
+    resetAppState(state);
+
+    expect(state).toEqual(createInitialAppState());
   });
 });
