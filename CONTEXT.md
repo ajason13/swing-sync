@@ -484,6 +484,12 @@ Implementation-ready transition on 2026-08-08:
   legal/privacy/safety/accessibility/trademark/compliance/public-release
   decisions remain PENDING/BLOCKED and no clearance is claimed. Runtime
   observability remains intentionally unchanged.
+- PR #21 is created and awaiting normal review/merge:
+  https://github.com/ajason13/swing-sync/pull/21. It records the SS-020 scope,
+  Node 22 verification, Git-native Claude audit lineage, packaging correction,
+  risks/deferred qualified-human gate, and unchanged observability. This is
+  only the PR-creation event: do not merge or mark SS-020 Done until merge and
+  post-merge synchronization are separately recorded.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
