@@ -439,6 +439,20 @@ Implementation-ready transition on 2026-08-08:
   with `PR PREPARATION PERMITTED` may unlock engineering PR preparation; it
   cannot grant any qualified-human release clearance. Status stays
   `4. Final Audit (Claude)`, PR empty, and observability unchanged.
+- Claude returned Stage 05 `FAIL`, captured at
+  `docs/handoffs/ss-020-claude-audit-05-git-native-response.md`. It verified
+  base/candidate/audit-record/packaging ancestry, candidate-to-audit-record
+  coordination-only lineage, and the Stage 05 prompt identity, but found the
+  prompt's ledger mislabeled structured verdict-body identities as whole raw
+  response-file byte/SHA-256 identities for 01, 02, 03A, and 04. The raw files
+  themselves are intact: their actual whole-file identities differ because
+  they retain Claude's surrounding verification narrative; 03B is a compact
+  raw structured response and therefore matches both bases. This is a real
+  audit-packaging/identity-contract blocker, not a candidate runtime or
+  product defect. PR preparation is prohibited. Lead must approve a corrected
+  ledger that records both whole-file and explicitly extracted structured-body
+  identities (including extraction method) followed by a focused Git-native
+  Stage 05 re-review. No clearance or observability state changed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
