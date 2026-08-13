@@ -454,6 +454,20 @@ Implementation-ready transition on 2026-08-08:
   re-review. B1 remains substantively resolved by operative 01/04, but final
   synthesis must fail closed until the re-review passes. No clearance or
   observability state changed.
+- The Lead-approved focused Stage 05 dual-ledger re-review is packaged and
+  pushed: prompt
+  `docs/handoffs/ss-020-claude-audit-05-git-native-focused-rereview.md` at
+  `12f10039436aba70c9fb9c9a52c21769efaab93c` (3,839 UTF-8 bytes, blob
+  `a6bb990fc3d61d6eab6813f7213ccce368d4b49c`, SHA-256
+  `97c5b18c7687d93e988f96ee5ebebd7aa32dd1ef5362930b76bc1acea1ba2f21`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-05-git-native-focused-rereview-delivery-manifest.md`
+  at `8c6bd4068465ba25053585e6a0a8cae42ddcb0d8`. It pins both whole-file and
+  structured-body identities, a fail-closed extraction contract, unchanged
+  response history, and packaging-only candidate lineage. Send the receipt
+  first and exact prompt second in one fresh Claude chat. PR preparation
+  remains prohibited unless this re-review returns exact PASS with
+  `PR PREPARATION PERMITTED`; no human-release clearance is claimed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
