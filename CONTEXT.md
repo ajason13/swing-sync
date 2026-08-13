@@ -442,17 +442,18 @@ Implementation-ready transition on 2026-08-08:
 - Claude returned Stage 05 `FAIL`, captured at
   `docs/handoffs/ss-020-claude-audit-05-git-native-response.md`. It verified
   base/candidate/audit-record/packaging ancestry, candidate-to-audit-record
-  coordination-only lineage, and the Stage 05 prompt identity, but found the
-  prompt's ledger mislabeled structured verdict-body identities as whole raw
-  response-file byte/SHA-256 identities for 01, 02, 03A, and 04. The raw files
-  themselves are intact: their actual whole-file identities differ because
-  they retain Claude's surrounding verification narrative; 03B is a compact
-  raw structured response and therefore matches both bases. This is a real
-  audit-packaging/identity-contract blocker, not a candidate runtime or
-  product defect. PR preparation is prohibited. Lead must approve a corrected
-  ledger that records both whole-file and explicitly extracted structured-body
-  identities (including extraction method) followed by a focused Git-native
-  Stage 05 re-review. No clearance or observability state changed.
+  coordination-only lineage, and the Stage 05 prompt identity, but could not
+  apply the prompt's body ledger to raw response blobs because the prompt did
+  not supply a self-contained extraction contract or parallel whole-file
+  identities for 01, 02, 03A, and 04. The raw files are intact and their
+  structured verdict-body identities match the earlier ledger; 03B is a compact
+  raw structured response and therefore its body equals its whole file. This is
+  a real audit-packaging/identity-contract blocker, not a candidate runtime or
+  product defect. PR preparation is prohibited. Lead approved a corrected dual
+  ledger with an explicit extraction method and a focused Git-native Stage 05
+  re-review. B1 remains substantively resolved by operative 01/04, but final
+  synthesis must fail closed until the re-review passes. No clearance or
+  observability state changed.
 - Exactly nine intentional untracked `docs/agent-guidance/` files remain
   preserved byte-for-byte and out of scope.
 - Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
