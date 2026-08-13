@@ -83,4 +83,5 @@ safety, deletion, anonymity, or regulatory compliance.
 
 See [Safety terms draft](./safety-terms.md) and
 [Privacy architecture](./privacy-architecture.md) for the current project
-boundaries.
+boundaries. The [release review gate](./release-review-gate.md) records the
+pending qualified-human review package for any future public release.

@@ -12,9 +12,11 @@ Last updated: 2026-08-08
   `6872897475786e41cc434374224236854bde2846`.
 - Current completed task:
   `SS-019 Perform accessibility and responsive design hardening`.
-- Active task: none. Next backlog task:
+- Active task:
   `SS-020 Prepare human legal/privacy/safety release review gate`.
-- Active branch: `main`.
+- Active branch: `ss-020-release-review-gate`, created from refreshed `main`
+  commit `0509999e7de5e609787fe53e8bdac2747aa0be64`.
+- SS-020 handshake status: `4. Final Audit (Claude)`.
 - SS-019 handshake status: `5. Done`.
 - Latest Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20),
   merged on 2026-08-08.
@@ -30,6 +32,468 @@ Last updated: 2026-08-08
   PR #20 merged as `6872897475786e41cc434374224236854bde2846`.
 - Remaining visible non-Done backlog tasks: SS-020 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
+
+## SS-020 Coordination
+
+SS-020 is legal-, privacy-, safety-, medical-scope-, trademark-, and
+release-governance-sensitive. It is operating in Gated Delivery Mode. The
+board's `1. Spec Drafting (Gemini)` label is retained for legacy compatibility,
+but the current owner is Codex as Deep Researcher and Specification Drafter.
+Gemini may supplement only; the human decision is that Gemini free-plan Deep
+Research is unavailable. Codex owns repository implementation and verification,
+Claude owns independent final adversarial audit, and qualified human reviewers
+own future legal, privacy, safety, trademark, and public-release decisions.
+Specialist and research outputs are advice requiring lead-architect
+disposition.
+
+Kickoff state on 2026-08-08:
+
+- `git fetch origin` completed successfully. Local `main` and `origin/main`
+  remain synchronized at post-merge context commit
+  `0509999e7de5e609787fe53e8bdac2747aa0be64`; PR #20 is merged as
+  `6872897475786e41cc434374224236854bde2846`.
+- The story branch `ss-020-release-review-gate` was created directly from the
+  confirmed `0509999e7de5e609787fe53e8bdac2747aa0be64` baseline.
+- Live Notion task:
+  https://app.notion.com/p/392834a0c8a6818b9f8cecd0debacbf6
+- Notion fields were confirmed before branching: Name
+  `SS-020 Prepare human legal/privacy/safety release review gate`, Branch
+  `ss-020-release-review-gate`, Handshake Status `0. Backlog`, Pull Request
+  empty, and Task Type `Research`. The task was then moved to
+  `1. Spec Drafting (Gemini)` with the branch retained and Pull Request empty.
+- Initial kickoff records are committed at
+  `845a5324d98f01406c14f21732556ebc1184f679` (`docs: start SS-020 release
+  review research`). `docs/ss-020-gemini-research-prompt.md` is historical and
+  superseded for paste use; do not wait for or solicit a Gemini response as an
+  implementation gate. Codex Deep Researcher/Specification Drafter now owns
+  research and the candidate specification. The Lead Architect remains the
+  disposition authority; Builder edits have not started.
+- Role pins: Lead Architect approves delivery mode, scope, acceptance mapping,
+  document ownership, and verification; Codex Deep Researcher/Specification
+  Drafter verifies primary sources and drafts the specification; Builder later
+  implements only the approved scope; Workflow Coordinator records durable
+  state without changing technical direction; Claude independently audits the
+  final package; qualified humans alone may provide legal/privacy/safety,
+  trademark, or release clearance.
+- The narrow docs-only governance exception is used to omit a separate
+  preimplementation Claude QA-planning round: this story changes no runtime,
+  dependency, data flow, provider, deployment, or exported-data behavior;
+  material current external facts must be checked against primary sources with
+  URLs and 2026-08-08 access dates; and independent final Claude audit remains
+  required. The exception does not waive lead approval, final Claude audit, or
+  future qualified-human release review.
+- Required later gates are: Codex research/specification and Lead Architect
+  disposition with approved implementation-ready scope; Codex documentation/
+  verifier implementation and Node 22 verification; Claude final adversarial
+  audit and explicit PR-preparation decision; PR creation; merge; and
+  post-merge synchronization.
+  Qualified-human legal/privacy/safety sign-off remains a future public-release
+  gate and must not be represented as completed by this story or Claude.
+- Runtime observability is intentionally unchanged because SS-020 is
+  documentation/release governance only. No telemetry, analytics, remote
+  logging, cloud diagnostics, runtime feature, provider/model, persistence,
+  service-worker, exported-data, remote-sharing, or deployment change is in
+  scope.
+- Exactly nine intentional untracked files under `docs/agent-guidance/` remain
+  preserved byte-for-byte and out of scope. No dependency, licensing, bundle,
+  notices, or SBOM surface has changed.
+- Pull Request: none. Claude audit: not started. Human release review/sign-off:
+  not started. Next owner: Codex Deep Researcher/Specification Drafter.
+  Minimum next action: complete Codex-owned primary-source research and
+  candidate specification, then obtain Lead Architect disposition. This
+  establishes an operational future human gate; it is not human, legal,
+  privacy, safety, trademark, medical, compliance, or release approval.
+
+Implementation-ready transition on 2026-08-08:
+
+- Codex research is committed at `03f18d4a0d8f9953bd6db54c393594a1b35a62c1`
+  (`docs: record SS-020 Codex research`); the independently reviewed Lead
+  Architect approval is committed at
+  `913718c9c4de6b36a14cb81e3567c92654fc3da2`
+  (`docs: approve SS-020 implementation scope`) and returned exact
+  `APPROVED FOR BUILDER`. The research-routing and Architect write-delegate
+  attempts stalled; the primary Codex research/specification fallback was
+  followed by independent Lead Architect review and disposition. This records
+  an availability exception, not a silent role or technical-direction change.
+- Approved artifacts: `docs/ss-020-research-notes.md`,
+  `docs/ss-020-research-disposition.md`, and
+  `docs/ss-020-preimplementation-spec.md`. The historical
+  `docs/ss-020-gemini-research-prompt.md` remains superseded for paste use.
+- Lead dispositions: Adopt one canonical, currently blocked release-review
+  package; traceable claim inventory, evidence taxonomy, qualified-reviewer
+  checklist, open-decision/source register, SS-002 legal blocker, scoped future
+  outcomes, and declarative verifier coverage. Revise approval, privacy,
+  trademark-search, and stale export wording into bounded factual or
+  reviewer-scoped language. Defer actual human signatures and decisions,
+  jurisdiction/territory/audience/business/host/trademark choices, SS-021,
+  SS-022, and other runtime-copy changes. Reject any automated or AI clearance,
+  SS-002 draft rewrite, absolute/professional claims, runtime/data/deployment
+  changes, parallel verifier, or changes to historical packets/protected files.
+- Builder is authorized only for these eight files:
+  `docs/release-review-gate.md`, `README.md`, `CONTRIBUTING.md`,
+  `docs/limitations.md`, `docs/safety-terms.md`,
+  `docs/privacy-architecture.md`, `scripts/verify-docs-claims.js`, and
+  `test/unit/docs-claims.test.ts`. The sole approved factual correction is the
+  bounded current-behavior export paragraph in `docs/privacy-architecture.md`;
+  it is not privacy approval. Any other tracked surface or runtime, dependency,
+  licensing, bundle, notice, SBOM, deployment, or data-flow change stops work
+  for renewed Lead Architect approval.
+- Verifier contract: extend only the existing declarative
+  `files`/`requiredStrings`/`crossFileChecks` registries and injected reader in
+  `scripts/verify-docs-claims.js`; add named adversarial unit cases for missing
+  files, formatting changes, empty values, embedded delimiters, fail-closed
+  paths, and positive paths. Do not add a policy parser or parallel verifier.
+- Builder must use Node 22 and record exact results for
+  `npm run test:unit -- docs-claims --reporter=verbose`, `npm run docs:verify`,
+  `npm run safety:verify`, `npm run privacy:verify`,
+  `npm run compliance:verify`, `npm run build`, and `git diff --check`.
+  Observability remains unchanged; no runtime telemetry, logging, diagnostics,
+  or behavior is authorized.
+- The corrected immutable audit candidate is
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, pushed at
+  `origin/ss-020-release-review-gate`; the prior remote-missing evidence is
+  resolved. Current branch HEAD is `ce3306d058f89920824bc2c9eb241f823c44d743`.
+  Internal Lead disposition is `APPROVED FOR CLAUDE AUDIT` and Codex research
+  is `PASS`; these are engineering gate inputs, not Claude or qualified-human
+  approval.
+- Claude Stage 01 governance response is recorded at
+  `docs/handoffs/ss-020-claude-audit-01-response.md` (1,997 bytes; SHA-256
+  `b94d483af413576cf2b50c3560f51b8696f928a0413e29833b439bcc75336fac`). It
+  returned `FAIL` for candidate `4e5dd4029da053ebb145b0a15416cbd5450b8fb1`.
+  Adopted blocker B1: the operational Accessibility checklist/evidence/owner
+  is missing, as is explicit accessibility blocking/reopening coverage. The
+  correction is applied; the Lead is `APPROVED` and independent research is
+  `ADOPT`. Compact focused re-review artifact
+  `docs/handoffs/ss-020-claude-audit-01-rereview.md` is Lead `APPROVED`
+  (7,337 bytes; SHA-256
+  `d9aff25f70b1c16704549dbf72999b7cba8b14264ddc275cf0e4abc3cd344077`).
+- Its immutable Claude response is
+  `docs/handoffs/ss-020-claude-audit-01-rereview-response.md` (4,218 bytes;
+  SHA-256 `36b926edf64114ceff3f7bf717a1950767780e06a86738169923a702c555e018`).
+  It returned `PASS` for candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, with B1 `RESOLVED`, no blockers,
+  and no missing evidence. Stage 01 `PASS` is operative. Lead rejected Claude
+  N1 as a false inference: a clean clone correctly sees six tracked
+  `docs/agent-guidance/` files but cannot observe the originating worktree's
+  nine additional protected local-only untracked files; the local preservation
+  statement is accurate. N1 is not a candidate defect, blocker, missing
+  evidence, or supplement. The refreshed packet set is Lead `APPROVED`:
+  `02` 8,859 bytes, blob `4f750d35ee9a8a3e54e6b9fcfe423559a0a5aa25`, SHA-256
+  `318fbd4756ba7b94f1e4646616ac833120ec743cc871f300b90873487951d0c9`; `03`
+  8,989 bytes, blob `1a46ec9a0dc81005a800c03120884f261aa9ce2b`, SHA-256
+  `d1f56dd913e5ee51f9b052c9855491a58e55c280d0cbfe94a9a74bee3fd4176`; `04`
+  8,781 bytes, blob `141b4f3e007ffe73778280092a82a9cb550eaf3f`, SHA-256
+  `db8bef38ffbeaba81a8c892a2a3baae8e1614dba68813d8de73c2851fbd1d5ad`; and
+  `05` 9,182 bytes, blob `8e8f8bff71a966f8b58458828be0dcc22f7ae08d`, SHA-256
+  `f2f13b4dd78fa6848ca058568dc309a5ef08c0a6fbd9378ca932e2b2bbb30794`.
+  The original 8,859-byte Stage 02 packet was rate-limited and yielded no
+  response or verdict; it is superseded for usability only. The immutable
+  candidate `e365204ecb763cf36f6663ac88e8f272744bf0fa` and its 21 paths are
+  unchanged. Lead approved operative `02-MICRO` (4,000 bytes, blob
+  `b9414408090f8f3072f3af256408d9d6745e3b25`, SHA-256
+  `5d32698813203df036a6939c5cf6d94c828fb6b89562bc5fd629ac96f0b0ec01`) and
+  updated `05` (9,632 bytes, blob `5d68c0724c4aec158a184792d05e6bab65e4f348`,
+  SHA-256 `9d9a76e1fe9df6cc7d0b2b290be2037d24d9549e4246bae99d5c222c10e5b743`).
+  Scoped micro package/push completed at
+  `dac208fac8d861e351e18956f864933e85b85147`; local and remote match and the
+  `02-MICRO`/updated `05` blobs and SHA-256 values are unchanged. Stage 02
+  `MICRO` is now the sole authorized retry; Stage 03 remains gated by its exact
+  result, followed by the remaining sequential gates. PR preparation remains
+  prohibited.
+- Current Node `22.22.3` verification passed: targeted `docs-claims` 40/40,
+  `npm run docs:verify`, `npm run safety:verify`, `npm run privacy:verify`,
+  `npm run compliance:verify`, `npm run build`, and `git diff --check`.
+  Runtime observability is intentionally unchanged: no telemetry, analytics,
+  logging, diagnostics, providers, persistence, data flow, or deployment
+  behavior changed.
+- Notion is now `4. Final Audit (Claude)`; branch remains
+  `ss-020-release-review-gate` and Pull Request remains empty. Stage 01 PASS is
+  operative. Scoped micro package/push completed at
+  `dac208fac8d861e351e18956f864933e85b85147`; Stage 02 `MICRO` is the sole
+  authorized retry. Stage 03 is gated by that exact result, followed by the
+  remaining sequential gates. PR preparation remains prohibited. Claude must
+  return `PASS` and explicitly permit PR preparation before a PR may be
+  prepared. `PASS WITH MINOR FIXES` requires fixes, verification, and focused
+  re-review; `FAIL` blocks PR preparation. PR creation, merge, and post-merge
+  synchronization remain separate later gates. The future qualified-human
+  release gate is deliberately not a package-merge prerequisite, and no human,
+  legal, privacy, safety, trademark, accessibility, medical, compliance, or
+  release clearance has occurred.
+- Stage 02 `MICRO` provenance and identity-bridge disposition on 2026-08-11:
+  the locally captured response artifact is
+  `docs/handoffs/ss-020-claude-audit-02-inventory-coverage-micro-response.md`
+  (1,614 bytes; SHA-256
+  `1799e9468702431b5c4ce1fea60f60a3f9a291e1f99dcb95e4e3d73f8a7f0fb6`), while
+  Claude reports its original response was 1,560 bytes. This is a provenance
+  conflict; do not describe the saved artifact as byte-exact Claude output.
+  Claude's refusal is separately recorded at
+  `docs/handoffs/ss-020-claude-audit-02-micro-restatement-refusal.md` (1,588
+  bytes; SHA-256
+  `71b59f46a460fd24fe7f68ef498fb2912288cda42c944e4269fec4138d8c703a`).
+  The Lead treats the original Stage 02 substance—AC1/AC5 `PASS`, B1
+  `RESOLVED`, no blockers, and `NEXT_STAGE: 03`—as non-operative: it binds
+  `CANDIDATE` to packaging HEAD `244b8b6`, not immutable candidate `e365204`,
+  and its non-blocker remains recorded rather than removed. Stage 03 is
+  blocked. The sole next action was a same-chat, **new** Stage 02
+  identity-bridge analysis comparing `e365204` through `244b8b6`.
+- Claude's new Stage 02 `MICRO` identity-bridge response is recorded at
+  `docs/handoffs/ss-020-claude-audit-02-micro-identity-bridge-response.md`
+  (1,705 bytes; SHA-256
+  `ec795519aef658fdab60b79319459067d4e0aae946c2d0e8c68e3c1c0aa1e3ba`).
+  Claude independently verified `e365204` is an ancestor of `244b8b6`, that
+  their diff contains only `CONTEXT.md` and audit-handoff files, and that all
+  eight AC1/AC5/B1 reviewed surfaces are byte-identical. The response binds
+  `CANDIDATE_ID` to `e365204ecb763cf36f6663ac88e8f272744bf0fa`, reports AC1
+  `PASS`, AC5 `PASS`, B1 `RESOLVED`, `VERDICT: PASS`, no blockers or missing
+  evidence, and `NEXT_STAGE: MAY PROCEED TO STAGE 03`. Its non-blocker is
+  preserved verbatim: `CONTEXT.md` agent-guidance count discrepancy carried
+  from 01-rereview, unchanged, out of this stage's scope. Claude did not
+  affirm Notion or `CONTEXT.md` provenance recording.
+- Stage 03 is authorized. Keep status `4. Final Audit (Claude)`, the empty
+  PR, no clearance claim, and unchanged observability. PR preparation remains
+  prohibited pending the remaining sequential final-audit gates and explicit
+  permission.
+- Lead Architect approved an in-task Stage 03 evidence decomposition on
+  2026-08-11 to meet the browser-audit packet budget without weakening the
+  review: `03A-PUBLIC-CLAIMS-PRIVACY` owns AC3 and the public/privacy portion
+  of AC4; `03B-SOURCE-REGISTER-PROVIDER` owns the provider/source-register
+  portion of AC4 and depends on the exact 03A response-body hash. Both remain
+  bound to immutable candidate `e365204ecb763cf36f6663ac88e8f272744bf0fa` and
+  the exact 21-path manifest. They are component results, not separate tasks,
+  branches, candidates, PRs, or human-clearance decisions. Each prompt is
+  capped at 4,000 UTF-8 bytes and each response at 1,800 bytes; both exact
+  `PASS` results, with no blockers or missing evidence, are required before
+  Stage 04 preflight. The original 4,715-byte 03 micro draft is non-operative
+  and must not be submitted or committed.
+- Stage 03A is packaged and pushed for the required external Claude handoff:
+  packet commit `d62bf5789979f5edd0c6611be039c22e935286af`, packet
+  `docs/handoffs/ss-020-claude-audit-03a-public-claims-privacy-micro.md`
+  (3,944 UTF-8 bytes, blob `b40131cf78d088f53a524151ed441fa1b82dc2eb`,
+  SHA-256 `1a79f2c0d2169a202beb1c0f7ecea5d1e23772e5e9ca62823e6d29250b9c8e3c`).
+  Its separately committed delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-03a-delivery-manifest.md` at
+  `5bec48dbc1ce42a2dc0f9f046a8b35dc00be0a73`. Send the small identity record
+  first and the exact packet second in one fresh Claude chat. No Stage 03
+  verdict exists yet; the task remains `4. Final Audit (Claude)`, with no PR
+  and no clearance claim.
+- Claude returned operative `03A-MICRO` `PASS` for immutable candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`: AC3 `PASS`,
+  AC4 public/privacy `PASS`, no blockers, no missing evidence, and
+  `NEXT_STAGE: MAY PROCEED TO STAGE 03B`. The captured response is
+  `docs/handoffs/ss-020-claude-audit-03a-public-claims-privacy-micro-response.md`;
+  its structured response body is 566 bytes with SHA-256
+  `720f75ed560ab679e570a7b83bad16bbc50bfe88df1425690f0cf53e42261eeb`.
+  Preserve Claude's sole non-blocker: the 03A packet called out a nonexistent
+  `diff-check` npm script; Claude independently substituted the relevant
+  `git diff` scope check and found no protected-surface drift. This is a packet
+  wording/command-label correction only, not a candidate finding. The 03B
+  packet now carries the exact 03A body identity and spells the existing
+  `git diff --check` verification correctly. Stage 03B is the next external
+  gate; PR preparation remains prohibited and no clearance is claimed.
+- Stage 03B is packaged and pushed for a fresh, bounded Claude handoff:
+  packet commit `a735cbf4a705ef170bf9979eaf5797448104bb5b`, packet
+  `docs/handoffs/ss-020-claude-audit-03b-provider-sources-micro.md`
+  (3,974 UTF-8 bytes, blob `6b91fad3f74fd6d9288ea8fccb6dd87ce230c2b7`,
+  SHA-256 `4b7ae4233d27b4c606e6e80deb8991d36fce87c5a089a7297cb0725ae07c773c`).
+  Its delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-03b-delivery-manifest.md` at
+  `99196b62f0dc7d4a502e90e83508a975d3c238d8`. Send the identity record first
+  and exact packet second in one fresh Claude chat. No 03B verdict exists yet;
+  status stays `4. Final Audit (Claude)`, PR stays empty, and observability is
+  unchanged.
+- Claude's initial 03B response reports candidate identity and AC4
+  provider/sources `PASS`, `VERDICT: PASS`, no blockers, no non-blockers, no
+  missing evidence, and `NEXT_STAGE: MAY PROCEED TO STAGE 04`; its captured
+  artifact is
+  `docs/handoffs/ss-020-claude-audit-03b-provider-sources-micro-response.md`
+  (2,350 UTF-8 bytes). It exceeds the 1,800-byte response hard cap, so it is
+  not yet an operative component result. Its structured body is 370 bytes,
+  SHA-256 `430df4158fb59128e8f918907808c27c5e88399011e016c6feef1421988334e5`.
+  The only permitted next action for that handoff is the same-chat compact
+  restatement at
+  `docs/handoffs/ss-020-claude-audit-03b-compact-restatement-request.md`;
+  it requests no new analysis and no finding loss. Stage 04 preflight may be
+  designed in parallel, but no Stage 04 audit packet may be submitted until
+  the compact 03B result is captured within the cap.
+- Claude's same-chat compact 03B restatement is now captured at
+  `docs/handoffs/ss-020-claude-audit-03b-compact-restatement-response.md`
+  (390 UTF-8 bytes; SHA-256
+  `0e81372afc3e4530f683b3fceecfa776fff0aab624751be381765e627f46dfe4`).
+  It is the sole operative 03B component result: candidate identity matches,
+  AC4 provider/sources `PASS`, verdict `PASS`, no blockers/non-blockers/
+  missing/future findings, and `NEXT_STAGE: MAY PROCEED TO STAGE 04`. The
+  2,350-byte initial response remains preserved but non-operative. Composite
+  Stage 03 now passes (03A and compact 03B); Stage 04 packaging may proceed,
+  while PR preparation remains prohibited and no clearance is claimed.
+- Lead Architect independently approved **Stage 04 compact packaging only**:
+  an essential two-component evidence decomposition, `04A` verifier contract
+  (AC3/AC4/AC6 and B1 enforcement) and `04B` adversarial tests/execution
+  (AC1/AC3/AC4/AC6 and B1 test evidence, dependent on the exact 04A body
+  identity). The 8,781-byte legacy Stage 04 artifact remains immutable and
+  non-operative. Every component packet/response remains capped at 4,000/
+  1,800 UTF-8 bytes; the compact 03B prerequisite is now satisfied. This is
+  an in-task audit-evidence decomposition, not a new task,
+  candidate, branch, PR, or clearance decision. Stage 05 remains separately
+  gated and will require a new compact synthesis after operative 04A/04B PASS
+  results.
+- Stage 04A is packaged and pushed for the required fresh Claude handoff:
+  packet commit `cb53cf352ff72e9917969d9873f8553204241258`, packet
+  `docs/handoffs/ss-020-claude-audit-04a-verifier-contract-micro.md`
+  (3,439 UTF-8 bytes, blob `a6e84065f4ca9dfb57815a2fd88de204ea713f4c`,
+  SHA-256 `989faac5616e88ca6ba9267449850eca8238a9ad65588cfb3bc500b89a1c07d8`).
+  Its delivery identity record is
+  `docs/handoffs/ss-020-claude-audit-04a-delivery-manifest.md` at
+  `e01875ea11ecc427772e49a8bf8dc99c1cb89753`. Send the small identity record
+  first and the exact packet second in one fresh Claude chat. 04B is prepared
+  but cannot be packaged or submitted until a cap-compliant exact 04A response
+  body exists. No Stage 04 verdict yet; status stays `4. Final Audit (Claude)`,
+  PR stays empty, observability is unchanged, and no clearance is claimed.
+- Claude did **not** issue a 04A verdict. The captured refusal is
+  `docs/handoffs/ss-020-claude-audit-04a-unavailable-response.md`, classified
+  `HANDOFF UNAVAILABLE—NO VERDICT`: the browser-chat packet contained identity
+  metadata and prose assertions but no inspectable source, focused diff, test
+  output, or hashable artifact contents. Claude correctly declined to certify
+  the verifier/gate claims from summaries. This is a handoff-evidence defect,
+  not a candidate finding, clearance, or implementation failure. Supersede the
+  04A packet for paste use and obtain Lead approval for compact packet(s) that
+  embed actual focused source/execution evidence before any new Claude request.
+  04B and Stage 05 remain blocked; PR preparation remains prohibited.
+- Lead Architect approved an evidence-first 04A replacement, not another
+  summary-only retry: three independent focused source-contract components,
+  `04A1` accessibility contract (B1/AC3/accessibility AC6), `04A2` premature
+  approval/no-clearance enforcement (AC4), and `04A3` pending outcome/canonical
+  ownership enforcement (AC6). Each must embed exact excerpts generated from
+  immutable candidate `e365204` plus compact named Node 22 test evidence,
+  explain that Claude Chat sees only pasted evidence, and permit
+  `HANDOFF UNAVAILABLE—NO VERDICT` rather than forcing a verdict. All three
+  exact, cap-compliant `PASS` results are required before redesigning 04B. The
+  prose-only prepared 04B packet is non-operative and must not be submitted.
+  This changes only audit packaging; candidate, runtime, observability,
+  dependencies, data flow, and human-clearance state remain unchanged.
+- Lead-approved evidence-bearing 04A1/04A2/04A3 packets are committed at
+  `7a916a2d4d2595b2ddc7cdab9bacc7da7f5fdb28`, generated from exact
+  `git show e365204:<path>` excerpts and fresh Node 22 targeted evidence
+  (`40/40`): 04A1 3,793 bytes, 04A2 3,795 bytes, and 04A3 3,799 bytes.
+  04A1 is ready for its fresh Claude audit with delivery manifest
+  `docs/handoffs/ss-020-claude-audit-04a1-delivery-manifest.md` committed at
+  `98612b157ff3808e11e8aa472623158853b0b25d`; its packet blob is
+  `81ace0cf4e23c4e9509caf3a694923a5360f2d0a`, SHA-256
+  `9d17417c1d6cde6134b0dcfefde009e9f63025e9b9838996d9be73a4f4cd4dfb`.
+  All three exact PASS results (or a no-verdict/failure stop) are required
+  before redesigned 04B work. Status remains `4. Final Audit (Claude)`, PR is
+  empty, observability unchanged, and no clearance is claimed.
+- Claude returned `HANDOFF UNAVAILABLE—NO VERDICT` for 04A1, captured at
+  `docs/handoffs/ss-020-claude-audit-04a1-unavailable-response.md`. The exact
+  pasted excerpts were internally consistent, but Claude correctly could not
+  close enforcement completeness or observed execution evidence under the
+  packet's stated no-repository/no-shell assumption. This is not a candidate
+  finding. The live Multi-Agent SDLC Framework was rechecked on 2026-08-12 and
+  its `Claude Chat GitHub-context protocol — 2026-08-11` confirms Claude Chat
+  now has GitHub/Git access. The prior self-contained 04A1/04A2/04A3 approach
+  is superseded for paste use, not deleted; Lead must approve lean Git-native
+  handoffs pointing Claude to the pushed repository, branch, immutable
+  candidate/base, focused files/diff, and verification evidence. 04B/05/PR
+  remain blocked. No clearance, candidate, runtime, dependency, or
+  observability state changed.
+- Lead approved a single lean Git-native `04-GIT-NATIVE` audit to replace the
+  remaining artificial 04A/04B microchain. It is committed/pushed for a fresh
+  Claude audit: prompt
+  `docs/handoffs/ss-020-claude-audit-04-git-native.md` at
+  `27019f4e4627b6453f2f988148e29d5c3fe07f3b` (3,369 UTF-8 bytes, blob
+  `ed8b529c97e9aafa64b994753f8c1ed68fd8186b`, SHA-256
+  `6b986a69ef0eb44908c041f2d885fc68c9663b6ea29cc43432215d70ede4fe50`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-04-git-native-delivery-manifest.md` at
+  `e4c47fe74977aa50f4f61421dc4e71c5a299054e`. It points Claude to the pushed
+  repository/branch, immutable candidate/base compare, four focused files,
+  acceptance/red-line scope, and recorded verification—not duplicated source.
+  Exact PASS with no blockers/missing evidence may proceed only to Stage 05;
+  no PR preparation or human-clearance claim is authorized. All prior Stage 04
+  packets/no-verdicts remain preserved and superseded for paste use.
+- Claude returned operative `04-GIT-NATIVE` `PASS` for immutable candidate
+  `e365204ecb763cf36f6663ac88e8f272744bf0fa`, captured at
+  `docs/handoffs/ss-020-claude-audit-04-git-native-response.md`. It
+  independently cloned/inspected the candidate, reproduced Node 22 verification
+  (targeted `40/40`, full `244/244` across 24 files, docs/safety/privacy/
+  compliance/build/`git diff --check`), and reports AC1/AC3/AC4/AC6 `PASS`,
+  B1 `RESOLVED`, no blockers, no missing evidence, and `NEXT_STAGE: MAY
+  PROCEED TO STAGE 05`. Its structured response body is 791 bytes, SHA-256
+  `60f845e0cab0fb5029a5d81e70c9b8226e5c4f080190b101a8f52d6fbe051c93`.
+  Preserve its sole non-blocker: at candidate `e365204`, `CONTEXT.md` still
+  named earlier failed candidate `4e5dd402` because a commit cannot
+  self-reference its own hash; Claude confirmed later packaging `27019f4`
+  corrects it and it is not a candidate-level defect. Stage 05 Lead preflight
+  is next. PR preparation remains prohibited; no clearance is claimed.
+- Lead approved the distinct final `05-GIT-NATIVE` lineage/PR-permission audit.
+  It is packaged/pushed for a fresh Claude Git audit: prompt
+  `docs/handoffs/ss-020-claude-audit-05-git-native.md` at
+  `54cea24c3112992867815f3aab517da68704a2a4` (3,806 UTF-8 bytes, blob
+  `bd5d7c8975555f8e1086d2a881d6dbebf4448602`, SHA-256
+  `299c97c44ce24f47d4e57e06b0f597bb0ca899c6022e0e37b5ea635bcd86f282`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-05-git-native-delivery-manifest.md` at
+  `ad4c4fb714f70ae45520e11f970761747980063d`. It directs Claude to audit
+  record head `8fd14458aff791edf46e3b3dda47c4a5343c6110`, all five operative
+  response bodies/identities, their findings/dispositions, and
+  candidate-to-audit-record packaging-only lineage. Only exact Stage 05 PASS
+  with `PR PREPARATION PERMITTED` may unlock engineering PR preparation; it
+  cannot grant any qualified-human release clearance. Status stays
+  `4. Final Audit (Claude)`, PR empty, and observability unchanged.
+- Claude returned Stage 05 `FAIL`, captured at
+  `docs/handoffs/ss-020-claude-audit-05-git-native-response.md`. It verified
+  base/candidate/audit-record/packaging ancestry, candidate-to-audit-record
+  coordination-only lineage, and the Stage 05 prompt identity, but could not
+  apply the prompt's body ledger to raw response blobs because the prompt did
+  not supply a self-contained extraction contract or parallel whole-file
+  identities for 01, 02, 03A, and 04. The raw files are intact and their
+  structured verdict-body identities match the earlier ledger; 03B is a compact
+  raw structured response and therefore its body equals its whole file. This is
+  a real audit-packaging/identity-contract blocker, not a candidate runtime or
+  product defect. PR preparation is prohibited. Lead approved a corrected dual
+  ledger with an explicit extraction method and a focused Git-native Stage 05
+  re-review. B1 remains substantively resolved by operative 01/04, but final
+  synthesis must fail closed until the re-review passes. No clearance or
+  observability state changed.
+- The Lead-approved focused Stage 05 dual-ledger re-review is packaged and
+  pushed: prompt
+  `docs/handoffs/ss-020-claude-audit-05-git-native-focused-rereview.md` at
+  `12f10039436aba70c9fb9c9a52c21769efaab93c` (3,839 UTF-8 bytes, blob
+  `a6bb990fc3d61d6eab6813f7213ccce368d4b49c`, SHA-256
+  `97c5b18c7687d93e988f96ee5ebebd7aa32dd1ef5362930b76bc1acea1ba2f21`) and
+  delivery manifest
+  `docs/handoffs/ss-020-claude-audit-05-git-native-focused-rereview-delivery-manifest.md`
+  at `8c6bd4068465ba25053585e6a0a8cae42ddcb0d8`. It pins both whole-file and
+  structured-body identities, a fail-closed extraction contract, unchanged
+  response history, and packaging-only candidate lineage. Send the receipt
+  first and exact prompt second in one fresh Claude chat. PR preparation
+  remains prohibited unless this re-review returns exact PASS with
+  `PR PREPARATION PERMITTED`; no human-release clearance is claimed.
+- Claude returned operative `05-GIT-NATIVE-FOCUSED-REREVIEW` `PASS`, captured
+  at
+  `docs/handoffs/ss-020-claude-audit-05-git-native-focused-rereview-response.md`
+  (416 UTF-8 bytes; SHA-256
+  `7e8d1c1c4981920de9ff0a10958e4c2d174a6f7e257d54d5f51d5fd35e730b52`).
+  It independently confirmed the dual ledger, unchanged response history,
+  packaging-only lineage, and B1 `RESOLVED`, with `VERDICT: PASS`, no blockers
+  or missing evidence, and exact `PR PREPARATION PERMITTED`. The Stage 05
+  identity-ledger blocker is resolved as a packaging-contract correction; it
+  did not require a candidate change. Codex reran on Node `22.22.3`:
+  `npm run compliance:verify`, `npm run build`, and `git diff --check` all
+  passed. Engineering PR preparation is now authorized; PR creation, merge,
+  and post-merge synchronization remain separate events. Qualified-human
+  legal/privacy/safety/accessibility/trademark/compliance/public-release
+  decisions remain PENDING/BLOCKED and no clearance is claimed. Runtime
+  observability remains intentionally unchanged.
+- PR #21 is created and awaiting normal review/merge:
+  https://github.com/ajason13/swing-sync/pull/21. It records the SS-020 scope,
+  Node 22 verification, Git-native Claude audit lineage, packaging correction,
+  risks/deferred qualified-human gate, and unchanged observability. This is
+  only the PR-creation event: do not merge or mark SS-020 Done until merge and
+  post-merge synchronization are separately recorded.
+- Exactly nine intentional untracked `docs/agent-guidance/` files remain
+  preserved byte-for-byte and out of scope.
+- Unrelated `AGENTS.md` work remains uncommitted and preserved outside SS-020
+  packaging.
 
 ## SS-019 Coordination
 

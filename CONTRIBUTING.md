@@ -120,7 +120,8 @@ release-of-liability language.
 
 See [Safety terms draft](docs/safety-terms.md) and
 [Privacy architecture](docs/privacy-architecture.md) for the current project
-boundaries.
+boundaries. The [release review gate](docs/release-review-gate.md) records the
+pending qualified-human review package for any future public release.
 
 For runtime changes, state whether observability was added, intentionally
 unchanged, or deferred. For SS-016 docs-only work, no new runtime observability

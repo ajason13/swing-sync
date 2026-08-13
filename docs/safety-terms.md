@@ -6,6 +6,9 @@ This document is product-compliance draft language for human and legal review.
 It is not legal advice, does not guarantee enforceability, and should be
 reviewed before release.
 
+The [release review gate](./release-review-gate.md) records the pending
+qualified-human review package for any future public release.
+
 ## Intended Use
 
 Swing Sync provides local-first, educational golf swing feedback. It is designed

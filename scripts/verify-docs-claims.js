@@ -25,6 +25,39 @@ const requiredStrings = {
     "This deployment guidance is product and engineering documentation, not legal,\n" +
     "security, privacy, deletion, anonymity, medical, trademark-clearance, or\n" +
     "regulatory-compliance advice or a guarantee.",
+  safetyDraft: "DRAFT - pending legal/human review; not for release.",
+  privacyDraft:
+    "DRAFT - pending human/privacy review before public release.",
+  releaseGateDraft: "DRAFT — HUMAN REVIEW PACKAGE",
+  releaseGateOutcome: "Current outcome: PENDING",
+  releaseGateBlocked:
+    "PUBLIC RELEASE BLOCKED — HUMAN SIGN-OFF NOT RECORDED",
+  releaseGateNoClearance:
+    "This package records no legal, privacy, safety, medical, trademark, compliance,\n" +
+    "or public-release clearance.",
+  releaseGateHumanBoundary:
+    "Claude and automated checks cannot substitute for\n" +
+    "qualified human reviewers.",
+  releaseGateSs002Blocker:
+    "SS-002 qualified legal review of the assumption-of-risk and\n" +
+    "release-of-liability language is not completed and blocks public release.",
+  releaseGateAccessibilityChecklist:
+    "| Are the candidate accessibility evidence, remaining manual risks, and exact public/UI accessibility and limitation wording appropriate for the named scope without implying certification or compliance? | Accessibility reviewer and release owner | SS-019 named automated/manual results, remaining-risk record, and exact candidate UI/public copy | Accessibility reviewer and release owner | Blocking | Pending |",
+  releaseGateAccessibilityPending:
+    "| Accessibility | `PENDING` | Not recorded | Not recorded | Not recorded | Not recorded |",
+  releaseGateAccessibilityBlocker:
+    "- candidate accessibility evidence or the accountable accessibility reviewer\n" +
+    "  decision is missing or unresolved;",
+  releaseGateAccessibilityReopening:
+    "- accessibility public copy, UI/interaction behavior, or candidate evidence\n" +
+    "  changes, including semantics/names, keyboard/focus, announcements, reflow,\n" +
+    "  nonvisual operation, or assistive-technology scope;",
+  releaseGateSourceDate: "Accessed: 2026-08-08",
+  releaseGateCodeFact: "Code/test-enforced fact",
+  releaseGateDesignIntent: "Documented design intent",
+  releaseGateUnresolved: "Unresolved assumption",
+  releaseGateHumanReview: "Qualified-human review required",
+  releaseGateDeferred: "Deferred / non-goal",
 };
 
 const files = {
@@ -49,6 +82,7 @@ const files = {
       "./docs/safety-terms.md",
       "./docs/privacy-architecture.md",
       "./docs/deployment.md",
+      "./docs/release-review-gate.md",
     ],
     placement: [
       {
@@ -69,7 +103,11 @@ const files = {
       "## Draft Review Status",
     ],
     requiredStrings: ["localFirst", "nonMedical", "draftReview"],
-    links: ["./safety-terms.md", "./privacy-architecture.md"],
+    links: [
+      "./safety-terms.md",
+      "./privacy-architecture.md",
+      "./release-review-gate.md",
+    ],
   },
   "CONTRIBUTING.md": {
     headings: [
@@ -82,7 +120,11 @@ const files = {
       "## Pull Requests",
     ],
     requiredStrings: ["localFirst", "nonMedical"],
-    links: ["docs/safety-terms.md", "docs/privacy-architecture.md"],
+    links: [
+      "docs/safety-terms.md",
+      "docs/privacy-architecture.md",
+      "docs/release-review-gate.md",
+    ],
   },
   "docs/deployment.md": {
     headings: [
@@ -130,6 +172,80 @@ const files = {
         firstParagraph: true,
       },
     ],
+  },
+  "docs/safety-terms.md": {
+    headings: [
+      "# Safety Terms and Educational Use Draft",
+      "## Intended Use",
+      "## Assumption of Risk Draft",
+      "## Release of Liability Draft",
+      "## Educational Feedback Boundary",
+      "## Consent Gate Requirement",
+      "## AI Coach Prompt Constraints",
+      "## Review Checklist",
+    ],
+    requiredStrings: ["safetyDraft"],
+    links: ["./release-review-gate.md"],
+    scanBannedClaims: false,
+  },
+  "docs/privacy-architecture.md": {
+    headings: [
+      "# Privacy Architecture and Video Data Lifecycle",
+      "## Default Privacy Posture",
+      "## Data Classes",
+      "## Local-First Processing Flow",
+      "## Video Lifecycle",
+      "## Export Policy",
+      "## Optional Remote Model or Coach Sharing",
+      "## User-Facing Copy Drafts",
+      "## Future Implementation Gates",
+      "## SS-005 MediaPipe Provider-Metrics Gate",
+    ],
+    requiredStrings: ["privacyDraft"],
+    links: ["./release-review-gate.md"],
+    scanBannedClaims: false,
+  },
+  "docs/release-review-gate.md": {
+    headings: [
+      "# Release Review Gate",
+      "## Current Status",
+      "## Evidence Taxonomy",
+      "## Public-Language Inventory",
+      "## Publication-Review Matrix",
+      "## Qualified-Human Checklist And Open Decisions",
+      "## Operational Gate Contract",
+      "### Entry Criteria",
+      "### Required Artifacts",
+      "### Permitted Future Outcomes",
+      "### Sign-Off Record",
+      "#### Durable Authenticated Record Location",
+      "#### Required Reviewer Domain Status",
+      "#### Aggregation Authority And Rule",
+      "### Blocking Conditions",
+      "### Reopening Rules",
+      "## Primary-Source Register",
+      "## Non-Goals And Deferred Work",
+    ],
+    requiredStrings: [
+      "releaseGateDraft",
+      "releaseGateOutcome",
+      "releaseGateBlocked",
+      "releaseGateNoClearance",
+      "releaseGateHumanBoundary",
+      "releaseGateSs002Blocker",
+      "releaseGateAccessibilityChecklist",
+      "releaseGateAccessibilityPending",
+      "releaseGateAccessibilityBlocker",
+      "releaseGateAccessibilityReopening",
+      "releaseGateSourceDate",
+      "releaseGateCodeFact",
+      "releaseGateDesignIntent",
+      "releaseGateUnresolved",
+      "releaseGateHumanReview",
+      "releaseGateDeferred",
+    ],
+    links: [],
+    scanBannedClaims: false,
   },
 };
 
@@ -250,12 +366,64 @@ const negativeFixtures = {
     "Swing Sync ships with CSP enforced in production and production headers are already configured.",
 };
 
+const releaseReviewPublicPaths = [
+  "docs/release-review-gate.md",
+  "README.md",
+  "CONTRIBUTING.md",
+  "docs/limitations.md",
+  "docs/safety-terms.md",
+  "docs/privacy-architecture.md",
+  "docs/deployment.md",
+];
+
 const crossFileChecks = [
   {
+    kind: "nonDuplication",
     sourcePath: "index.html",
     targetPath: "docs/deployment.md",
     extract: extractCspMetaContent,
     description: "CSP meta directive string",
+  },
+  {
+    kind: "prematureCurrentApproval",
+    targetPaths: releaseReviewPublicPaths,
+    description: "premature current human-review approval",
+    patterns: [
+      /\b(?:legal|privacy|safety|trademark|public-release) review is complete\b/i,
+      /\b(?:legal|privacy|safety|trademark|public-release) review has passed\b/i,
+      /\b(?:legal|privacy|safety|trademark|public-release) review is cleared\b/i,
+      /\bpublic release (?:is cleared|has passed|is approved)\b/i,
+      /(?<!\bno )\bhuman sign-off is recorded\b/i,
+      /(?<!\bno )\b(?:legal|privacy|safety|trademark|public(?:-| )release) review completed\b/i,
+      /(?<!\bno )\b(?:legal|privacy|safety|trademark|licensing|accessibility|product(?:\/| and )evidence|security(?:\/| and )deployment|public(?:-| )release) review is approved\b/i,
+      /(?<!\bno )\b(?:legal|privacy|safety|trademark|licensing|accessibility|product(?:\/| and )evidence|security(?:\/| and )deployment|public(?:-| )release) review approved\b/i,
+      /\bpublic release approved\b/i,
+      /(?<!\bnot )\bcleared for public release\b/i,
+      /(?<!\bnot )\ball required reviews are complete\b/i,
+    ],
+  },
+  {
+    kind: "currentOutcome",
+    ownerPath: "docs/release-review-gate.md",
+    paths: releaseReviewPublicPaths,
+    expectedOutcome: "PENDING",
+    extractPattern:
+      /^\s*(?:\*\*)?current outcome\s*:\s*([^*\r\n]+?)(?:\*\*)?\s*$/gim,
+    description: "current outcome",
+  },
+  {
+    kind: "uniqueNormalizedOwner",
+    ownerPath: "docs/release-review-gate.md",
+    paths: [
+      "docs/release-review-gate.md",
+      "README.md",
+      "CONTRIBUTING.md",
+      "docs/limitations.md",
+      "docs/safety-terms.md",
+      "docs/privacy-architecture.md",
+    ],
+    text: requiredStrings.releaseGateBlocked,
+    description: "canonical blocked-status anchor",
   },
 ];
 
@@ -285,7 +453,11 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
         stringKey === "readmeNonMedical"
           ? "Swing Sync is not medical advice, pain diagnosis, rehabilitation guidance,\nphysical therapy, or a substitute for qualified medical care or professional\ngolf coaching."
           : requiredStrings[stringKey];
-      if (!content.includes(expected)) {
+      const hasExpected =
+        stringKey === "releaseGateBlocked"
+          ? normalizeText(content).includes(normalizeText(expected))
+          : content.includes(expected);
+      if (!hasExpected) {
         errors.push(`${filePath}: missing canonical ${stringKey} string`);
       }
     }
@@ -306,13 +478,15 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
       assertPlacement(filePath, content, placement, errors);
     }
 
-    for (const unit of scanUnits(content)) {
-      for (const [category, patterns] of Object.entries(bannedPatterns)) {
-        for (const pattern of patterns) {
-          if (unit.includes(pattern) && !allowedMatchUnits.has(unit)) {
-            errors.push(
-              `${filePath}: prohibited ${category} phrase "${pattern}" in "${unit}"`,
-            );
+    if (config.scanBannedClaims !== false) {
+      for (const unit of scanUnits(content)) {
+        for (const [category, patterns] of Object.entries(bannedPatterns)) {
+          for (const pattern of patterns) {
+            if (unit.includes(pattern) && !allowedMatchUnits.has(unit)) {
+              errors.push(
+                `${filePath}: prohibited ${category} phrase "${pattern}" in "${unit}"`,
+              );
+            }
           }
         }
       }
@@ -347,6 +521,19 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
   }
 
   for (const check of crossFileChecks) {
+    if (check.kind === "prematureCurrentApproval") {
+      assertNoPrematureCurrentApproval(check, fileReader, errors);
+      continue;
+    }
+    if (check.kind === "currentOutcome") {
+      assertCurrentOutcome(check, fileReader, errors);
+      continue;
+    }
+    if (check.kind === "uniqueNormalizedOwner") {
+      assertUniqueNormalizedOwner(check, fileReader, errors);
+      continue;
+    }
+
     const source = fileReader(check.sourcePath);
     const target = fileReader(check.targetPath);
     if (source === null) {
@@ -432,6 +619,96 @@ function assertPlacement(filePath, content, placement, errors) {
       );
     }
   }
+}
+
+function assertNoPrematureCurrentApproval(check, fileReader, errors) {
+  for (const targetPath of check.targetPaths) {
+    const content = fileReader(targetPath);
+    if (content === null) {
+      continue;
+    }
+
+    const normalized = normalizeText(content);
+    for (const pattern of check.patterns) {
+      const match = normalized.match(pattern);
+      if (match) {
+        errors.push(
+          `${targetPath}: ${check.description} assertion "${match[0]}"`,
+        );
+      }
+    }
+  }
+}
+
+function assertCurrentOutcome(check, fileReader, errors) {
+  for (const filePath of check.paths) {
+    const content = fileReader(filePath);
+    if (content === null) {
+      continue;
+    }
+
+    const extractPattern = new RegExp(
+      check.extractPattern.source,
+      check.extractPattern.flags,
+    );
+    const outcomes = [...content.matchAll(extractPattern)].map((match) =>
+      normalizeText(match[1]).toUpperCase(),
+    );
+    const found = outcomes.length
+      ? outcomes.map((outcome) => `"${outcome}"`).join(", ")
+      : "none";
+
+    if (filePath === check.ownerPath) {
+      if (outcomes.length !== 1 || outcomes[0] !== check.expectedOutcome) {
+        errors.push(
+          `${filePath}: ${check.description} must be declared exactly once as ${check.expectedOutcome} (found ${found})`,
+        );
+      }
+    } else if (outcomes.length > 0) {
+      errors.push(
+        `${filePath}: ${check.description} declaration is reserved for ${check.ownerPath} (found ${found})`,
+      );
+    }
+  }
+}
+
+function assertUniqueNormalizedOwner(check, fileReader, errors) {
+  const normalizedText = normalizeText(check.text);
+  let totalOccurrences = 0;
+  let ownerOccurrences = 0;
+
+  for (const filePath of check.paths) {
+    const content = fileReader(filePath);
+    if (content === null) {
+      continue;
+    }
+
+    const occurrences = countOccurrences(normalizeText(content), normalizedText);
+    totalOccurrences += occurrences;
+    if (filePath === check.ownerPath) {
+      ownerOccurrences = occurrences;
+    } else if (occurrences > 0) {
+      errors.push(
+        `${filePath}: duplicates ${check.description} owned by ${check.ownerPath}`,
+      );
+    }
+  }
+
+  if (ownerOccurrences !== 1) {
+    errors.push(
+      `${check.ownerPath}: ${check.description} must occur exactly once in its owner (found ${ownerOccurrences})`,
+    );
+  }
+  if (totalOccurrences !== 1) {
+    errors.push(
+      `${check.ownerPath}: ${check.description} must be uniquely owned across configured public docs (found ${totalOccurrences})`,
+    );
+  }
+}
+
+function countOccurrences(value, search) {
+  if (!search) return 0;
+  return value.split(search).length - 1;
 }
 
 function extractCspMetaContent(html) {

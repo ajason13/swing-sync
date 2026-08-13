@@ -82,6 +82,8 @@ npm run sbom:generate
 
 ## Documentation
 
+- [Release review gate](./docs/release-review-gate.md) — current public-release
+  decision remains pending qualified-human review.
 - [Limitations](./docs/limitations.md)
 - [Deployment](./docs/deployment.md)
 - [Contributor guide](./CONTRIBUTING.md)
