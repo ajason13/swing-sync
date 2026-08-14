@@ -63,8 +63,9 @@ release/reset, sanitized fail-closed status, and no origin-wide clearing.
   blockers and explicitly permits engineering PR preparation. The response is
   `docs/handoffs/ss-021-claude-audit-response.md`; Claude could not run
   Playwright due to Chromium-download egress, so that limitation is recorded.
-  Notion remains `4. Final Audit (Claude)` with no PR until PR creation is
-  recorded. Merge, Done, and all human-clearance claims remain blocked.
+  Notion remains `4. Final Audit (Claude)` and records [PR #22](https://github.com/ajason13/swing-sync/pull/22).
+  Merge, Done, and all human-clearance claims remain blocked pending PR review
+  and merge.
 - Preserved unrelated work: modified `AGENTS.md` and
   `.agents/skills/swing-sync-story-delivery/SKILL.md`; ten observed untracked
   `docs/agent-guidance/` files; untracked `docs/delivery-work-hierarchy.md`;
