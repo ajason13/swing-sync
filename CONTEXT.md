@@ -7,16 +7,18 @@ Last updated: 2026-08-13
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
 - Latest merged PR: https://github.com/ajason13/swing-sync/pull/22
-- Latest merge commit: `e3fc186bcfbdaf264bb886c95ee1ee3686f71b3e`.
+- Latest post-merge context commit: `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`.
 - Current local `main` and `origin/main` are synchronized at post-merge context
-  commit `e3fc186bcfbdaf264bb886c95ee1ee3686f71b3e`.
+  commit `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`.
 - Current completed task: `SS-021 Add clear-local-data UX and storage lifecycle
   controls`, merged as PR #22. SS-020's qualified-human legal/privacy/safety/
   accessibility/trademark/compliance/public-release gate remains
   PENDING/BLOCKED; no clearance is recorded.
 - Next task: `SS-022 Define real-world pose, phase, and metric accuracy
-  validation protocol` (`0. Backlog`, Research).
-- Active branch: `main`; next branch is `ss-022-accuracy-validation-protocol`.
+  validation protocol` (`4. Final Audit (Claude)`, Research; handoff
+  unavailable/no verdict).
+- Active branch: `ss-022-accuracy-validation-protocol`, created from refreshed
+  `main` at `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`; Pull Request remains empty.
 - SS-021 handshake status: `5. Done`.
 - SS-019 handshake status: `5. Done`.
 - Latest Pull Request: [PR #22](https://github.com/ajason13/swing-sync/pull/22),
@@ -73,14 +75,27 @@ release/reset, sanitized fail-closed status, and no origin-wide clearing.
 
 ## SS-022 Handoff
 
-SS-022 is the next backlog Research task. It defines a bounded real-world pose,
-phase, and metric accuracy-validation protocol; it must not add media,
-fixtures, model assets, providers, dependencies, or runtime behavior. The
-branch is `ss-022-accuracy-validation-protocol`, the PR is empty, and Notion
-is `0. Backlog`. Start on refreshed `main`, use Gated Delivery, and keep
-observability unchanged. The session prompt is
-`docs/agent-guidance/post-ss-021-next-codex-session-prompt.md` (intentionally
-untracked guidance).
+SS-022 final-audit handoff on 2026-08-13: Gated Delivery, docs-only Research
+on `ss-022-accuracy-validation-protocol` (base
+`16abc6b435df8ed3b406e68e160cf0dbc547b7cc`). Lead Architect approved the
+bounded docs-only scope and evidence language. Intended artifacts are
+`docs/accuracy-validation-protocol.md`, `docs/ss-022-research-notes.md`,
+`docs/ss-022-research-disposition.md`, `docs/ss-022-preimplementation-spec.md`,
+and the 2,958-byte `docs/ss-022-claude-audit-prompt.md`. Under Node 22.22.3,
+`npm run docs:verify`, `npm run fixture:verify`, `npm run safety:verify`,
+`npm run privacy:verify`, `npm run compliance:verify`, and `git diff --check`
+PASS. Notion is `4. Final Audit (Claude)`; Task Type is Research, the branch is
+retained, and Pull Request is empty. Audit status:
+`HANDOFF UNAVAILABLE—NO VERDICT` (no Claude auditor connector in this session).
+PR creation, merge, and `5. Done` are blocked pending an authorized independent
+Claude verdict; do not treat this handoff as a verdict. No runtime change is
+authorized and observability is unchanged. Do not add real-person or
+third-party media, fixtures, model assets, SDKs, providers, dependencies, or
+remote sharing; retain bounded non-medical, non-coaching claims. Preserve
+user-owned modified `AGENTS.md` and `.agents/skills/swing-sync-story-delivery/
+SKILL.md`, all untracked `docs/agent-guidance/` files, untracked
+`docs/delivery-work-hierarchy.md`, and
+`docs/handoffs/ss-020-claude-audit-03-public-claims-sources-micro.md`.
 
 ## SS-020 Coordination
 
