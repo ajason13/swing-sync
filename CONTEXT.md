@@ -15,10 +15,11 @@ Last updated: 2026-08-14
   accessibility/trademark/compliance/public-release gate remains
   PENDING/BLOCKED; no clearance is recorded.
 - Next task: `SS-022 Define real-world pose, phase, and metric accuracy
-  validation protocol` (`4. Final Audit (Claude)`, Research; handoff
-  unavailable/no verdict).
+  validation protocol` (`4. Final Audit (Claude)`, Research; Claude PASS;
+  PR #23 open).
 - Active branch: `ss-022-accuracy-validation-protocol`, created from refreshed
-  `main` at `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`; Pull Request remains empty.
+  `main` at `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`; [PR #23](https://github.com/ajason13/swing-sync/pull/23)
+  is open.
 - SS-021 handshake status: `5. Done`.
 - SS-019 handshake status: `5. Done`.
 - Latest Pull Request: [PR #22](https://github.com/ajason13/swing-sync/pull/22),
@@ -85,12 +86,14 @@ is `PASS / PR PREPARATION PERMITTED`: no blockers and no missing blocking
 evidence. Its two deferred, non-blocking future-study notes are to tighten the
 generic metric-method wording to the seven geometry primitives and to explicitly
 address reviewer qualifications/inter-rater-reliability reporting when a future
-study is proposed. Notion remains `4. Final Audit (Claude)`; Task Type is
-Research, branch retained, and Pull Request empty until a PR is created. Next
-gate: PR preparation. This is engineering/documentation-content clearance only,
-not authorization for a real-media study or human, legal, privacy, safety,
-medical, coaching, compliance, or public-release clearance. No runtime change
-is authorized; observability remains unchanged. Preserve user-owned modified
+study is proposed. Audit-response commit `ecea5a7`; [PR #23](https://github.com/ajason13/swing-sync/pull/23)
+is open. Notion remains `4. Final Audit (Claude)` (Task Type: Research); the
+compliance CI run is in progress. Merge and `5. Done` remain blocked pending
+the actual merge and post-merge Notion/`CONTEXT.md` synchronization. This is
+engineering/documentation-content clearance only, not authorization for a
+real-media study or human, legal, privacy, safety, medical, coaching,
+compliance, or public-release clearance. No runtime change is authorized;
+observability remains unchanged. Preserve user-owned modified
 `AGENTS.md` and `.agents/skills/swing-sync-story-delivery/SKILL.md`, all
 untracked `docs/agent-guidance/` files, untracked
 `docs/delivery-work-hierarchy.md`, and
