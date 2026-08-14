@@ -7,9 +7,13 @@ export interface ConsentStorage {
 export interface SafetyConsentStore {
   hasSafetyConsent(): boolean;
   setSafetyConsent(accepted: boolean): void;
+  clearAppLocalData(): ClearAppLocalDataResult;
 }
 
 export const consentStorageKey = "swing-sync:safety-consent:v1";
+export const appLocalStorageKeys = [consentStorageKey] as const;
+
+export type ClearAppLocalDataResult = "cleared" | "blocked";
 
 export function createSafetyConsentStore(storage: ConsentStorage = window.localStorage): SafetyConsentStore {
   let storageFailed = false;
@@ -26,6 +30,7 @@ export function createSafetyConsentStore(storage: ConsentStorage = window.localS
       }
     },
     setSafetyConsent: (accepted: boolean) => {
+      if (storageFailed) return;
       try {
         if (accepted) {
           storage.setItem(consentStorageKey, "accepted");
@@ -35,6 +40,33 @@ export function createSafetyConsentStore(storage: ConsentStorage = window.localS
       } catch {
         storageFailed = true;
       }
+    },
+    clearAppLocalData: () => {
+      if (storageFailed) return "blocked";
+
+      let blocked = false;
+      try {
+        for (const key of appLocalStorageKeys) {
+          try {
+            storage.removeItem(key);
+          } catch {
+            blocked = true;
+          }
+        }
+        for (const key of appLocalStorageKeys) {
+          try {
+            if (storage.getItem(key) !== null) blocked = true;
+          } catch {
+            blocked = true;
+          }
+        }
+      } catch {
+        blocked = true;
+      }
+
+      if (!blocked) return "cleared";
+      storageFailed = true;
+      return "blocked";
     }
   };
 }

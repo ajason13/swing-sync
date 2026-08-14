@@ -35,6 +35,43 @@ describe("safety consent storage", () => {
     expect(consent.hasSafetyConsent()).toBe(false);
   });
 
+  it("clears every registered app key, verifies removal, and preserves unrelated origin data", () => {
+    const fakeStorage = storage("accepted");
+    fakeStorage.values.set("unrelated:preference", "keep");
+    const consent = createSafetyConsentStore(fakeStorage);
+
+    expect(consent.clearAppLocalData()).toBe("cleared");
+    expect(fakeStorage.values.has(consentStorageKey)).toBe(false);
+    expect(fakeStorage.values.get("unrelated:preference")).toBe("keep");
+    expect(consent.hasSafetyConsent()).toBe(false);
+  });
+
+  it("fails closed when removal, verification, or removal readback is blocked", () => {
+    const removeFailure = createSafetyConsentStore({
+      getItem: () => "accepted",
+      setItem: () => undefined,
+      removeItem: () => { throw new Error("blocked"); }
+    });
+    expect(removeFailure.clearAppLocalData()).toBe("blocked");
+    expect(removeFailure.hasSafetyConsent()).toBe(false);
+
+    const readFailure = createSafetyConsentStore({
+      getItem: () => { throw new Error("blocked"); },
+      setItem: () => undefined,
+      removeItem: () => undefined
+    });
+    expect(readFailure.clearAppLocalData()).toBe("blocked");
+    expect(readFailure.hasSafetyConsent()).toBe(false);
+
+    const retainedValue = createSafetyConsentStore({
+      getItem: () => "accepted",
+      setItem: () => undefined,
+      removeItem: () => undefined
+    });
+    expect(retainedValue.clearAppLocalData()).toBe("blocked");
+    expect(retainedValue.hasSafetyConsent()).toBe(false);
+  });
+
   it("fails closed when reading local acknowledgement throws", () => {
     const consent = createSafetyConsentStore({
       getItem: () => {

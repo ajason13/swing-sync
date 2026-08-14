@@ -1,25 +1,26 @@
 # Swing Sync Context
 
-Last updated: 2026-08-08
+Last updated: 2026-08-13
 
 ## Current State
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/20
-- Latest merge commit: `6872897475786e41cc434374224236854bde2846`.
-- Current local `main` and `origin/main` include PR #20 merge commit
-  `6872897475786e41cc434374224236854bde2846`.
-- Current completed task:
-  `SS-019 Perform accessibility and responsive design hardening`.
-- Active task:
-  `SS-020 Prepare human legal/privacy/safety release review gate`.
-- Active branch: `ss-020-release-review-gate`, created from refreshed `main`
-  commit `0509999e7de5e609787fe53e8bdac2747aa0be64`.
-- SS-020 handshake status: `4. Final Audit (Claude)`.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/21
+- Latest merge commit: `61d9da250e14a91e4969f204c68b5e980fa4e727`.
+- Current local `main` and `origin/main` are synchronized at post-merge context
+  commit `04368ad211ef652a4415f83769d3940af1fd8e94`.
+- Current completed task: `SS-020 Prepare human legal/privacy/safety release
+  review gate`. Its qualified-human legal/privacy/safety/accessibility/
+  trademark/compliance/public-release gate remains PENDING/BLOCKED; no
+  clearance is recorded.
+- Active task: `SS-021 Add clear-local-data UX and storage lifecycle controls`.
+- Active branch: `ss-021-clear-local-data`, created from refreshed `main`
+  commit `04368ad211ef652a4415f83769d3940af1fd8e94`.
+- SS-021 handshake status: `4. Final Audit (Claude)`.
 - SS-019 handshake status: `5. Done`.
-- Latest Pull Request: [PR #20](https://github.com/ajason13/swing-sync/pull/20),
-  merged on 2026-08-08.
+- Latest Pull Request: [PR #21](https://github.com/ajason13/swing-sync/pull/21),
+  merged before this session.
 - Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
   (`feat: harden accessibility and responsive design`), pushed on the story
   branch. The exact reviewed commit spans 43 files. Full Node 22 verification
@@ -32,6 +33,43 @@ Last updated: 2026-08-08
   PR #20 merged as `6872897475786e41cc434374224236854bde2846`.
 - Remaining visible non-Done backlog tasks: SS-020 through SS-022, created
   from the manual app-readiness gap review on 2026-07-03.
+
+## SS-021 Coordination
+
+SS-021 is privacy-sensitive runtime work in Gated Delivery Mode. Codex Deep
+Researcher verified that the sole persisted app-owned value is
+`swing-sync:safety-consent:v1`; raw video, frames, landmarks, metrics, phase
+state, and prompts remain volatile. Independent Lead Architect returned
+`APPROVED FOR BUILDER` for an exact-key registry with readback, volatile-session
+release/reset, sanitized fail-closed status, and no origin-wide clearing.
+
+- Immutable implementation candidate: `361e0ad052c12e5fef16222b83c2df8a2d899bba`
+  (`feat: add clear local data controls`), pushed to
+  `origin/ss-021-clear-local-data`; base is
+  `04368ad211ef652a4415f83769d3940af1fd8e94`.
+- Changed candidate files: `docs/ss-021-preimplementation-spec.md`,
+  `docs/ss-021-research-disposition.md`, consent/event/renderer/app-state
+  runtime files, and their targeted unit/smoke tests. No dependency, provider,
+  service-worker, persistence-backend, remote, telemetry, logging, export, or
+  observability change was made. Runtime observability is intentionally
+  unchanged; the sanitized existing UI status/announcer is failure handling,
+  not diagnostics.
+- Node 22.22.3 evidence: targeted unit 30/30 PASS; full unit 24 files / 248
+  tests PASS; focused desktop/mobile clear and blocked-clear smoke PASS;
+  complete smoke execution had all SS-021 cases pass before streamed output
+  closed and the server exited cleanly; build, compliance, privacy, safety, and
+  diff checks PASS.
+- Claude final audit returned `PASS` for the immutable candidate with no
+  blockers and explicitly permits engineering PR preparation. The response is
+  `docs/handoffs/ss-021-claude-audit-response.md`; Claude could not run
+  Playwright due to Chromium-download egress, so that limitation is recorded.
+  Notion remains `4. Final Audit (Claude)` and records [PR #22](https://github.com/ajason13/swing-sync/pull/22).
+  Merge, Done, and all human-clearance claims remain blocked pending PR review
+  and merge.
+- Preserved unrelated work: modified `AGENTS.md` and
+  `.agents/skills/swing-sync-story-delivery/SKILL.md`; ten observed untracked
+  `docs/agent-guidance/` files; untracked `docs/delivery-work-hierarchy.md`;
+  and untracked `docs/handoffs/ss-020-claude-audit-03-public-claims-sources-micro.md`.
 
 ## SS-020 Coordination
 

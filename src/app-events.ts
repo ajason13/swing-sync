@@ -3,6 +3,7 @@ import type { AccessibilityIntent, RenderRequest } from "./app-accessibility";
 import {
   confirmPhaseReview,
   rebuildPhaseReviewState,
+  resetAppState,
   selectKeyframe,
   selectLocalVideo,
   selectWorkflowStep,
@@ -18,7 +19,7 @@ import { getNextWorkflowStep, getWorkflowStep, type WorkflowStepId } from "./wor
 
 export interface AppEventsDependencies {
   state: AppState;
-  consent: SafetyConsentStore;
+  consent: Pick<SafetyConsentStore, "hasSafetyConsent" | "setSafetyConsent"> & Partial<Pick<SafetyConsentStore, "clearAppLocalData">>;
   lifecycle: AnalysisLifecycle;
   requestRender(request?: RenderRequest): void;
   applyAccessibilityIntent(intent: AccessibilityIntent): void;
@@ -34,6 +35,16 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
       ? "Safety acknowledgement recorded locally."
       : "Safety acknowledgement is required before analysis.";
     requestRender({ focusKey: "safety-consent", announcement: message });
+  });
+
+  root.querySelector<HTMLButtonElement>("#clear-local-data")?.addEventListener("click", async () => {
+    await lifecycle.closeActive();
+    resetAppState(state);
+    const cleared = consent.clearAppLocalData?.() === "cleared";
+    const message = cleared
+      ? "Local Swing Sync user state was cleared in this browser. This is not device-level erasure, and browser or operating-system storage behavior may vary."
+      : "Swing Sync could not clear all local app data in this browser. The safety acknowledgement is treated as not recorded. Check browser storage settings and try again.";
+    requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });
   });
 
   root.querySelector<HTMLButtonElement>("#analysis-button")?.addEventListener("click", () => {

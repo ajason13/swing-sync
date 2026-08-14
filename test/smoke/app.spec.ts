@@ -412,9 +412,32 @@ test("fails closed when stored consent cannot be removed", async ({ page }) => {
   await expect(consent).toBeChecked();
   await expect(beginAnalysis).toBeDisabled();
 
-  await consent.click();
+  await page.getByRole("button", { name: "Clear local app data" }).click();
   await expect(consent).not.toBeChecked();
   await expect(beginAnalysis).toBeDisabled();
+  await expect(page.locator("#app-visible-status")).toContainText("could not clear all local app data");
+  await expect(page.locator("#app-announcer")).toContainText("could not clear all local app data");
+  await expect(page.locator("#app-visible-status")).not.toContainText("SecurityError");
+});
+
+test("clears registered local app data and remains cleared after refresh", async ({ page }) => {
+  const consent = page.getByRole("checkbox");
+  await consent.check();
+  await expect(consent).toBeChecked();
+
+  await page.getByRole("button", { name: "Clear local app data" }).click();
+
+  await expect(consent).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Begin analysis" })).toBeDisabled();
+  await expect(page.locator("#app-visible-status")).toContainText("Local Swing Sync user state was cleared");
+  await expect(page.locator("#app-announcer")).toContainText("Local Swing Sync user state was cleared");
+  await expect(page.locator("#safety-consent")).toBeFocused();
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
+
+  await page.reload();
+  await expect(consent).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Begin analysis" })).toBeDisabled();
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
 });
 
 test("runtime consent guard reports inline and focuses the acknowledgement", async ({ page }) => {
