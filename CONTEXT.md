@@ -1,6 +1,6 @@
 # Swing Sync Context
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 
 ## Current State
 
@@ -75,25 +75,24 @@ release/reset, sanitized fail-closed status, and no origin-wide clearing.
 
 ## SS-022 Handoff
 
-SS-022 final-audit handoff on 2026-08-13: Gated Delivery, docs-only Research
-on `ss-022-accuracy-validation-protocol` (base
+SS-022 is Gated Delivery, docs-only Research on
+`ss-022-accuracy-validation-protocol` (base
 `16abc6b435df8ed3b406e68e160cf0dbc547b7cc`). Lead Architect approved the
-bounded docs-only scope and evidence language. Intended artifacts are
-`docs/accuracy-validation-protocol.md`, `docs/ss-022-research-notes.md`,
-`docs/ss-022-research-disposition.md`, `docs/ss-022-preimplementation-spec.md`,
-and the 2,958-byte `docs/ss-022-claude-audit-prompt.md`. Under Node 22.22.3,
-`npm run docs:verify`, `npm run fixture:verify`, `npm run safety:verify`,
-`npm run privacy:verify`, `npm run compliance:verify`, and `git diff --check`
-PASS. Notion is `4. Final Audit (Claude)`; Task Type is Research, the branch is
-retained, and Pull Request is empty. Audit status:
-`HANDOFF UNAVAILABLE—NO VERDICT` (no Claude auditor connector in this session).
-PR creation, merge, and `5. Done` are blocked pending an authorized independent
-Claude verdict; do not treat this handoff as a verdict. No runtime change is
-authorized and observability is unchanged. Do not add real-person or
-third-party media, fixtures, model assets, SDKs, providers, dependencies, or
-remote sharing; retain bounded non-medical, non-coaching claims. Preserve
-user-owned modified `AGENTS.md` and `.agents/skills/swing-sync-story-delivery/
-SKILL.md`, all untracked `docs/agent-guidance/` files, untracked
+bounded scope and evidence language. The immutable candidate is
+`ee9869f3e67f3bc1cc440809c6cbd6eaa4b83aab` (`docs: add SS-022 validation
+protocol`). Claude’s task-specific independent verdict, received 2026-08-14,
+is `PASS / PR PREPARATION PERMITTED`: no blockers and no missing blocking
+evidence. Its two deferred, non-blocking future-study notes are to tighten the
+generic metric-method wording to the seven geometry primitives and to explicitly
+address reviewer qualifications/inter-rater-reliability reporting when a future
+study is proposed. Notion remains `4. Final Audit (Claude)`; Task Type is
+Research, branch retained, and Pull Request empty until a PR is created. Next
+gate: PR preparation. This is engineering/documentation-content clearance only,
+not authorization for a real-media study or human, legal, privacy, safety,
+medical, coaching, compliance, or public-release clearance. No runtime change
+is authorized; observability remains unchanged. Preserve user-owned modified
+`AGENTS.md` and `.agents/skills/swing-sync-story-delivery/SKILL.md`, all
+untracked `docs/agent-guidance/` files, untracked
 `docs/delivery-work-hierarchy.md`, and
 `docs/handoffs/ss-020-claude-audit-03-public-claims-sources-micro.md`.
 
