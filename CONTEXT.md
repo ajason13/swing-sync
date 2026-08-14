@@ -59,11 +59,12 @@ release/reset, sanitized fail-closed status, and no origin-wide clearing.
   complete smoke execution had all SS-021 cases pass before streamed output
   closed and the server exited cleanly; build, compliance, privacy, safety, and
   diff checks PASS.
-- Notion is `4. Final Audit (Claude)` with no PR. The lean Git-native prompt is
-  ready at untracked `docs/ss-021-claude-audit-prompt.md`. No Claude tool is
-  available in this session: `HANDOFF UNAVAILABLE—NO VERDICT`. PR creation,
-  merge, Done, and all clearance claims remain blocked pending an independent
-  Claude verdict for the immutable candidate.
+- Claude final audit returned `PASS` for the immutable candidate with no
+  blockers and explicitly permits engineering PR preparation. The response is
+  `docs/handoffs/ss-021-claude-audit-response.md`; Claude could not run
+  Playwright due to Chromium-download egress, so that limitation is recorded.
+  Notion remains `4. Final Audit (Claude)` with no PR until PR creation is
+  recorded. Merge, Done, and all human-clearance claims remain blocked.
 - Preserved unrelated work: modified `AGENTS.md` and
   `.agents/skills/swing-sync-story-delivery/SKILL.md`; ten observed untracked
   `docs/agent-guidance/` files; untracked `docs/delivery-work-hierarchy.md`;
