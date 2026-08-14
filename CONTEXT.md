@@ -6,21 +6,21 @@ Last updated: 2026-08-13
 
 - Repository: https://github.com/ajason13/swing-sync
 - Default branch: `main`
-- Latest merged PR: https://github.com/ajason13/swing-sync/pull/21
-- Latest merge commit: `61d9da250e14a91e4969f204c68b5e980fa4e727`.
+- Latest merged PR: https://github.com/ajason13/swing-sync/pull/22
+- Latest merge commit: `e3fc186bcfbdaf264bb886c95ee1ee3686f71b3e`.
 - Current local `main` and `origin/main` are synchronized at post-merge context
-  commit `04368ad211ef652a4415f83769d3940af1fd8e94`.
-- Current completed task: `SS-020 Prepare human legal/privacy/safety release
-  review gate`. Its qualified-human legal/privacy/safety/accessibility/
-  trademark/compliance/public-release gate remains PENDING/BLOCKED; no
-  clearance is recorded.
-- Active task: `SS-021 Add clear-local-data UX and storage lifecycle controls`.
-- Active branch: `ss-021-clear-local-data`, created from refreshed `main`
-  commit `04368ad211ef652a4415f83769d3940af1fd8e94`.
-- SS-021 handshake status: `4. Final Audit (Claude)`.
+  commit `e3fc186bcfbdaf264bb886c95ee1ee3686f71b3e`.
+- Current completed task: `SS-021 Add clear-local-data UX and storage lifecycle
+  controls`, merged as PR #22. SS-020's qualified-human legal/privacy/safety/
+  accessibility/trademark/compliance/public-release gate remains
+  PENDING/BLOCKED; no clearance is recorded.
+- Next task: `SS-022 Define real-world pose, phase, and metric accuracy
+  validation protocol` (`0. Backlog`, Research).
+- Active branch: `main`; next branch is `ss-022-accuracy-validation-protocol`.
+- SS-021 handshake status: `5. Done`.
 - SS-019 handshake status: `5. Done`.
-- Latest Pull Request: [PR #21](https://github.com/ajason13/swing-sync/pull/21),
-  merged before this session.
+- Latest Pull Request: [PR #22](https://github.com/ajason13/swing-sync/pull/22),
+  merged on 2026-08-14.
 - Implementation/audit commit: `ba564f368df654c07b1a73ad91aa46762cfa9721`
   (`feat: harden accessibility and responsive design`), pushed on the story
   branch. The exact reviewed commit spans 43 files. Full Node 22 verification
@@ -63,13 +63,24 @@ release/reset, sanitized fail-closed status, and no origin-wide clearing.
   blockers and explicitly permits engineering PR preparation. The response is
   `docs/handoffs/ss-021-claude-audit-response.md`; Claude could not run
   Playwright due to Chromium-download egress, so that limitation is recorded.
-  Notion remains `4. Final Audit (Claude)` and records [PR #22](https://github.com/ajason13/swing-sync/pull/22).
-  Merge, Done, and all human-clearance claims remain blocked pending PR review
-  and merge.
+  PR #22 merged as `e3fc186bcfbdaf264bb886c95ee1ee3686f71b3e`; local and
+  remote `main` were synchronized afterward, and Notion is `5. Done`. This is
+  engineering completion only; no qualified-human clearance is recorded.
 - Preserved unrelated work: modified `AGENTS.md` and
   `.agents/skills/swing-sync-story-delivery/SKILL.md`; ten observed untracked
   `docs/agent-guidance/` files; untracked `docs/delivery-work-hierarchy.md`;
   and untracked `docs/handoffs/ss-020-claude-audit-03-public-claims-sources-micro.md`.
+
+## SS-022 Handoff
+
+SS-022 is the next backlog Research task. It defines a bounded real-world pose,
+phase, and metric accuracy-validation protocol; it must not add media,
+fixtures, model assets, providers, dependencies, or runtime behavior. The
+branch is `ss-022-accuracy-validation-protocol`, the PR is empty, and Notion
+is `0. Backlog`. Start on refreshed `main`, use Gated Delivery, and keep
+observability unchanged. The session prompt is
+`docs/agent-guidance/post-ss-021-next-codex-session-prompt.md` (intentionally
+untracked guidance).
 
 ## SS-020 Coordination
 
