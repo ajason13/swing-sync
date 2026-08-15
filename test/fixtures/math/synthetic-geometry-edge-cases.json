@@ -1,0 +1,50 @@
+{
+  "fixtureId": "synthetic-geometry-edge-cases-v1",
+  "fixtureClass": "project-authored-synthetic-landmarks",
+  "baseFixture": "synthetic-swing-landmarks.json",
+  "provenance": {
+    "source": "Project-authored deterministic mutation instructions; no real-person or third-party media.",
+    "evidenceScope": "Plumbing and regression behavior only; not real-world accuracy evidence.",
+    "limitations": "Does not establish pose, phase, metric, biomechanical, coaching, safety, or real-world accuracy."
+  },
+  "cases": [
+    {
+      "caseId": "missing-right-shoulder",
+      "mutation": {
+        "kind": "truncate-landmarks",
+        "length": 12
+      },
+      "expected": {
+        "status": "unavailable",
+        "value": null,
+        "warnings": ["MISSING_LANDMARK"]
+      }
+    },
+    {
+      "caseId": "non-finite-left-shoulder-x",
+      "mutation": {
+        "kind": "set-nan-coordinate",
+        "index": 11,
+        "coordinate": "x"
+      },
+      "expected": {
+        "status": "unavailable",
+        "value": null,
+        "warnings": ["NON_FINITE_COORDINATE"]
+      }
+    },
+    {
+      "caseId": "below-threshold-left-shoulder-visibility",
+      "mutation": {
+        "kind": "set-visibility",
+        "index": 11,
+        "value": 0.499
+      },
+      "expected": {
+        "status": "unavailable",
+        "value": null,
+        "warnings": ["LOW_VISIBILITY"]
+      }
+    }
+  ]
+}
