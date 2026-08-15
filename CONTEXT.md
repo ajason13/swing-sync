@@ -9,7 +9,8 @@ Last updated: 2026-08-15
 - Latest merged PR: [PR #23](https://github.com/ajason13/swing-sync/pull/23),
   merged 2026-08-15 04:05:20 UTC as
   `e848ef6509d0ce9240b0f15b18b34cc4410bcaaf`.
-- Current local `main` and `origin/main` are synchronized at `e848ef6`.
+- Current local `main` and `origin/main` are synchronized and include merge
+  commit `e848ef6` plus this post-merge context record.
 - Current completed task: SS-022, `Define real-world pose, phase, and metric
   accuracy validation protocol`; Notion Handshake Status is `5. Done`.
 - All existing Notion tasks SS-001 through SS-022 show `5. Done`. No new
@@ -79,8 +80,8 @@ SS-022 was Gated Delivery, docs-only Research on
 notes cover geometry-primitive wording and reviewer qualifications/
 inter-rater reliability. [PR #23](https://github.com/ajason13/swing-sync/pull/23)
 merged as `e848ef6509d0ce9240b0f15b18b34cc4410bcaaf` on 2026-08-15 04:05:20
-UTC; Notion is `5. Done` and `main`/`origin/main` are synchronized at
-`e848ef6`. Engineering/documentation clearance only: it does not authorize a
+UTC; Notion is `5. Done`; `main`/`origin/main` contain the merge and its
+post-merge context record. Engineering/documentation clearance only: it does not authorize a
 real-media study, media addition, or human/legal/privacy/safety/medical/
 coaching/compliance/public-release clearance. No runtime, dependency, provider,
 or data-flow change occurred; observability remains unchanged. No next Notion
