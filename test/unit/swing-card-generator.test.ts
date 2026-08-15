@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { SwingMetricPayload } from "../../src/metric-contract";
 import {
   buildSwingCardPrompt,
@@ -212,6 +214,14 @@ function metricPayload(overrides: Partial<SwingMetricPayload["metrics"][number]>
   };
 }
 
+function metricFixture(
+  name: "low-confidence-payload.json" | "missing-payload.json"
+): SwingMetricPayload {
+  return JSON.parse(
+    readFileSync(resolve("test/fixtures/metrics", name), "utf8")
+  ) as SwingMetricPayload;
+}
+
 function content(overrides: Partial<SwingCardContent> = {}): SwingCardContent {
   const base: SwingCardContent = {
     keyframes: [keyframe()],
@@ -250,6 +260,24 @@ afterEach(() => {
 });
 
 describe("swing card warning derivation", () => {
+  it("derives required warnings from the existing low-confidence and missing fixtures", () => {
+    expect(
+      deriveSwingCardContentWarnings({
+        keyframes: [keyframe()],
+        metricPayload: metricFixture("low-confidence-payload.json"),
+        phaseReviewConfirmed: true
+      })
+    ).toEqual(["PROMPT_LIMITED_EVIDENCE"]);
+
+    expect(
+      deriveSwingCardContentWarnings({
+        keyframes: [keyframe()],
+        metricPayload: metricFixture("missing-payload.json"),
+        phaseReviewConfirmed: false
+      })
+    ).toEqual(["METRICS_UNAVAILABLE", "PHASE_REVIEW_REQUIRED", "PROMPT_LIMITED_EVIDENCE"]);
+  });
+
   it("returns warning codes in deterministic order with co-occurrence", () => {
     expect(
       deriveSwingCardContentWarnings({
@@ -321,6 +349,40 @@ describe("swing card text and filenames", () => {
 });
 
 describe("swing card PNG composition", () => {
+  it("preserves low-confidence fixture warnings when PNG composition returns no blob", async () => {
+    installCanvasFactoryWithToBlob((callback) => callback(null));
+    const metricPayload = metricFixture("low-confidence-payload.json");
+    const warnings = deriveSwingCardContentWarnings({
+      keyframes: [keyframe()],
+      metricPayload,
+      phaseReviewConfirmed: true
+    });
+
+    await expect(composeSwingCardPng(content({ metricPayload, warnings }))).resolves.toEqual({
+      status: "error",
+      reason: "PNG_NULL_BLOB",
+      warnings
+    });
+  });
+
+  it("preserves missing fixture warnings when PNG composition serialization fails", async () => {
+    installCanvasFactoryWithToBlob(() => {
+      throw new Error("serialization failed");
+    });
+    const metricPayload = metricFixture("missing-payload.json");
+    const warnings = deriveSwingCardContentWarnings({
+      keyframes: [keyframe()],
+      metricPayload,
+      phaseReviewConfirmed: false
+    });
+
+    await expect(composeSwingCardPng(content({ metricPayload, warnings }))).resolves.toEqual({
+      status: "error",
+      reason: "PNG_SERIALIZATION_FAILED",
+      warnings
+    });
+  });
+
   it("returns success with unchanged warnings and does not close previews", async () => {
     installCanvasFactory();
     Object.assign(globalThis, { devicePixelRatio: 2 });

@@ -11,6 +11,7 @@ import {
   calculateTrailKneeFlex,
   GEOMETRY_EPSILON,
   MIN_LANDMARK_VISIBILITY,
+  type GeometryMetricResult,
   type GeometryMetricInput
 } from "../../src/geometry-metrics";
 import type { PoseLandmark } from "../../src/pose-contract";
@@ -54,6 +55,46 @@ function syntheticFixtureInput(): GeometryMetricInput {
   return JSON.parse(
     readFileSync(resolve("test/fixtures/math/synthetic-swing-landmarks.json"), "utf8")
   ) as GeometryMetricInput;
+}
+
+interface SyntheticGeometryEdgeCaseFixture {
+  fixtureId: string;
+  fixtureClass: string;
+  baseFixture: string;
+  provenance: {
+    source: string;
+    evidenceScope: string;
+    limitations: string;
+  };
+  cases: readonly {
+    caseId: string;
+    mutation:
+      | { kind: "truncate-landmarks"; length: number }
+      | { kind: "set-nan-coordinate"; index: number; coordinate: "x" | "y" | "z" }
+      | { kind: "set-visibility"; index: number; value: number };
+    expected: GeometryMetricResult;
+  }[];
+}
+
+function syntheticEdgeCaseFixture(): SyntheticGeometryEdgeCaseFixture {
+  return JSON.parse(
+    readFileSync(resolve("test/fixtures/math/synthetic-geometry-edge-cases.json"), "utf8")
+  ) as SyntheticGeometryEdgeCaseFixture;
+}
+
+function applySyntheticMutation(
+  input: GeometryMetricInput,
+  mutation: SyntheticGeometryEdgeCaseFixture["cases"][number]["mutation"]
+): GeometryMetricInput {
+  const landmarks = input.landmarks.map((point) => ({ ...point }));
+  if (mutation.kind === "truncate-landmarks") {
+    landmarks.length = mutation.length;
+  } else if (mutation.kind === "set-nan-coordinate") {
+    landmarks[mutation.index][mutation.coordinate] = Number.NaN;
+  } else {
+    landmarks[mutation.index].visibility = mutation.value;
+  }
+  return { ...input, landmarks };
 }
 
 function expectMeasured(value: ReturnType<typeof calculateShoulderAngle>, expected: number): void {
@@ -254,6 +295,23 @@ describe("calculateHeadDisplacement", () => {
 });
 
 describe("geometry metric validation", () => {
+  it("fails closed for the named synthetic geometry edge-case fixture", () => {
+    const fixture = syntheticEdgeCaseFixture();
+
+    expect(fixture.fixtureId).toBe("synthetic-geometry-edge-cases-v1");
+    expect(fixture.fixtureClass).toBe("project-authored-synthetic-landmarks");
+    expect(fixture.baseFixture).toBe("synthetic-swing-landmarks.json");
+    expect(fixture.provenance.source).toContain("no real-person or third-party media");
+    expect(fixture.provenance.evidenceScope).toContain("regression behavior only");
+    expect(fixture.provenance.evidenceScope).toContain("not real-world accuracy evidence");
+    expect(fixture.cases).toHaveLength(3);
+
+    for (const testCase of fixture.cases) {
+      const input = applySyntheticMutation(syntheticFixtureInput(), testCase.mutation);
+      expect(calculateShoulderAngle(input), testCase.caseId).toEqual(testCase.expected);
+    }
+  });
+
   it("classifies missing indexes, malformed entries, and non-finite numeric fields", () => {
     const missing = standardInput();
     missing.landmarks = missing.landmarks.slice(0, 12);
