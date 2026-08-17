@@ -20,7 +20,9 @@
     "fixture:verify": "node scripts/verify-fixtures.js",
     "compliance:verify": "node scripts/verify-compliance.js && npm run fixture:verify && npm run pose-assets:verify && npm run safety:verify && npm run privacy:verify && npm run docs:verify",
     "test:unit": "vitest run",
-    "test:smoke": "playwright test"
+    "test:smoke": "playwright test",
+    "test:smoke:dev": "playwright test --config playwright.dev.config.ts",
+    "test:smoke:csp-preview": "playwright test --config playwright.csp-preview.config.ts"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^4.2.1",
