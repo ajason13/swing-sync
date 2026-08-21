@@ -46,6 +46,40 @@ npm ci
 npm run dev
 ```
 
+Vite prints the local URL when it starts (normally `http://localhost:5173`).
+
+## Using Swing Sync
+
+1. Open the local URL printed by `npm run dev`.
+2. Read the safety acknowledgement and select its checkbox. Analysis remains
+   unavailable until it is acknowledged.
+3. Under **Capture or choose your swing**, select **Choose a video** and pick a
+   local swing video file. Camera capture is not currently available.
+4. Select **Begin analysis**. The app loads the local pose model and processes
+   sampled video frames in the browser. You can stop the local analysis, or
+   retry it if processing fails.
+5. When processing completes, select **Review phase labels** to inspect the
+   detected swing phases, keyframes, and available geometry and tempo metrics.
+   Treat these as estimates for educational review, not medical, biomechanical,
+   or professional-coaching conclusions.
+6. Create a Swing Card from the completed review when useful:
+   - **Download PNG** saves a local image summary.
+   - **Print / Save as PDF** opens the browser print flow.
+   - **Copy prompt** copies educational review context that you may choose to
+     paste into another service yourself.
+7. Use **Clear local app data** to remove Swing Sync's registered app data for
+   this browser origin, including the safety acknowledgement. It does not erase
+   downloaded files or guarantee device-level deletion.
+
+Raw video is processed locally by default and is not included in Swing Card
+exports. If you copy a prompt or share an exported card with another service,
+that separate service's terms and privacy practices apply.
+
+For more useful visual review, record with a stable camera, good lighting, and
+your full body plus as much of the club path as practical in frame. Stop if you
+feel pain or unusual discomfort, and consult qualified medical or golf coaching
+professionals for personal concerns.
+
 Install the Playwright browser once per development environment when running
 browser smoke tests:
 
