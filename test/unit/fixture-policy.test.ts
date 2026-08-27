@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -310,14 +309,19 @@ describe("fixture policy validation", () => {
 
   it("keeps fixture validation zero-dependency", () => {
     const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-    const basePackageJson = JSON.parse(
-      execFileSync("git", ["show", "7399ea0403da4ad4da41f7d18cb1312e3445bcc7:package.json"], {
-        encoding: "utf8"
-      })
+    const verifierSources = [
+      readFileSync("scripts/verify-fixtures.js", "utf8"),
+      readFileSync("scripts/fixture-policy-data.mjs", "utf8")
+    ];
+    const verifierImports = verifierSources.flatMap((source) =>
+      [...source.matchAll(/\bfrom\s+["']([^"']+)["']/g)].map((match) => match[1])
     );
-    expect(packageJson.dependencies).toEqual(basePackageJson.dependencies);
-    expect(packageJson.devDependencies).toEqual(basePackageJson.devDependencies);
+    const dynamicModuleLoaderPattern = /\b(?:import|require)\s*\(/;
+
     expect(packageJson.scripts["fixture:verify"]).toBe("node scripts/verify-fixtures.js");
+    expect(verifierImports).toEqual(["node:crypto", "node:fs", "node:path", "./fixture-policy-data.mjs"]);
+    expect('import("package"); require("package")').toMatch(dynamicModuleLoaderPattern);
+    expect(verifierSources.join("\n")).not.toMatch(dynamicModuleLoaderPattern);
     expect(packageJson.scripts["compliance:verify"]).toContain("npm run fixture:verify");
   });
 });
