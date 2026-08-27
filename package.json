@@ -27,7 +27,7 @@
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^5.0.0",
     "@onebeyond/license-checker": "^2.2.0",
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.62.1",
     "@swing-sync-test/bundled-prohibited-package": "file:test/fixtures/bundled-prohibited-package",
     "rollup-plugin-license": "^3.7.1",
     "typescript": "^5.8.3",
