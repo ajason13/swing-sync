@@ -41,7 +41,8 @@ async function expectStyledDevelopmentPage(browser: Browser, width: number): Pro
   await expect(announcer).toHaveAttribute("role", "status");
   await expect(announcer).not.toHaveAttribute("aria-hidden", "true");
   await expect(announcer).not.toHaveCSS("display", "none");
-  expect(JSON.stringify(await page.accessibility.snapshot({ interestingOnly: false }))).toContain('"role":"status"');
+  const snapshot = await announcer.ariaSnapshot();
+  expect(snapshot).toMatch(/^- status\b/m);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
   const layout = await page.evaluate(() => ({
     workspaceColumns: getComputedStyle(document.querySelector(".workspace")!).gridTemplateColumns.trim().split(/\s+/).length,
