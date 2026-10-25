@@ -65,6 +65,55 @@ describe("browser frame source", () => {
     revokeObjectURL.mockRestore();
   });
 
+  it("preserves the abort code and releases bitmaps when aborted between initialization and inference", async () => {
+    const video = new FakeVideo();
+    const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const messages: string[] = [];
+    const terminate = vi.fn();
+    class FakeWorker extends EventTarget {
+      terminate = terminate;
+      postMessage(message: { type: string }): void {
+        messages.push(message.type);
+        if (message.type === "init") queueMicrotask(() => this.dispatchEvent(new MessageEvent("message", { data: { type: "ready" } })));
+      }
+    }
+    const preview = { close: vi.fn() } as unknown as ImageBitmap;
+    const inference = { close: vi.fn() } as unknown as ImageBitmap;
+    let releasePreview!: (bitmap: ImageBitmap) => void;
+    const createBitmap = vi.fn()
+      .mockImplementationOnce(() => new Promise<ImageBitmap>((resolve) => { releasePreview = resolve; }))
+      .mockResolvedValueOnce(inference);
+    vi.stubGlobal("Worker", FakeWorker);
+    vi.stubGlobal("createImageBitmap", createBitmap);
+    const states: string[] = [];
+    try {
+      const { controller, abort } = createBrowserFrameController(
+        video as unknown as HTMLVideoElement,
+        new File(["synthetic"], "synthetic.webm"),
+        { onState: (state, code) => states.push(code ? `${state}:${code}` : state), onProgress: () => undefined, onOutput: () => undefined }
+      );
+      const run = controller.start();
+      await vi.waitFor(() => expect(video.load).toHaveBeenCalledOnce());
+      video.dispatchEvent(new Event("loadedmetadata"));
+      await vi.waitFor(() => expect(createBitmap).toHaveBeenCalledOnce());
+      abort("UNEXPECTED_NETWORK_BLOCKED");
+      releasePreview(preview);
+      await run;
+
+      expect(states).toEqual(["loading", "processing", "failed:UNEXPECTED_NETWORK_BLOCKED"]);
+      expect(messages).toEqual(["init"]);
+      expect(terminate).toHaveBeenCalledOnce();
+      expect(preview.close).toHaveBeenCalledOnce();
+      expect(inference.close).toHaveBeenCalledOnce();
+      expect(controller.getOutputs()).toEqual([]);
+    } finally {
+      createObjectURL.mockRestore();
+      revokeObjectURL.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("rejects an in-flight metadata load when disposed", async () => {
     const video = new FakeVideo();
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
