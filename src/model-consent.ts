@@ -142,7 +142,7 @@ export function createGuardedModelAdapter(
   provider: ModelProviderDescriptor,
   reviewedProviders: readonly ModelProviderDescriptor[],
   transport: ModelAdapterTransport,
-  options: { readonly providerConfigured: boolean; readonly remoteConsentGranted(): boolean; readonly manualContentAvailable(): boolean }
+  options: { readonly providerConfigured: boolean; readonly remoteConsentGranted: () => boolean; readonly manualContentAvailable: () => boolean }
 ): ModelAdapter {
   return {
     provider,

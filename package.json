@@ -29,10 +29,11 @@
     "@onebeyond/license-checker": "^2.2.0",
     "@playwright/test": "1.62.1",
     "@swing-sync-test/bundled-prohibited-package": "file:test/fixtures/bundled-prohibited-package",
+    "esbuild": "0.28.2",
     "rollup-plugin-license": "^3.7.1",
     "typescript": "^5.8.3",
-    "vite": "^5.4.21",
-    "vitest": "2.1.9"
+    "vite": "^8.3.5",
+    "vitest": "5.0.5"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.35"

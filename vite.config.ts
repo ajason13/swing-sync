@@ -33,11 +33,14 @@ export function developmentCspPlugin(): Plugin {
 
 export function createViteConfig({ command }: Pick<ConfigEnv, "command">): UserConfig {
   return {
+  // Keep the production CSS generator within the permitted-license toolchain.
+  css: { transformer: "postcss" },
   worker: {
     format: "es"
   },
   plugins: command === "serve" ? [developmentCspPlugin()] : [],
   build: {
+    cssMinify: "esbuild",
     rollupOptions: {
       plugins: [
         license({
