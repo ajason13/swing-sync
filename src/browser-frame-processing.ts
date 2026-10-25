@@ -103,6 +103,7 @@ export class VideoFrameSource implements FrameSource {
 
 class PoseFrameProcessor implements FrameProcessor {
   private session?: PoseSession;
+  private abortCode?: string;
   private initializeResolve?: () => void;
   private initializeReject?: (error: Error) => void;
   private resultResolve?: (result: PoseFrameResult) => void;
@@ -110,6 +111,7 @@ class PoseFrameProcessor implements FrameProcessor {
   private closeResolve?: () => void;
 
   initialize(): Promise<void> {
+    if (this.abortCode) return Promise.reject(new Error(this.abortCode));
     return new Promise((resolve, reject) => {
       this.initializeResolve = resolve;
       this.initializeReject = reject;
@@ -127,6 +129,10 @@ class PoseFrameProcessor implements FrameProcessor {
   }
 
   process(bitmap: ImageBitmap, timestampMs: number): Promise<PoseFrameResult> {
+    if (this.abortCode) {
+      bitmap.close();
+      return Promise.reject(new Error(this.abortCode));
+    }
     return new Promise((resolve, reject) => {
       this.resultResolve = resolve;
       this.resultReject = reject;
@@ -147,7 +153,8 @@ class PoseFrameProcessor implements FrameProcessor {
   }
 
   abort(code: string): void {
-    this.session?.abort(code);
+    this.abortCode ??= code;
+    this.session?.abort(this.abortCode);
   }
 
   private handleStatus(status: PoseSessionStatus, code?: string): void {
