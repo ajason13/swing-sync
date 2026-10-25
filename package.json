@@ -29,6 +29,7 @@
     "@onebeyond/license-checker": "^2.2.0",
     "@playwright/test": "1.52.0",
     "@swing-sync-test/bundled-prohibited-package": "file:test/fixtures/bundled-prohibited-package",
+    "esbuild": "0.28.2",
     "rollup-plugin-license": "^3.7.1",
     "typescript": "^5.8.3",
     "vite": "^8.3.5",

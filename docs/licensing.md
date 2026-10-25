@@ -82,6 +82,25 @@ code, model assets, or other files incorporated into the production output.
 AGPL dependencies are blocked entirely until a maintainer explicitly approves a
 documented exception.
 
+### Production CSS toolchain
+
+The Vite 8 upgrade keeps PostCSS as the CSS transformer and explicitly selects
+`esbuild@0.28.2` (MIT) for CSS minification. Vite 8's default minifier is
+Lightning CSS, whose MPL-2.0 license does not meet the production generator
+boundary above. Lightning CSS remains an installed transitive development
+dependency of Vite, but this project's configuration does not use it to
+transform or minify application CSS. No MPL-2.0 exception is introduced.
+
+`test/unit/css-toolchain.test.ts` denies Lightning CSS imports in a separate
+process and verifies that the actual Vite configuration still builds minified
+CSS. CI runs this regression with the unit suite; the existing bundle license
+fixture and production dependency audit remain separate checks.
+
+Verified on 2026-10-24 against the
+[Vite build options](https://vite.dev/config/build-options#build-cssminify),
+the installed Vite 8.3.5 CSS minifier implementation, and
+[esbuild 0.28.2 package metadata](https://registry.npmjs.org/esbuild/0.28.2).
+
 ## Reference Repository Reuse
 
 Clean-room reimplementation is the default for reference repositories.
