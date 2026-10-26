@@ -16,7 +16,7 @@ class FakeVideo extends EventTarget {
 }
 
 describe("browser frame source", () => {
-  it("retains a network-blocked abort received before worker initialization", async () => {
+  it("fails immediately on a network abort before metadata settles and ignores later source events", async () => {
     const video = new FakeVideo();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
@@ -36,13 +36,17 @@ describe("browser frame source", () => {
       const run = controller.start();
       await vi.waitFor(() => expect(video.load).toHaveBeenCalledOnce());
       abort("UNEXPECTED_NETWORK_BLOCKED");
-      video.dispatchEvent(new Event("loadedmetadata"));
+      abort("LATER_ABORT");
       await run;
+      await vi.waitFor(() => expect(states).toEqual(["loading", "failed:UNEXPECTED_NETWORK_BLOCKED"]));
+      video.dispatchEvent(new Event("error"));
+      video.dispatchEvent(new Event("loadedmetadata"));
 
       expect(states).toEqual(["loading", "failed:UNEXPECTED_NETWORK_BLOCKED"]);
       expect(worker).not.toHaveBeenCalled();
       expect(controller.getOutputs()).toEqual([]);
-      expect(revokeObjectURL).toHaveBeenCalledWith("blob:test");
+      expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith("blob:test");
+      expect(video.pause).toHaveBeenCalledOnce();
     } finally {
       createObjectURL.mockRestore();
       revokeObjectURL.mockRestore();
@@ -65,7 +69,7 @@ describe("browser frame source", () => {
     revokeObjectURL.mockRestore();
   });
 
-  it("preserves the abort code and releases bitmaps when aborted between initialization and inference", async () => {
+  it("preserves the abort code and releases the preview without creating an inference after abort", async () => {
     const video = new FakeVideo();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
@@ -100,12 +104,14 @@ describe("browser frame source", () => {
       abort("UNEXPECTED_NETWORK_BLOCKED");
       releasePreview(preview);
       await run;
+      await vi.waitFor(() => expect(states.at(-1)).toBe("failed:UNEXPECTED_NETWORK_BLOCKED"));
 
       expect(states).toEqual(["loading", "processing", "failed:UNEXPECTED_NETWORK_BLOCKED"]);
       expect(messages).toEqual(["init"]);
       expect(terminate).toHaveBeenCalledOnce();
       expect(preview.close).toHaveBeenCalledOnce();
-      expect(inference.close).toHaveBeenCalledOnce();
+      expect(createBitmap).toHaveBeenCalledOnce();
+      expect(inference.close).not.toHaveBeenCalled();
       expect(controller.getOutputs()).toEqual([]);
     } finally {
       createObjectURL.mockRestore();
