@@ -124,6 +124,14 @@ export class FrameProcessingController {
     await this.cleanupPromise;
   }
 
+  async abort(code: string): Promise<void> {
+    if (this.cleanupPromise || !["loading", "processing"].includes(this.state)) return;
+    this.cleanupPromise = this.fail(this.generation, new Error(code)).finally(() => {
+      this.cleanupPromise = undefined;
+    });
+    await this.cleanupPromise;
+  }
+
   async close(): Promise<void> {
     if (this.cleanupPromise) await this.cleanupPromise;
     if (this.state === "closed") return;

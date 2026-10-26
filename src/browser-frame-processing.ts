@@ -192,8 +192,12 @@ export function createBrowserFrameController(
       return activeProcessor;
     }
   };
+  const controller = new FrameProcessingController(dependencies, events);
   return {
-    controller: new FrameProcessingController(dependencies, events),
-    abort: (code) => activeProcessor?.abort(code)
+    controller,
+    abort: (code) => {
+      activeProcessor?.abort(code);
+      void controller.abort(code);
+    }
   };
 }

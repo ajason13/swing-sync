@@ -130,6 +130,20 @@ describe("preview dimensions", () => {
 });
 
 describe("frame processing controller", () => {
+  it("ignores network aborts outside an active loading or processing run", async () => {
+    const source = new FakeSource();
+    const { controller, states } = harness(source);
+    await controller.abort("UNEXPECTED_NETWORK_BLOCKED");
+    expect(states).toEqual([]);
+
+    await controller.start();
+    await controller.abort("UNEXPECTED_NETWORK_BLOCKED");
+
+    expect(states).toEqual(["loading", "processing", "completed"]);
+    expect(controller.getOutputs()).toHaveLength(8);
+    expect(source.disposed).toBe(false);
+  });
+
   it("produces ordered timestamp, preview, and pose outputs with one inference at a time", async () => {
     const source = new FakeSource();
     const { controller, processor, states, progress, outputs } = harness(source);

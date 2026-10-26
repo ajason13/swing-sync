@@ -1075,14 +1075,37 @@ test("keeps the UI responsive while the local model loads", async ({ page }) => 
 });
 
 test("fails closed and reports a CSP-blocked outbound request", async ({ page }) => {
+  // Hold metadata delivery so the CSP violation occurs before a worker session exists.
+  await page.evaluate(() => {
+    const holdMetadata = (event: Event) => {
+      const video = event.target;
+      if (!(video instanceof HTMLVideoElement) || video.id !== "analysis-video") return;
+      event.stopImmediatePropagation();
+      Object.assign(window, {
+        __releaseAnalysisMetadata: () => {
+          document.removeEventListener("loadedmetadata", holdMetadata, true);
+          video.dispatchEvent(new Event("loadedmetadata"));
+        }
+      });
+    };
+    document.addEventListener("loadedmetadata", holdMetadata, true);
+  });
   await page.getByRole("checkbox").check();
   await page.locator("#video-file").setInputFiles(poseFixture);
   await page.getByRole("button", { name: "Begin analysis" }).click();
-  await page.evaluate(() => {
+  await expect.poll(() => page.evaluate(() => typeof (window as typeof window & {
+    __releaseAnalysisMetadata?: () => void;
+  }).__releaseAnalysisMetadata)).toBe("function");
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    document.addEventListener("securitypolicyviolation", () => resolve(), { once: true });
     void fetch("https://example.com/blocked-by-swing-sync-csp").catch(() => undefined);
+  }));
+  await page.evaluate(() => {
+    (window as typeof window & { __releaseAnalysisMetadata(): void }).__releaseAnalysisMetadata();
   });
 
   await expect(page.getByText(/Local pose analysis stopped \(UNEXPECTED_NETWORK_BLOCKED\)/)).toBeVisible();
+  expect(requestsFor(page).filter((url) => url.includes("/models/"))).toEqual([]);
 });
 
 test("releases the selected object URL when analysis stops", async ({ page }) => {
