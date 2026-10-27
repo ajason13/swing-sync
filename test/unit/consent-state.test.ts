@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { consentStorageKey, createSafetyConsentStore, type ConsentStorage } from "../../src/consent-state";
 
 function storage(initial?: string): ConsentStorage & { values: Map<string, string> } {
@@ -17,6 +17,24 @@ function storage(initial?: string): ConsentStorage & { values: Map<string, strin
 }
 
 describe("safety consent storage", () => {
+  it("fails closed when acquiring browser storage throws", () => {
+    const getStorage = vi.fn(() => {
+      throw new Error("private storage failure details");
+    });
+    vi.stubGlobal("window", { get localStorage() { return getStorage(); } });
+    try {
+      const consent = createSafetyConsentStore();
+      expect(consent.hasSafetyConsent()).toBe(false);
+      consent.setSafetyConsent(true);
+      expect(consent.hasSafetyConsent()).toBe(false);
+      consent.setSafetyConsent(false);
+      expect(consent.clearAppLocalData()).toBe("blocked");
+      expect(getStorage).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("reads accepted and missing local acknowledgement state", () => {
     expect(createSafetyConsentStore(storage("accepted")).hasSafetyConsent()).toBe(true);
     expect(createSafetyConsentStore(storage()).hasSafetyConsent()).toBe(false);
