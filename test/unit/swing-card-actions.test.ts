@@ -1,11 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SampledFrameOutput } from "../../src/frame-processing";
 import {
   completeProcessingWithOutputs,
+  resetAppState,
+  resetPhaseReview,
+  selectWorkflowStep,
   createInitialAppState,
   rebuildPhaseReviewState,
   setPhaseDeclaration
 } from "../../src/app-state";
+import * as keyframeRenderer from "../../src/keyframe-overlay-renderer";
+import type { PoseOverlayRenderResult } from "../../src/pose-renderer";
 import { phaseDefinitions } from "../../src/phase-review";
 import { poseThresholds, type PoseFrameResult, type PoseLandmark } from "../../src/pose-contract";
 import {
@@ -50,12 +55,152 @@ function sampledOutputs(): SampledFrameOutput[] {
   }));
 }
 
+function populatedState() {
+  const state = createInitialAppState();
+  state.activeStep = "export";
+  completeProcessingWithOutputs(state, { getOutputs: sampledOutputs });
+  setPhaseDeclaration(state, "view", "face-on");
+  setPhaseDeclaration(state, "handedness", "right");
+  setPhaseDeclaration(state, "mirrored", "no");
+  setPhaseDeclaration(state, "setup", "confirmed");
+  rebuildPhaseReviewState(state);
+  return state;
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
+}
+
+const unavailableOverlay: PoseOverlayRenderResult = {
+  status: "unavailable", renderedSegments: 0, skippedSegments: 0, warnings: [], width: 0, height: 0
+};
+
+const actionCases = [
+  ["PNG", downloadSwingCard, "LOCAL_EXPORT_FAILED"],
+  ["print", (state, render) => printSwingCard({ querySelector: () => null } as unknown as ParentNode, state, render), "Browser print view could not be prepared."],
+  ["copy", copySwingCardPrompt, "Prompt copy unavailable in this browser."]
+] as const satisfies readonly (readonly [string, typeof downloadSwingCard, string])[];
+
 describe("swing card actions", () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(() => {
     generatorMocks.composeSwingCardPng.mockReset();
     generatorMocks.renderSwingCardPrintSurface.mockReset();
     generatorMocks.triggerSwingCardDownload.mockReset();
     vi.unstubAllGlobals();
+  });
+
+  it.each(actionCases)("recovers %s from partial preparation failure with sanitized status", async (_name, action, failure) => {
+    const state = populatedState();
+    const outputs = state.phaseOutputs;
+    const bitmaps = [0, 1].map(() => ({ close: vi.fn() } as unknown as ImageBitmap));
+    const renderer = vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe")
+      .mockResolvedValueOnce({ preview: bitmaps[0], overlay: unavailableOverlay })
+      .mockResolvedValueOnce({ preview: bitmaps[1], overlay: unavailableOverlay })
+      .mockRejectedValueOnce(new Error("secret-file-and-landmarks"));
+    const render = vi.fn();
+    await action(state, render);
+    expect(renderer).toHaveBeenCalledTimes(3);
+    for (const bitmap of bitmaps) expect(bitmap.close).toHaveBeenCalledOnce();
+    for (const output of outputs) expect(output.preview?.close).not.toHaveBeenCalled();
+    expect(state.swingCardBusy).toBe(false);
+    expect(state.swingCardStatus).toContain(failure);
+    expect(JSON.stringify(render.mock.calls)).not.toContain("secret-file-and-landmarks");
+    expect(render).toHaveBeenCalledTimes(2);
+  });
+
+  for (const [cancelName, cancel] of [
+    ["navigation", (state) => { selectWorkflowStep(state, "review"); selectWorkflowStep(state, "export"); }],
+    ["clear-local-data", resetAppState],
+    ["analysis reset", resetPhaseReview]
+  ] as const satisfies readonly (readonly [string, (state: ReturnType<typeof createInitialAppState>) => void])[]) {
+    it.each(actionCases)(`discards pending %s preparation after ${cancelName}`, async (_name, action) => {
+      const state = populatedState();
+      const gate = deferred<Awaited<ReturnType<typeof keyframeRenderer.renderAnnotatedKeyframe>>>();
+      const renderer = vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockReturnValueOnce(gate.promise);
+      const print = vi.fn();
+      const writeText = vi.fn();
+      vi.stubGlobal("window", { print });
+      vi.stubGlobal("navigator", { clipboard: { writeText } });
+      const render = vi.fn();
+      const pending = action(state, render);
+      cancel(state);
+      // A replacement operation must retain its own busy/status values.
+      state.swingCardBusy = true;
+      state.swingCardStatus = "New session operation";
+      const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
+      gate.resolve({ preview: bitmap, overlay: unavailableOverlay });
+      await pending;
+      expect(bitmap.close).toHaveBeenCalledOnce();
+      expect(renderer).toHaveBeenCalledOnce();
+      expect(generatorMocks.composeSwingCardPng).not.toHaveBeenCalled();
+      expect(generatorMocks.renderSwingCardPrintSurface).not.toHaveBeenCalled();
+      expect(generatorMocks.triggerSwingCardDownload).not.toHaveBeenCalled();
+      expect(print).not.toHaveBeenCalled();
+      expect(writeText).not.toHaveBeenCalled();
+      expect(state.swingCardBusy).toBe(true);
+      expect(state.swingCardStatus).toBe("New session operation");
+      expect(render).toHaveBeenCalledOnce();
+    });
+  }
+
+  it("discards PNG serialization after navigation and releases all prepared bitmaps", async () => {
+    const state = populatedState();
+    const bitmaps = phaseDefinitions.map(() => ({ close: vi.fn() } as unknown as ImageBitmap));
+    let index = 0;
+    vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockImplementation(async () => ({
+      preview: bitmaps[index++], overlay: unavailableOverlay
+    }));
+    const gate = deferred<unknown>();
+    const started = deferred<void>();
+    generatorMocks.composeSwingCardPng.mockImplementation(() => { started.resolve(); return gate.promise; });
+    const render = vi.fn();
+    const pending = downloadSwingCard(state, render);
+    await started.promise;
+    selectWorkflowStep(state, "review");
+    const status = state.swingCardStatus;
+    gate.resolve({ status: "ok", blob: new Blob(["png"]), filename: "card.png" });
+    await pending;
+    expect(generatorMocks.triggerSwingCardDownload).not.toHaveBeenCalled();
+    for (const bitmap of bitmaps) expect(bitmap.close).toHaveBeenCalledOnce();
+    expect(state.swingCardBusy).toBe(false);
+    expect(state.swingCardStatus).toBe(status);
+    expect(render).toHaveBeenCalledOnce();
+  });
+
+  it.each(["resolve", "reject"] as const)("ignores clipboard %s after reset once a write has already been requested", async (completion) => {
+    const state = createInitialAppState();
+    const gate = deferred<void>();
+    const started = deferred<void>();
+    vi.stubGlobal("navigator", { clipboard: { writeText: () => { started.resolve(); return gate.promise; } } });
+    const render = vi.fn();
+    const pending = copySwingCardPrompt(state, render);
+    await started.promise;
+    resetAppState(state);
+    const status = state.swingCardStatus;
+    if (completion === "resolve") gate.resolve();
+    else gate.reject(new Error("private clipboard failure"));
+    await pending;
+    expect(state.swingCardStatus).toBe(status);
+    expect(state.swingCardBusy).toBe(false);
+    expect(render).toHaveBeenCalledOnce();
+  });
+
+  it("releases successful preparation exactly once even if release is repeated", async () => {
+    const state = populatedState();
+    const bitmaps = phaseDefinitions.map(() => ({ close: vi.fn() } as unknown as ImageBitmap));
+    let index = 0;
+    vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockImplementation(async () => ({
+      preview: bitmaps[index++], overlay: unavailableOverlay
+    }));
+    const prepared = await prepareSwingCardContent(state);
+    expect(prepared.content.keyframes.map((frame) => frame.preview)).toEqual(bitmaps);
+    prepared.release();
+    prepared.release();
+    for (const bitmap of bitmaps) expect(bitmap.close).toHaveBeenCalledOnce();
   });
 
   it("uses exact global start and completion requests for Swing Card download", async () => {

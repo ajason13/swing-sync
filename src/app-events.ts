@@ -1,6 +1,7 @@
 import type { AnalysisLifecycle } from "./analysis-lifecycle";
 import type { AccessibilityIntent, RenderRequest } from "./app-accessibility";
 import {
+  cancelSwingCardExport,
   confirmPhaseReview,
   rebuildPhaseReviewState,
   resetAppState,
@@ -41,6 +42,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
   });
 
   root.querySelector<HTMLButtonElement>("#clear-local-data")?.addEventListener("click", async () => {
+    cancelSwingCardExport(state);
     await lifecycle.closeActive();
     resetAppState(state);
     const cleared = consent.clearAppLocalData?.() === "cleared";
@@ -80,6 +82,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
         !opensCompletedReview &&
         !preservesReviewData
       ) {
+        cancelSwingCardExport(state);
         await lifecycle.closeActive();
       }
       selectWorkflowStep(state, nextStep);
@@ -102,6 +105,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
   fileInput?.addEventListener("change", async (event) => {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
+    cancelSwingCardExport(state);
     await lifecycle.closeActive();
     selectLocalVideo(state, file);
     const message = "Local video selected. It has not been analyzed or persisted.";

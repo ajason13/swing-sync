@@ -25,6 +25,8 @@ export interface PreparedSwingCardContent {
 
 export async function downloadSwingCard(state: AppState, requestRender: (request?: RenderRequest) => void): Promise<void> {
   if (state.swingCardBusy) return;
+  const token = state.swingCardToken;
+  const isCurrent = () => state.swingCardToken === token;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing local Swing Card PNG.");
   requestRender({
@@ -32,9 +34,12 @@ export async function downloadSwingCard(state: AppState, requestRender: (request
     visibleStatusText: state.swingCardStatus,
     announcement: state.swingCardStatus
   });
-  const prepared = await prepareSwingCardContent(state);
+  let prepared: PreparedSwingCardContent | undefined;
   try {
+    prepared = await prepareSwingCardContent(state, isCurrent);
+    if (!isCurrent()) return;
     const result = await composeSwingCardPng(prepared.content);
+    if (!isCurrent()) return;
     if (result.status === "ok") {
       triggerSwingCardDownload(result.blob, result.filename);
       setSwingCardStatus(state, "Swing Card PNG download started.");
@@ -42,15 +47,18 @@ export async function downloadSwingCard(state: AppState, requestRender: (request
       setSwingCardStatus(state, `Swing Card PNG export stopped (${result.reason}).`);
     }
   } catch {
+    if (!isCurrent()) return;
     setSwingCardStatus(state, "Swing Card PNG export stopped (LOCAL_EXPORT_FAILED).");
   } finally {
-    prepared.release();
-    setSwingCardBusy(state, false);
-    requestRender({
-      focusKey: "swing-card-download",
-      visibleStatusText: state.swingCardStatus,
-      announcement: state.swingCardStatus
-    });
+    prepared?.release();
+    if (isCurrent()) {
+      setSwingCardBusy(state, false);
+      requestRender({
+        focusKey: "swing-card-download",
+        visibleStatusText: state.swingCardStatus,
+        announcement: state.swingCardStatus
+      });
+    }
   }
 }
 
@@ -60,6 +68,8 @@ export async function printSwingCard(
   requestRender: (request?: RenderRequest) => void
 ): Promise<void> {
   if (state.swingCardBusy) return;
+  const token = state.swingCardToken;
+  const isCurrent = () => state.swingCardToken === token;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing browser print view.");
   requestRender({
@@ -67,27 +77,34 @@ export async function printSwingCard(
     visibleStatusText: state.swingCardStatus,
     announcement: state.swingCardStatus
   });
-  const prepared = await prepareSwingCardContent(state);
+  let prepared: PreparedSwingCardContent | undefined;
   try {
+    prepared = await prepareSwingCardContent(state, isCurrent);
+    if (!isCurrent()) return;
     const host = root.querySelector<HTMLElement>("[data-swing-card-print-host]");
     host?.replaceChildren(renderSwingCardPrintSurface(prepared.content));
     setSwingCardStatus(state, "Browser print dialog opened. Save as PDF if your browser supports it.");
     window.print();
   } catch {
+    if (!isCurrent()) return;
     setSwingCardStatus(state, "Browser print view could not be prepared.");
   } finally {
-    prepared.release();
-    setSwingCardBusy(state, false);
-    requestRender({
-      focusKey: "swing-card-print",
-      visibleStatusText: state.swingCardStatus,
-      announcement: state.swingCardStatus
-    });
+    prepared?.release();
+    if (isCurrent()) {
+      setSwingCardBusy(state, false);
+      requestRender({
+        focusKey: "swing-card-print",
+        visibleStatusText: state.swingCardStatus,
+        announcement: state.swingCardStatus
+      });
+    }
   }
 }
 
 export async function copySwingCardPrompt(state: AppState, requestRender: (request?: RenderRequest) => void): Promise<void> {
   if (state.swingCardBusy) return;
+  const token = state.swingCardToken;
+  const isCurrent = () => state.swingCardToken === token;
   setSwingCardBusy(state, true);
   setSwingCardStatus(state, "Preparing prompt text.");
   requestRender({
@@ -95,59 +112,81 @@ export async function copySwingCardPrompt(state: AppState, requestRender: (reque
     visibleStatusText: state.swingCardStatus,
     announcement: state.swingCardStatus
   });
-  const prepared = await prepareSwingCardContent(state);
+  let prepared: PreparedSwingCardContent | undefined;
   try {
+    prepared = await prepareSwingCardContent(state, isCurrent);
+    if (!isCurrent()) return;
     await navigator.clipboard.writeText(prepared.content.analysisPrompt);
+    if (!isCurrent()) return;
     setSwingCardStatus(state, "Prompt copied for manual use.");
   } catch {
+    if (!isCurrent()) return;
     setSwingCardStatus(state, "Prompt copy unavailable in this browser.");
   } finally {
-    prepared.release();
-    setSwingCardBusy(state, false);
-    requestRender({
-      focusKey: "swing-card-copy",
-      visibleStatusText: state.swingCardStatus,
-      announcement: state.swingCardStatus
-    });
+    prepared?.release();
+    if (isCurrent()) {
+      setSwingCardBusy(state, false);
+      requestRender({
+        focusKey: "swing-card-copy",
+        visibleStatusText: state.swingCardStatus,
+        announcement: state.swingCardStatus
+      });
+    }
   }
 }
 
-export async function prepareSwingCardContent(state: AppState): Promise<PreparedSwingCardContent> {
+export async function prepareSwingCardContent(
+  state: AppState,
+  isCurrent: () => boolean = () => true
+): Promise<PreparedSwingCardContent> {
   const createdBitmaps: ImageBitmap[] = [];
   const keyframes: SwingCardKeyframe[] = [];
   const assignments = getCompleteSwingCardAssignments(state);
-
-  for (const phase of phaseDefinitions) {
-    const assignment = assignments?.find((item) => item.phaseId === phase.id);
-    const output = assignment ? state.phaseOutputs[assignment.sampleIndex] : undefined;
-    const rendered = output ? await renderAnnotatedKeyframeWithoutTiming(output) : undefined;
-    if (rendered?.preview) createdBitmaps.push(rendered.preview);
-    keyframes.push({
-      phaseId: phase.id,
-      phaseLabel: phase.label,
-      preview: rendered?.preview,
-      overlay: rendered?.overlay
-    });
-  }
-
-  const warnings = deriveSwingCardContentWarnings({
-    keyframes,
-    metricPayload: undefined,
-    phaseReviewConfirmed: (state.phaseReviewState?.readyForFutureMetrics ?? false) && hasCompleteAssignments(assignments)
-  });
-  const base: SwingCardContent = {
-    keyframes,
-    metricPayload: undefined,
-    warnings,
-    analysisPrompt: ""
+  const outputs = state.phaseOutputs;
+  const phaseReviewConfirmed = (state.phaseReviewState?.readyForFutureMetrics ?? false) && hasCompleteAssignments(assignments);
+  const release = () => {
+    for (const bitmap of createdBitmaps.splice(0)) bitmap.close();
   };
-  const content = { ...base, analysisPrompt: buildSwingCardPrompt(base) };
-  return {
-    content,
-    release: () => {
-      for (const bitmap of createdBitmaps) bitmap.close();
+  const checkCurrent = () => {
+    if (!isCurrent()) throw new Error("LOCAL_EXPORT_CANCELLED");
+  };
+
+  try {
+    for (const phase of phaseDefinitions) {
+      checkCurrent();
+      const assignment = assignments?.find((item) => item.phaseId === phase.id);
+      const output = assignment ? outputs[assignment.sampleIndex] : undefined;
+      const rendered = output ? await renderAnnotatedKeyframeWithoutTiming(output) : undefined;
+      if (rendered?.preview) createdBitmaps.push(rendered.preview);
+      checkCurrent();
+      keyframes.push({
+        phaseId: phase.id,
+        phaseLabel: phase.label,
+        preview: rendered?.preview,
+        overlay: rendered?.overlay
+      });
     }
-  };
+
+    const warnings = deriveSwingCardContentWarnings({
+      keyframes,
+      metricPayload: undefined,
+      phaseReviewConfirmed
+    });
+    const base: SwingCardContent = {
+      keyframes,
+      metricPayload: undefined,
+      warnings,
+      analysisPrompt: ""
+    };
+    const content = { ...base, analysisPrompt: buildSwingCardPrompt(base) };
+    return {
+      content,
+      release
+    };
+  } catch (error) {
+    release();
+    throw error;
+  }
 }
 
 async function renderAnnotatedKeyframeWithoutTiming(output: SampledFrameOutput) {
