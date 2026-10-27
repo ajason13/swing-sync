@@ -7,8 +7,13 @@ import {
   selectWorkflowStep,
   createInitialAppState,
   rebuildPhaseReviewState,
-  setPhaseDeclaration
+  setPhaseDeclaration,
+  setPhaseDraftAssignment,
+  setPhaseConfirmation,
+  confirmPhaseReview,
+  selectKeyframe
 } from "../../src/app-state";
+import { renderPhaseReview } from "../../src/phase-review-renderer";
 import * as keyframeRenderer from "../../src/keyframe-overlay-renderer";
 import type { PoseOverlayRenderResult } from "../../src/pose-renderer";
 import { phaseDefinitions } from "../../src/phase-review";
@@ -91,6 +96,48 @@ describe("swing card actions", () => {
     generatorMocks.renderSwingCardPrintSurface.mockReset();
     generatorMocks.triggerSwingCardDownload.mockReset();
     vi.unstubAllGlobals();
+  });
+
+  it("uses the corrected sample for the phase label, canvas, and exported image", async () => {
+    const state = populatedState();
+    setPhaseConfirmation(state, true);
+    selectKeyframe(state, 7);
+    setPhaseDraftAssignment(state, 3, 2);
+    expect(state.selectedKeyframeIndex).toBe(3);
+    expect(state.phaseConfirmation).toBe(false);
+    const html = renderPhaseReview(state);
+    expect(html).toContain('id="keyframe-review-heading">Top</h3>');
+    expect(html).toContain('aria-label="Annotated keyframe: Top, Sample 3"');
+    const draw = vi.fn(() => unavailableOverlay);
+    const root = { querySelector: () => ({}) } as unknown as ParentNode;
+    keyframeRenderer.renderSelectedKeyframeCanvas(root, state, false, draw);
+    expect(draw).toHaveBeenCalledWith(expect.anything(), {
+      preview: state.phaseOutputs[2].preview,
+      landmarks: state.phaseOutputs[2].pose.landmarks[0]
+    });
+    setPhaseConfirmation(state, true);
+    confirmPhaseReview(state);
+    expect(state.phaseReviewState?.readyForFutureMetrics).toBe(true);
+    const renderer = vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe")
+      .mockImplementation(async (output) => ({ preview: output.preview, overlay: unavailableOverlay }));
+    const prepared = await prepareSwingCardContent(state);
+    expect(renderer.mock.calls[3][0]).toBe(state.phaseOutputs[2]);
+    expect(prepared.content.keyframes[3]).toMatchObject({
+      phaseLabel: "Top", preview: state.phaseOutputs[2].preview
+    });
+    prepared.release();
+
+    setPhaseDeclaration(state, "mirrored", "yes");
+    rebuildPhaseReviewState(state);
+    expect(state.phaseReviewState?.readyForFutureMetrics).toBe(false);
+    expect(state.phaseConfirmation).toBe(false);
+    draw.mockClear();
+    keyframeRenderer.renderSelectedKeyframeCanvas(root, state, false, draw);
+    expect(draw).toHaveBeenCalledWith(expect.anything(), {
+      preview: state.phaseOutputs[3].preview,
+      landmarks: state.phaseOutputs[3].pose.landmarks[0]
+    });
+    expect(renderPhaseReview(state)).toContain('aria-label="Annotated keyframe: Top, Sample 4"');
   });
 
   it.each(actionCases)("recovers %s from partial preparation failure with sanitized status", async (_name, action, failure) => {

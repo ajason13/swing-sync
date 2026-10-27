@@ -150,6 +150,7 @@ export function setPhaseDraftAssignment(state: AppState, phaseIndex: number, sam
     sampleIndex
   };
   state.phaseConfirmation = false;
+  selectKeyframe(state, phaseIndex);
 }
 
 export function setPhaseConfirmation(state: AppState, confirmed: boolean): void {
@@ -169,6 +170,17 @@ export function confirmPhaseReview(state: AppState): void {
 export function selectKeyframe(state: AppState, keyframeIndex: number): void {
   state.selectedKeyframeIndex = keyframeIndex;
   state.latestOverlayResult = undefined;
+}
+
+// The selected keyframe index identifies a phase; its draft identifies the sample.
+export function getSelectedPhasePreview(state: AppState) {
+  const phaseIndex = phaseDefinitions[state.selectedKeyframeIndex] ? state.selectedKeyframeIndex : 0;
+  const sampleIndex = state.phaseDraft[phaseIndex]?.sampleIndex ?? phaseIndex;
+  return {
+    phase: phaseDefinitions[phaseIndex],
+    sampleIndex,
+    output: state.phaseOutputs[sampleIndex]
+  };
 }
 
 export function setOverlayResult(state: AppState, overlayResult: PoseOverlayRenderResult): void {

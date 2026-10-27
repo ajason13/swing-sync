@@ -772,11 +772,11 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.getByRole("group", { name: "Swing phase assignments" })).toBeVisible();
   await expect(page.getByRole("group", { name: "Select keyframe" })).toBeVisible();
   await expect(canvas).toHaveCount(1);
-  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Address");
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Address, Sample 1");
   await expect(page.locator("[data-overlay-status]")).toContainText(/Skeleton overlay/);
   await page.locator("[data-keyframe-index='3']").click();
   await expect(canvas).toHaveCount(1);
-  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Top");
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Top, Sample 4");
   const canvasState = await page.evaluate(() => {
     const element = document.querySelector("[data-keyframe-canvas]") as HTMLCanvasElement;
     const label = element.getAttribute("aria-label") ?? "";
@@ -860,6 +860,65 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await page.getByRole("button", { name: /Review/ }).click();
   await expect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
   await expect(page.getByText("Annotated keyframes")).toBeVisible();
+});
+
+test("shows the corrected phase sample consistently in preview and export at desktop and 320px", async ({ page }, testInfo) => {
+  if (testInfo.project.name === "mobile-chromium") {
+    await page.setViewportSize({ width: 320, height: 720 });
+  }
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+  const canvas = page.locator("[data-keyframe-canvas]");
+  await page.locator("[data-keyframe-index='2']").click();
+  const assignedImage = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+  await page.locator("[data-keyframe-index='3']").click();
+  const originalImage = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+  expect(originalImage).not.toBe(assignedImage);
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  const assignment = page.locator("[data-phase-index='3']");
+  await assignment.selectOption("2");
+  await expect(assignment).toBeFocused();
+  await expect(page.getByLabel(/I reviewed these provisional labels/)).not.toBeChecked();
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Top, Sample 3");
+  await expect(page.locator("#keyframe-review-heading")).toHaveText("Top");
+  await expect(page.locator(".keyframe-review__heading")).toContainText("Sample 3");
+  expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(assignedImage);
+  await page.locator("[data-keyframe-index='7']").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-keyframe-index='7']")).toBeFocused();
+  await page.locator("[data-keyframe-index='3']").click();
+  expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(assignedImage);
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+  await page.evaluate(() => {
+    window.print = () => {
+      Object.assign(window, { __printedKeyframes: [...document.querySelectorAll<HTMLCanvasElement>(
+        "[data-swing-card-print-host] canvas"
+      )].map((canvas) => canvas.toDataURL()) });
+    };
+  });
+  await page.getByRole("button", { name: "Print / Save as PDF" }).click();
+  await expect(page.locator("[data-swing-card-status]")).toContainText("Browser print dialog opened");
+  const printed = await page.evaluate(() =>
+    (window as typeof window & { __printedKeyframes: string[] }).__printedKeyframes
+  );
+  expect(printed).toHaveLength(8);
+  // Mid-backswing and corrected Top both use sample 3; export redraws at a
+  // different size from the responsive review canvas, so compare export tiles.
+  expect(printed[3] === printed[2]).toBe(true);
+  expect(printed[3] === printed[4]).toBe(false);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  expect((await downloadPromise).suggestedFilename()).toMatch(/\.png$/);
+  await expect(page.locator("[data-swing-card-status]")).toHaveText("Swing Card PNG download started.");
 });
 
 test("keeps phase semantic announcements and overlay ownership mutually exclusive", async ({ page }) => {

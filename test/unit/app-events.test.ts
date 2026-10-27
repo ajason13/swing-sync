@@ -542,6 +542,7 @@ describe("app event binding", () => {
     expect(phaseRender).toHaveBeenLastCalledWith({ focusKey: "phase-setup" });
     await assignment.dispatch("change");
     expect(phaseRender).toHaveBeenLastCalledWith({ focusKey: "phase-assignment:0" });
+    expect(phaseState.selectedKeyframeIndex).toBe(0);
     await confirmation.dispatch("change");
     expect(phaseRender).toHaveBeenLastCalledWith({ focusKey: "phase-confirmation" });
     await confirm.dispatch("click");
