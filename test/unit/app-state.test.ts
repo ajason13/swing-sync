@@ -60,8 +60,10 @@ describe("app state transitions", () => {
     state.phaseConfirmation = true;
     state.latestLandmarkCount = 33;
 
+    const previousToken = state.swingCardToken;
     resetAppState(state);
 
-    expect(state).toEqual(createInitialAppState());
+    expect(state.swingCardToken).not.toBe(previousToken);
+    expect(state).toEqual({ ...createInitialAppState(), swingCardToken: state.swingCardToken });
   });
 });

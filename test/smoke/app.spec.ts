@@ -1333,3 +1333,99 @@ test("keeps real failure review and confirmed export usable at 320 CSS pixels", 
     ".remote-model-panel", ".remote-model-disclosure", ".remote-model-disclosure dd", "#remote-model-status"
   ]);
 });
+
+async function openConfirmedSwingCard(page: Page): Promise<void> {
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Review phase labels" }).click();
+  await page.getByLabel("View", { exact: true }).selectOption("face-on");
+  await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+  await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+  await page.getByLabel(/I confirm this is one trimmed/).check();
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+}
+
+test("recovers all Swing Card actions after partial canvas preparation failure", async ({ page }) => {
+  await openConfirmedSwingCard(page);
+  for (const [selector, failure] of [
+    ["[data-download-swing-card]", "LOCAL_EXPORT_FAILED"],
+    ["[data-print-swing-card]", "Browser print view could not be prepared."],
+    ["[data-copy-swing-card-prompt]", "Prompt copy unavailable in this browser."]
+  ]) {
+    await page.evaluate(() => {
+      const originalGetContext = HTMLCanvasElement.prototype.getContext;
+      const originalCreate = window.createImageBitmap.bind(window);
+      const closes: number[] = [];
+      let calls = 0;
+      Object.assign(window, { __partialExportCloses: closes });
+      HTMLCanvasElement.prototype.getContext = function (...args) {
+        if (++calls === 3) {
+          HTMLCanvasElement.prototype.getContext = originalGetContext;
+          throw new Error("private preparation detail");
+        }
+        return originalGetContext.apply(this, args);
+      } as typeof originalGetContext;
+      window.createImageBitmap = async (...args) => {
+        const bitmap = await originalCreate(...args);
+        const index = closes.push(0) - 1;
+        const close = bitmap.close.bind(bitmap);
+        bitmap.close = () => { closes[index] += 1; close(); };
+        if (closes.length === 2) window.createImageBitmap = originalCreate;
+        return bitmap;
+      };
+    });
+    await page.locator(selector).click();
+    await expect(page.locator("#swing-card-action-status")).toContainText(failure);
+    await expect(page.locator(selector)).toBeEnabled();
+    await expect(page.locator(selector)).toBeFocused();
+    expect(await page.evaluate(() => (window as typeof window & { __partialExportCloses: number[] }).__partialExportCloses)).toEqual([1, 1]);
+    expect(consoleMessagesFor(page).join("\n")).not.toContain("private preparation detail");
+  }
+});
+
+test("cancels pending Swing Card actions on navigation and clear-local-data", async ({ page }) => {
+  await openConfirmedSwingCard(page);
+  const downloads: string[] = [];
+  page.on("download", (download) => downloads.push(download.suggestedFilename()));
+  for (const [index, selector] of ["[data-download-swing-card]", "[data-print-swing-card]", "[data-copy-swing-card-prompt]"].entries()) {
+    await page.evaluate(() => {
+      const originalCreate = window.createImageBitmap.bind(window);
+      let release!: () => void;
+      const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
+      const effects = { print: 0, copy: 0, created: 0, closed: 0 };
+      Object.assign(window, { __exportEffects: effects, __releasePendingExport: release });
+      window.print = () => { effects.print += 1; };
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { effects.copy += 1; } } });
+      window.createImageBitmap = async (...args) => {
+        await gate;
+        const bitmap = await originalCreate(...args);
+        effects.created += 1;
+        const close = bitmap.close.bind(bitmap);
+        bitmap.close = () => { effects.closed += 1; close(); };
+        return bitmap;
+      };
+      Object.assign(window, { __restoreExportBitmap: () => { window.createImageBitmap = originalCreate; } });
+    });
+    await page.locator(selector).click();
+    await expect(page.locator(selector)).toBeDisabled();
+    if (index === 2) await page.locator("#clear-local-data").click();
+    else {
+      await page.locator("[data-step='review']").click();
+      await page.getByRole("button", { name: "Open Swing Card export" }).click();
+    }
+    await expect(page.locator("#app-announcer")).toContainText(index === 2 ? "Local Swing Sync user state was cleared" : "Swing Card export opened.");
+    const status = await page.locator("#app-announcer").textContent();
+    await page.evaluate(() => (window as typeof window & { __releasePendingExport: () => void }).__releasePendingExport());
+    await expect.poll(() => page.evaluate(() => (window as typeof window & { __exportEffects: { closed: number } }).__exportEffects.closed)).toBe(1);
+    expect(await page.evaluate(() => (window as typeof window & { __exportEffects: unknown }).__exportEffects)).toEqual({ print: 0, copy: 0, created: 1, closed: 1 });
+    expect(downloads).toEqual([]);
+    await expect(page.locator("#app-announcer")).toHaveText(status ?? "");
+    await page.evaluate(() => (window as typeof window & { __restoreExportBitmap: () => void }).__restoreExportBitmap());
+    if (index < 2) await expect(page.locator(selector)).toBeEnabled();
+    else await expect(page.getByRole("button", { name: "Begin analysis" })).toBeDisabled();
+  }
+});

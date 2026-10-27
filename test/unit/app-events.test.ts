@@ -269,6 +269,33 @@ describe("app event binding", () => {
     expect(applyAccessibilityIntent).toHaveBeenCalledWith({ focusKey: "video-picker" });
   });
 
+  it.each(["capture", "review", "clear"] as const)("invalidates exports immediately on %s before controller teardown resolves", async (destination) => {
+    const control = new EventTargetStub();
+    control.dataset.step = destination;
+    const state = createInitialAppState();
+    state.activeStep = "export";
+    state.swingCardBusy = true;
+    const token = state.swingCardToken;
+    const gate = deferred();
+    const closeActive = vi.fn(() => gate.promise);
+    const root = destination === "clear"
+      ? new MapRoot({ "#clear-local-data": control })
+      : new MapRoot({}, { "[data-step]": [control] });
+    bindAppEvents(root as unknown as ParentNode, {
+      state,
+      consent: { hasSafetyConsent: () => true, setSafetyConsent: () => undefined },
+      lifecycle: { closeActive } as never,
+      requestRender: vi.fn(),
+      applyAccessibilityIntent: vi.fn()
+    });
+    const pending = control.dispatch("click");
+    expect(state.swingCardToken).not.toBe(token);
+    expect(state.swingCardBusy).toBe(false);
+    if (destination !== "review") expect(closeActive).toHaveBeenCalledOnce();
+    gate.resolve();
+    await pending;
+  });
+
   it("awaits closeActive before rendering workflow navigation exactly once", async () => {
     const button = new EventTargetStub();
     button.dataset.step = "capture";

@@ -29,6 +29,8 @@ export interface AppState {
   phaseConfirmation: boolean;
   selectedKeyframeIndex: number;
   latestOverlayResult: PoseOverlayRenderResult | undefined;
+  // Replaced on navigation/reset so pending exports cannot complete into another session.
+  swingCardToken: symbol;
   swingCardBusy: boolean;
   swingCardStatus: string;
 }
@@ -49,6 +51,7 @@ export function createInitialAppState(): AppState {
     phaseConfirmation: false,
     selectedKeyframeIndex: 0,
     latestOverlayResult: undefined,
+    swingCardToken: Symbol("swing-card-session"),
     swingCardBusy: false,
     swingCardStatus: initialSwingCardStatus
   };
@@ -77,6 +80,7 @@ export function selectCanBeginAnalysis(state: AppState, consentAccepted: boolean
 }
 
 export function selectWorkflowStep(state: AppState, step: WorkflowStepId): void {
+  if (state.activeStep !== step) cancelSwingCardExport(state);
   state.activeStep = step;
 }
 
@@ -122,8 +126,7 @@ export function resetPhaseReview(state: AppState): void {
   state.phaseConfirmation = false;
   state.selectedKeyframeIndex = 0;
   state.latestOverlayResult = undefined;
-  state.swingCardBusy = false;
-  state.swingCardStatus = initialSwingCardStatus;
+  cancelSwingCardExport(state);
 }
 
 export function rebuildPhaseReviewState(state: AppState): void {
@@ -170,6 +173,12 @@ export function selectKeyframe(state: AppState, keyframeIndex: number): void {
 
 export function setOverlayResult(state: AppState, overlayResult: PoseOverlayRenderResult): void {
   state.latestOverlayResult = overlayResult;
+}
+
+export function cancelSwingCardExport(state: AppState): void {
+  state.swingCardToken = Symbol("swing-card-session");
+  state.swingCardBusy = false;
+  state.swingCardStatus = initialSwingCardStatus;
 }
 
 export function setSwingCardBusy(state: AppState, busy: boolean): void {
