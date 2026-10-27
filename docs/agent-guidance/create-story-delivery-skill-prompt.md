@@ -1,5 +1,10 @@
 # Create Swing Sync Story Delivery Skill Prompt
 
+> Historical session prompt. Retained as provenance; do not use it to start
+> new work. Follow [AGENTS.md](../../AGENTS.md) and
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) for the current workflow. References
+> below to `CONTEXT.md`, trackers, or external auditors describe past practice.
+
 Use this prompt with Codex from the Swing Sync repository root. Explicitly
 invoke `$skill-creator`.
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "Swing Sync Story Delivery"
-  short_description: "Coordinate Swing Sync stories through merge"
-  default_prompt: "Use $swing-sync-story-delivery to execute the next Swing Sync story from task selection through audit, PR, merge, and context sync."
+  short_description: "Deliver scoped Swing Sync features and fixes"
+  default_prompt: "Use $swing-sync-story-delivery to deliver this scoped Swing Sync change using AGENTS.md and the relevant product policies."
