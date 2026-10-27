@@ -15,12 +15,18 @@ export const appLocalStorageKeys = [consentStorageKey] as const;
 
 export type ClearAppLocalDataResult = "cleared" | "blocked";
 
-export function createSafetyConsentStore(storage: ConsentStorage = window.localStorage): SafetyConsentStore {
+export function createSafetyConsentStore(storage?: ConsentStorage): SafetyConsentStore {
   let storageFailed = false;
+  try {
+    // Accessing the browser storage property can itself throw when storage is denied.
+    storage ??= window.localStorage;
+  } catch {
+    storageFailed = true;
+  }
 
   return {
     hasSafetyConsent: () => {
-      if (storageFailed) return false;
+      if (storageFailed || !storage) return false;
 
       try {
         return storage.getItem(consentStorageKey) === "accepted";
@@ -30,7 +36,7 @@ export function createSafetyConsentStore(storage: ConsentStorage = window.localS
       }
     },
     setSafetyConsent: (accepted: boolean) => {
-      if (storageFailed) return;
+      if (storageFailed || !storage) return;
       try {
         if (accepted) {
           storage.setItem(consentStorageKey, "accepted");
@@ -42,7 +48,7 @@ export function createSafetyConsentStore(storage: ConsentStorage = window.localS
       }
     },
     clearAppLocalData: () => {
-      if (storageFailed) return "blocked";
+      if (storageFailed || !storage) return "blocked";
 
       let blocked = false;
       try {

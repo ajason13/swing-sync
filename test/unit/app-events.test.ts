@@ -116,7 +116,7 @@ describe("app event binding", () => {
     const eventIntentCalls = events.split("\n").filter((line) => line.includes("applyAccessibilityIntent({"));
     const eventRenderOwners = [
       ["dependency contract", "requestRender(request?: RenderRequest): void;"],
-      ["consent change", 'requestRender({ focusKey: "safety-consent", announcement: message });'],
+      ["consent change", 'requestRender({ focusKey: "safety-consent", announcement: message, ...(requested && !accepted ? { visibleStatusText: message } : {}) });'],
       ["clear local data", 'requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });'],
       ["consent guard", 'requestRender({ focusKey: "safety-consent", visibleStatusText: message, announcement: message });'],
       ["video guard", 'requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });'],
@@ -349,6 +349,26 @@ describe("app event binding", () => {
     });
     await pickerRoot.input.dispatch("change");
     expect(pickerRender).toHaveBeenCalledOnce();
+  });
+
+  it("shows sanitized storage guidance when acknowledgement cannot be recorded", async () => {
+    const control = new EventTargetStub();
+    control.checked = true;
+    const requestRender = vi.fn();
+    bindAppEvents(new MapRoot({ "#safety-consent": control }) as unknown as ParentNode, {
+      state: createInitialAppState(),
+      consent: { hasSafetyConsent: () => false, setSafetyConsent: () => undefined },
+      lifecycle: {} as never,
+      requestRender,
+      applyAccessibilityIntent: vi.fn()
+    });
+    await control.dispatch("change");
+    const message = "Safety acknowledgement could not be recorded in this browser. Check browser storage settings and try again.";
+    expect(requestRender).toHaveBeenCalledWith({
+      focusKey: "safety-consent",
+      announcement: message,
+      visibleStatusText: message
+    });
   });
 
   it("executes typed consent guard begin workflow review declaration confirmation export and keyframe intents", async () => {

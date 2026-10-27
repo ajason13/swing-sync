@@ -29,12 +29,15 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
   const { state, consent, lifecycle, requestRender, applyAccessibilityIntent } = dependencies;
 
   root.querySelector<HTMLInputElement>("#safety-consent")?.addEventListener("change", (event) => {
-    consent.setSafetyConsent((event.currentTarget as HTMLInputElement).checked);
+    const requested = (event.currentTarget as HTMLInputElement).checked;
+    consent.setSafetyConsent(requested);
     const accepted = consent.hasSafetyConsent();
     const message = accepted
       ? "Safety acknowledgement recorded locally."
-      : "Safety acknowledgement is required before analysis.";
-    requestRender({ focusKey: "safety-consent", announcement: message });
+      : requested
+        ? "Safety acknowledgement could not be recorded in this browser. Check browser storage settings and try again."
+        : "Safety acknowledgement is required before analysis.";
+    requestRender({ focusKey: "safety-consent", announcement: message, ...(requested && !accepted ? { visibleStatusText: message } : {}) });
   });
 
   root.querySelector<HTMLButtonElement>("#clear-local-data")?.addEventListener("click", async () => {

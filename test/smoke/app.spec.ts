@@ -378,6 +378,40 @@ test("reflows long status text at 320 CSS pixels without clipping or overlap", a
   expect(layout).toEqual({ pageOverflow: false, clipped: false, withinViewport: true });
 });
 
+test("renders and fails closed when the localStorage getter is denied at startup", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("private storage failure details", "SecurityError");
+      }
+    });
+  });
+  await page.reload();
+
+  await expect(page.getByRole("heading", { name: "Safety acknowledgement", exact: true })).toBeVisible();
+  const consent = page.getByRole("checkbox");
+  const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await consent.click();
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+  await expect(page.locator("#app-visible-status")).toContainText("Check browser storage settings and try again");
+  await expect(page.locator("#app-announcer")).toContainText("Safety acknowledgement could not be recorded");
+
+  await page.getByRole("button", { name: "Clear local app data" }).click();
+  await expect(page.locator("#app-visible-status")).toContainText("Check browser storage settings and try again");
+  await expect(consent).not.toBeChecked();
+  await expect(beginAnalysis).toBeDisabled();
+  await expect(page.locator("#app")).not.toContainText(/SecurityError|private storage failure details/);
+  expect(pageErrors).toEqual([]);
+  expect(consoleMessagesFor(page).join("\n")).not.toMatch(/SecurityError|private storage failure details/);
+});
+
 test("fails closed when local consent storage is unavailable", async ({ page }) => {
   await page.addInitScript(() => {
     Storage.prototype.getItem = () => {
