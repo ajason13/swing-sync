@@ -1,5 +1,5 @@
 import type { AppState } from "./app-state";
-import { setOverlayResult } from "./app-state";
+import { getSelectedPhasePreview, setOverlayResult } from "./app-state";
 import type { SampledFrameOutput } from "./frame-processing";
 import { renderPoseOverlayFrame, type PoseOverlayRenderResult } from "./pose-renderer";
 
@@ -13,7 +13,8 @@ export function renderSelectedKeyframeCanvas(
 ): void {
   const canvas = root.querySelector<HTMLCanvasElement>("[data-keyframe-canvas]");
   if (!canvas || state.phaseOutputs.length === 0) return;
-  const output = state.phaseOutputs[state.selectedKeyframeIndex] ?? state.phaseOutputs[0];
+  const { output } = getSelectedPhasePreview(state);
+  if (!output) return;
   const status = root.querySelector<HTMLElement>("#keyframe-overlay-status");
   const result = renderFrame(canvas, {
     preview: output.preview,

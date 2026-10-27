@@ -1,4 +1,4 @@
-import type { AppState } from "./app-state";
+import { getSelectedPhasePreview, type AppState } from "./app-state";
 import { overlayStatusText } from "./keyframe-overlay-renderer";
 import { isValidCorrection, phaseDefinitions, type PhaseDeclarations } from "./phase-review";
 
@@ -80,8 +80,7 @@ export function renderPhaseReview(state: AppState): string {
 }
 
 function renderKeyframeOverlayReview(state: AppState): string {
-  const selectedOutput = state.phaseOutputs[state.selectedKeyframeIndex] ?? state.phaseOutputs[0];
-  const selectedPhase = phaseDefinitions[selectedOutput?.index ?? 0] ?? phaseDefinitions[0];
+  const { phase: selectedPhase, sampleIndex } = getSelectedPhasePreview(state);
   const overlayStatus = overlayStatusText(state.latestOverlayResult?.status);
 
   return `
@@ -90,11 +89,12 @@ function renderKeyframeOverlayReview(state: AppState): string {
         <div>
           <p class="placeholder-kicker">Annotated keyframes</p>
           <h3 id="keyframe-review-heading">${selectedPhase.label}</h3>
+          <p class="action-note">Sample ${sampleIndex + 1}</p>
         </div>
         <span class="stage-status">Annotated still</span>
       </div>
       <div class="keyframe-canvas-wrap">
-        <canvas class="keyframe-canvas" data-keyframe-canvas role="img" aria-label="Annotated keyframe: ${selectedPhase.label}" aria-describedby="keyframe-overlay-status"></canvas>
+        <canvas class="keyframe-canvas" data-keyframe-canvas role="img" aria-label="Annotated keyframe: ${selectedPhase.label}, Sample ${sampleIndex + 1}" aria-describedby="keyframe-overlay-status"></canvas>
       </div>
       <p class="action-note" id="keyframe-overlay-status" data-overlay-status role="status" aria-live="polite" aria-atomic="true">${overlayStatus}</p>
       <div class="keyframe-strip" role="group" aria-label="Select keyframe">
