@@ -10,14 +10,9 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "strict": true
+    "strict": true,
+    "types": ["node", "vite/client"],
+    "allowJs": true
   },
-  "include": [
-    "src",
-    "test",
-    "playwright.config.ts",
-    "vite.config.ts",
-    "vite.config.test.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["src", "test", "*.config.ts"]
 }

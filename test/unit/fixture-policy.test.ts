@@ -3,13 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-// @ts-expect-error JS verifier is exercised directly by SS-014 tests.
 import {
   validateFixtureDirectory,
   validateFixtureDirectories,
   validateFixtureManifest
 } from "../../scripts/verify-fixtures.js";
-// @ts-expect-error Canonical policy data is authored as a zero-dependency Node module.
 import {
   blockedGenerationMethods,
   fixtureClasses,

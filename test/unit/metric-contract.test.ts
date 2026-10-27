@@ -18,8 +18,10 @@ function validPayload(): SwingMetricPayload {
 
 function firstMetric(overrides: Partial<SwingMetricPayload["metrics"][number]>) {
   const payload = validPayload();
-  payload.metrics[0] = { ...payload.metrics[0], ...overrides };
-  return payload;
+  return {
+    ...payload,
+    metrics: [{ ...payload.metrics[0], ...overrides }, ...payload.metrics.slice(1)]
+  };
 }
 
 describe("metric payload fixtures", () => {

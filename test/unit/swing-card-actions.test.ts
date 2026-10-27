@@ -426,7 +426,7 @@ describe("swing card actions", () => {
     try {
       expect(state.phaseOutputs.map((output) => output.observedSeekTimestampMs)).toContain(12345);
       expect(prepared.content.keyframes).toHaveLength(phaseDefinitions.length);
-      expect(prepared.content.keyframes.some((keyframe) => keyframe.overlay.status === "unavailable")).toBe(true);
+      expect(prepared.content.keyframes.some((keyframe) => keyframe.overlay?.status === "unavailable")).toBe(true);
       expect(JSON.stringify(prepared.content)).not.toContain("observedSeekTimestampMs");
       expect(JSON.stringify(prepared.content.keyframes)).not.toContain("12345");
       expect(prepared.content.analysisPrompt).not.toContain("observedSeekTimestampMs");

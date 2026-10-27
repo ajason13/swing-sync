@@ -267,7 +267,9 @@ function getLandmark(
   if (value.visibility < MIN_LANDMARK_VISIBILITY) {
     collector.add("LOW_VISIBILITY");
   }
-  return value;
+  // All four required numeric fields were checked above; the partial-record type
+  // does not retain those property checks as a complete PoseLandmark.
+  return value as PoseLandmark;
 }
 
 function isLandmarkRecord(value: unknown): value is Partial<PoseLandmark> {

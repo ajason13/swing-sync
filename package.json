@@ -22,13 +22,15 @@
     "test:unit": "vitest run",
     "test:smoke": "playwright test",
     "test:smoke:dev": "playwright test --config playwright.dev.config.ts",
-    "test:smoke:csp-preview": "playwright test --config playwright.csp-preview.config.ts"
+    "test:smoke:csp-preview": "playwright test --config playwright.csp-preview.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
     "@onebeyond/license-checker": "^2.2.0",
     "@playwright/test": "1.62.1",
     "@swing-sync-test/bundled-prohibited-package": "file:test/fixtures/bundled-prohibited-package",
+    "@types/node": "22.20.5",
     "esbuild": "0.28.2",
     "rollup-plugin-license": "^3.7.1",
     "typescript": "^5.8.3",

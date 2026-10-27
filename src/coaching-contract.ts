@@ -183,7 +183,9 @@ export function validateCoachingResponse(value: unknown, content: SwingCardConte
   }
 
   if (errors.size > 0) return invalid([...errors]);
-  return { ok: true, value: value as CoachingResponse };
+  // Top-level, section, and item guards above validate the full response before this assertion.
+  // TypeScript cannot infer the shape from the accumulated validation errors.
+  return { ok: true, value: value as unknown as CoachingResponse };
 }
 
 export function normalizeCoachingText(value: string): string {
