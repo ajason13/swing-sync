@@ -1,70 +1,39 @@
-# Repository Guidelines
+# Swing Sync Repository Guidance
 
-## Start With Current State
+## Product boundaries
 
-Read [`CONTEXT.md`](./CONTEXT.md) before starting work. Confirm the next task,
-acceptance criteria, branch, and handshake status in the Swing Sync Notion task
-database before implementation. After PR creation, audit results, or merge
-state changes, keep Notion and `CONTEXT.md` synchronized.
+Swing Sync is local-first. Raw swing video is not uploaded by default; any
+remote sharing requires a separate, explicit opt-in. Do not make absolute
+privacy, safety, legal, deletion, anonymity, or compliance claims.
 
-Keep changes within the accepted story scope. For runtime changes, document
-whether observability was added, intentionally unchanged, or deferred.
+Follow `docs/privacy-architecture.md`, `docs/safety-terms.md`,
+`docs/licensing.md`, and `docs/models-licensing.md` when the task touches their
+subject. Any connected model or coaching feature must avoid medical diagnosis,
+pain triage, and aggressive mechanical prescriptions.
 
-## Sensitive Story Rules
+## Working loop
 
-For safety, privacy, legal, medical, AI-coaching, model-provider, or
-compliance-sensitive stories, keep roles explicit:
+1. Check `git status --short --branch`; inspect only task-relevant files.
+2. Make the smallest complete change and preserve local-first constraints.
+3. Run the checks that cover the changed surface and review the final diff.
+4. Report verification, observability impact, assumptions, and residual risk.
 
-- Gemini researches and drafts specifications.
-- Codex implements, verifies, and maintains repository state.
-- Claude performs adversarial audit and re-review.
-
-Treat Gemini research as input, not authority. Before implementation, classify
-broad recommendations as Adopt, Revise, Defer, or Reject. Claude adversarial
-review is required before a sensitive story is Done. After fixes, use a
-separate focused re-review prompt containing prior findings, applied fixes,
-relevant current context, verification, and a focused diff.
-
-Browser-chat prompts must embed all required repository context; Gemini and
-Claude Chat do not have filesystem or GitHub access.
-
-After Claude or implementation feedback, convert repeatable lessons into
-durable process updates. Prefer this loop: classify each finding as blocker,
-non-blocking recommendation, or future work; update the spec and tests before
-implementation when the finding changes acceptance or verification; get a
-focused re-review for sensitive stories; then capture reusable rules in
-`CONTEXT.md` and, when they affect future delivery, this file or the relevant
-`.agents/skills/*/SKILL.md`. Do not rely on chat memory alone.
-
-For sensitive verifier or documentation changes, audit packets should include
-every changed tracked file or an explicit rationale for omission. Test evidence
-should include named tests mapped to acceptance criteria or audit blockers when
-coverage is part of the sign-off decision.
-
-## Product And Compliance Boundaries
-
-Preserve the local-first rules in
-[`docs/privacy-architecture.md`](./docs/privacy-architecture.md): raw swing
-video is not uploaded by default, and remote sharing requires a separate,
-explicit opt-in. Do not make absolute privacy, safety, legal, deletion,
-anonymity, or compliance claims.
-
-Follow [`docs/safety-terms.md`](./docs/safety-terms.md) for user-facing and AI
-coaching boundaries. Follow [`docs/licensing.md`](./docs/licensing.md) and
-[`docs/models-licensing.md`](./docs/models-licensing.md) before adding
-dependencies, reference-derived code, model assets, SDKs, or providers.
+Use a fresh-context Codex review after implementation for safety, privacy,
+legal, licensing, model-provider, public-contract, release, or requested-review
+work. Do not require Notion, Claude, Gemini, or another external-model handoff.
 
 ## Verification
 
-Use Node 22 from `.nvmrc`. Run the checks required by the changed surface and
-record results in the PR:
+Use Node 22 from `.nvmrc`.
 
-- Baseline runtime/docs changes: `npm run build` and
+- Baseline runtime or docs changes: `npm run build` and
   `npm run compliance:verify`.
-- Dependency, bundle, or licensing changes: also run `npm run license:audit`,
+- Dependency or licensing changes: also run `npm run license:audit`,
   `npm run verify:bundle-license-fixture`, and `npm run sbom:generate`.
-- Targeted boundaries: run `npm run safety:verify` or
-  `npm run privacy:verify` when those surfaces change.
+- Safety or privacy changes: also run `npm run safety:verify` or
+  `npm run privacy:verify`.
+- Tests: `npm run test:unit` or `npm run test:smoke` when the changed surface
+  requires them.
 
-Complete [`.github/pull_request_template.md`](./.github/pull_request_template.md)
-and preserve required notices.
+Historical handoffs live in `docs/history/` and are not default task context.
+Read a specific record only when it is relevant to the task.

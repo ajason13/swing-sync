@@ -116,6 +116,7 @@ npm run sbom:generate
 
 ## Documentation
 
+- [Codex sessions: start, continue, and troubleshoot](./docs/codex-sessions.md)
 - [Release review gate](./docs/release-review-gate.md) — current public-release
   decision remains pending qualified-human review.
 - [Limitations](./docs/limitations.md)
@@ -126,7 +127,7 @@ npm run sbom:generate
 - [Licensing and dependency policy](./docs/licensing.md)
 - [Model licensing policy](./docs/models-licensing.md)
 - [Fixture policy](./docs/fixture-policy.md)
-- [Current project context](./CONTEXT.md)
+- [Historical project records](./docs/history/)
 
 ## License
 

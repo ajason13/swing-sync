@@ -1,5 +1,10 @@
 # SS-005 New Codex Session Prompt
 
+> Historical session prompt. Retained as provenance; do not use it to start
+> new work. Follow [AGENTS.md](../../AGENTS.md) and
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) for the current workflow. References
+> below to `CONTEXT.md`, trackers, or external auditors describe past practice.
+
 Paste this prompt into a new Codex session started from:
 
 `/Users/jasonalvarez/gitHubRepos/swing-sync`

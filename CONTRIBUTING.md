@@ -1,8 +1,7 @@
 # Contributing
 
-This repository uses a story-by-story workflow with explicit safety, privacy,
-licensing, and audit gates. Start every change by reading `AGENTS.md` and
-`CONTEXT.md`.
+This repository uses focused safety, privacy, and licensing constraints. Start
+every change by reading `AGENTS.md` and the task-relevant policy documents.
 
 ## Environment
 
@@ -31,30 +30,15 @@ updates the project baseline.
 
 ## Task Workflow
 
-Before branching, confirm the selected Notion task's Name, Branch, Handshake
-Status, Pull Request, Task Type, and acceptance criteria. Create the task branch
-from synchronized `main` using the Notion Branch value.
+Start from synchronized `main` unless the current task states otherwise. Put
+acceptance criteria in the issue, pull request, or task prompt. For safety,
+privacy, legal, medical, AI-coaching, model-provider, compliance, or licensing
+changes, create a focused specification when the existing policy does not
+already define the boundary, then run a fresh-context Codex review after
+implementation.
 
-Keep Notion and `CONTEXT.md` synchronized when a task is selected, status
-changes, QA or audit results arrive, a PR is opened, a PR merges, or post-merge
-state changes.
-
-Sensitive stories must keep roles explicit:
-
-- Codex implements, verifies, and maintains repository state.
-- Codex may own research/spec drafting when the former Gemini route is
-  unavailable, degraded, or explicitly bypassed.
-- Claude remains the independent QA planning, adversarial audit, and re-review
-  reviewer.
-
-For sensitive stories, do not implement user-facing safety, privacy, legal,
-medical, AI-coaching, model-provider, compliance, or licensing copy before the
-research/disposition note, preimplementation spec, and self-contained Claude QA
-planning prompt pass or blockers are resolved and re-reviewed.
-
-Browser-chat prompts for Claude must be self-contained. Include role, stage,
-scope, context, acceptance criteria, protected boundaries, relevant source
-contents or focused diff, verification, known non-goals, and required output.
+Historical handoffs are archival evidence, not a workflow gate. Read one only
+when it is directly relevant to the task.
 
 ## Testing
 
@@ -124,8 +108,8 @@ boundaries. The [release review gate](docs/release-review-gate.md) records the
 pending qualified-human review package for any future public release.
 
 For runtime changes, state whether observability was added, intentionally
-unchanged, or deferred. For SS-016 docs-only work, no new runtime observability
-is added. Existing debugging is local test output, browser devtools, sanitized
+unchanged, or deferred. Docs-only workflow changes do not add runtime
+observability. Existing debugging is local test output, browser devtools, sanitized
 UI status/error codes, and CI/browser failure artifacts.
 
 ## Pull Requests
