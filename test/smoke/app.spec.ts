@@ -688,9 +688,9 @@ test("traverses capture processing review confirmation and export with keyboard 
     let release!: () => void;
     const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
     Object.assign(window, { __releaseKeyboardPrint: release });
-    window.createImageBitmap = async (...arguments_) => {
+    window.createImageBitmap = async (...arguments_: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
       await gate;
-      return originalCreateImageBitmap(...arguments_);
+      return Reflect.apply(originalCreateImageBitmap, window, arguments_);
     };
   });
   const print = page.locator("[data-print-swing-card]");
@@ -734,9 +734,9 @@ test("traverses capture processing review confirmation and export with keyboard 
     let release!: () => void;
     const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
     Object.assign(window, { __releaseKeyboardDownload: release });
-    window.createImageBitmap = async (...arguments_) => {
+    window.createImageBitmap = async (...arguments_: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
       await gate;
-      return originalCreateImageBitmap(...arguments_);
+      return Reflect.apply(originalCreateImageBitmap, window, arguments_);
     };
   });
   await downloadButton.focus();
@@ -1494,15 +1494,15 @@ test("recovers all Swing Card actions after partial canvas preparation failure",
       const closes: number[] = [];
       let calls = 0;
       Object.assign(window, { __partialExportCloses: closes });
-      HTMLCanvasElement.prototype.getContext = function (...args) {
+      HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, ...args: Parameters<typeof originalGetContext>) {
         if (++calls === 3) {
           HTMLCanvasElement.prototype.getContext = originalGetContext;
           throw new Error("private preparation detail");
         }
         return originalGetContext.apply(this, args);
       } as typeof originalGetContext;
-      window.createImageBitmap = async (...args) => {
-        const bitmap = await originalCreate(...args);
+      window.createImageBitmap = async (...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
+        const bitmap = await Reflect.apply(originalCreate, window, args);
         const index = closes.push(0) - 1;
         const close = bitmap.close.bind(bitmap);
         bitmap.close = () => { closes[index] += 1; close(); };
@@ -1532,9 +1532,9 @@ test("cancels pending Swing Card actions on navigation and clear-local-data", as
       Object.assign(window, { __exportEffects: effects, __releasePendingExport: release });
       window.print = () => { effects.print += 1; };
       Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { effects.copy += 1; } } });
-      window.createImageBitmap = async (...args) => {
+      window.createImageBitmap = async (...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
         await gate;
-        const bitmap = await originalCreate(...args);
+        const bitmap = await Reflect.apply(originalCreate, window, args);
         effects.created += 1;
         const close = bitmap.close.bind(bitmap);
         bitmap.close = () => { effects.closed += 1; close(); };

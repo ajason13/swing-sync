@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-// @ts-expect-error JS verifier is exercised directly by SS-016 tests.
 import { verifyDocsClaims } from "../../scripts/verify-docs-claims.js";
 
 const currentDocs = {

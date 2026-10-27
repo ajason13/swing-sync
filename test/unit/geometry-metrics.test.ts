@@ -24,7 +24,13 @@ function landmarks(): PoseLandmark[] {
   return Array.from({ length: 33 }, () => landmark());
 }
 
-function standardInput(): GeometryMetricInput {
+type MutableGeometryInput = Omit<GeometryMetricInput, "landmarks" | "worldLandmarks" | "baselineLandmarks"> & {
+  landmarks: PoseLandmark[];
+  worldLandmarks: PoseLandmark[];
+  baselineLandmarks?: PoseLandmark[];
+};
+
+function standardInput(): MutableGeometryInput {
   const normalized = landmarks();
   normalized[0] = landmark({ x: 0, y: -0.7 });
   normalized[11] = landmark({ x: 0.2, y: -0.5 });

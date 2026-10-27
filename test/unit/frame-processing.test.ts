@@ -189,7 +189,7 @@ describe("frame processing controller", () => {
   });
 
   it("invalidates cancellation before a stale seek can create a bitmap", async () => {
-    let releaseSeek = () => undefined;
+    let releaseSeek: () => void = () => undefined;
     const seekGate = new Promise<void>((resolve) => {
       releaseSeek = resolve;
     });
@@ -210,7 +210,7 @@ describe("frame processing controller", () => {
   it("treats a second cancel during cleanup as a no-op", async () => {
     const source = new FakeSource({ durationSeconds: 0.001, width: 10, height: 10 });
     const { controller, processor, states } = harness(source);
-    let releaseClose = () => undefined;
+    let releaseClose: () => void = () => undefined;
     processor.closeGate = new Promise<void>((resolve) => {
       releaseClose = resolve;
     });
@@ -243,7 +243,7 @@ describe("frame processing controller", () => {
   it("closes the current preview when cancellation races a completed inference", async () => {
     const source = new FakeSource({ durationSeconds: 0.001, width: 10, height: 10 });
     const processor = new FakeProcessor();
-    let releaseProcess = () => undefined;
+    let releaseProcess: () => void = () => undefined;
     processor.processGate = new Promise<void>((resolve) => {
       releaseProcess = resolve;
     });
@@ -300,7 +300,7 @@ describe("frame processing controller", () => {
       height: 10
     })];
     const processors = [new FakeProcessor(), new FakeProcessor()];
-    let releaseClose = () => undefined;
+    let releaseClose: () => void = () => undefined;
     processors[0].closeGate = new Promise<void>((resolve) => {
       releaseClose = resolve;
     });

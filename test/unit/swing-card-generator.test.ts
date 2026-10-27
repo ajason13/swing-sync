@@ -25,7 +25,7 @@ interface FakeContext {
   strokeRect: ReturnType<typeof vi.fn>;
   fillText: ReturnType<typeof vi.fn>;
   drawImage: ReturnType<typeof vi.fn>;
-  measureText: ReturnType<typeof vi.fn>;
+  measureText: ReturnType<typeof vi.fn<CanvasRenderingContext2D["measureText"]>>;
 }
 
 const originalGetRandomValues = crypto.getRandomValues.bind(crypto);

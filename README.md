@@ -96,9 +96,14 @@ npm run build
 npm run compliance:verify
 ```
 
+TypeScript checking covers app and worker code, tests, and all TypeScript tool
+configs. Node and Vite environment types are explicit; imported JavaScript
+helpers use inferred signatures. CI runs this check before unit tests.
+
 Useful targeted checks:
 
 ```bash
+npm run typecheck
 npm run test:unit
 npm run test:smoke
 npm run safety:verify

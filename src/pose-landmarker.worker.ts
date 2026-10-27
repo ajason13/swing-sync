@@ -33,6 +33,11 @@ function failInference(code: string, timestampMs?: number): void {
   respond({ type: "inference-error", code, timestampMs });
 }
 
+// Read through a function because message handlers can change state across awaits.
+function isTornDown(): boolean {
+  return state === "torn-down";
+}
+
 async function initialize(): Promise<void> {
   if (state !== "uninitialized") {
     failInitialization();
@@ -50,7 +55,7 @@ async function initialize(): Promise<void> {
       outputSegmentationMasks: false,
       ...poseThresholds
     });
-    if (state === "torn-down") {
+    if (isTornDown()) {
       createdLandmarker.close();
       return;
     }
