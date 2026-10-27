@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 
 const poseFixture = resolve("test/fixtures/pose-landmarker/mannequin-golf-address.webm");
 const allowedRequestPattern = /^http:\/\/127\.0\.0\.1:4174\/|^blob:/;
@@ -1407,6 +1408,78 @@ async function openConfirmedSwingCard(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Confirm phase review" }).click();
   await page.getByRole("button", { name: "Open Swing Card export" }).click();
 }
+
+test("exports uncropped portrait keyframes with aligned annotation markers in a real PNG", async ({ page }, testInfo) => {
+  await openConfirmedSwingCard(page);
+  // Replace only the prepared export bitmaps with generated geometry, not person media.
+  // A circle stands in for a composited annotation: it must remain round and centered.
+  await page.evaluate(() => {
+    const createBitmap = window.createImageBitmap.bind(window);
+    window.createImageBitmap = async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 360;
+      canvas.height = 640;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = "#ff0000";
+      context.fillRect(0, 0, 360, 640);
+      context.fillStyle = "#00ff00";
+      context.fillRect(20, 20, 320, 600);
+      context.fillStyle = "#00ffff";
+      context.beginPath();
+      context.arc(180, 320, 60, 0, Math.PI * 2);
+      context.fill();
+      return createBitmap(canvas);
+    };
+  });
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  const download = await downloadPromise;
+  const artifact = testInfo.outputPath("portrait-swing-card.png");
+  await download.saveAs(artifact);
+  await testInfo.attach("portrait Swing Card PNG", { path: artifact, contentType: "image/png" });
+  const png = await readFile(artifact);
+  expect([...png.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  const geometry = await page.evaluate(async (bytes) => {
+    // Decode the downloaded bytes with the native image decoder.
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "image/png" }));
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    URL.revokeObjectURL(image.src);
+    const dpr = canvas.width / 960;
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const bounds = (red: number, green: number, blue: number) => {
+      let left = Infinity, top = Infinity, right = -1, bottom = -1;
+      // First tile only; the remaining rows and labels are covered by unit geometry checks.
+      for (let y = 100 * dpr; y < 400 * dpr; y++) {
+        for (let x = 40 * dpr; x < 460 * dpr; x++) {
+          const offset = (y * canvas.width + x) * 4;
+          if (data[offset] === red && data[offset + 1] === green && data[offset + 2] === blue) {
+            left = Math.min(left, x); right = Math.max(right, x);
+            top = Math.min(top, y); bottom = Math.max(bottom, y);
+          }
+        }
+      }
+      return { left, top, right, bottom, width: right - left + 1, height: bottom - top + 1 };
+    };
+    return { width: canvas.width, height: canvas.height, dpr, frame: bounds(255, 0, 0), marker: bounds(0, 255, 255) };
+  }, [...png]);
+  expect(geometry.height / geometry.dpr).toBe(1600);
+  expect(Math.abs(geometry.frame.width - 132.75 * geometry.dpr)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.frame.height - 236 * geometry.dpr)).toBeLessThanOrEqual(1);
+  expect((geometry.frame.left + geometry.frame.right + 1) / (2 * geometry.dpr)).toBeCloseTo(250, 0);
+  expect(Math.abs(geometry.marker.width - geometry.marker.height)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.marker.left + geometry.marker.right - geometry.frame.left - geometry.frame.right)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.marker.top + geometry.marker.bottom - geometry.frame.top - geometry.frame.bottom)).toBeLessThanOrEqual(1);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+});
 
 test("recovers all Swing Card actions after partial canvas preparation failure", async ({ page }) => {
   await openConfirmedSwingCard(page);

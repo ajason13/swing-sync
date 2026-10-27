@@ -243,7 +243,20 @@ function drawKeyframes(
     const x = CARD_PADDING + column * (KEYFRAME_WIDTH + 40);
     const top = startY + row * (KEYFRAME_HEIGHT + 52);
     if (keyframe.preview && keyframe.overlay && keyframe.overlay.status !== "unavailable") {
-      context.drawImage(keyframe.preview, x, top, KEYFRAME_WIDTH, KEYFRAME_HEIGHT);
+      // The preview already contains the overlay; fit both together without cropping.
+      const scale = Math.min(
+        KEYFRAME_WIDTH / keyframe.preview.width,
+        KEYFRAME_HEIGHT / keyframe.preview.height
+      );
+      const width = keyframe.preview.width * scale;
+      const height = keyframe.preview.height * scale;
+      context.drawImage(
+        keyframe.preview,
+        x + (KEYFRAME_WIDTH - width) / 2,
+        top + (KEYFRAME_HEIGHT - height) / 2,
+        width,
+        height
+      );
     } else {
       drawPlaceholder(context, x, top, KEYFRAME_WIDTH, KEYFRAME_HEIGHT, "Keyframe unavailable");
     }

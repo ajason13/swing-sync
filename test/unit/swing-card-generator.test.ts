@@ -349,6 +349,61 @@ describe("swing card text and filenames", () => {
 });
 
 describe("swing card PNG composition", () => {
+  it.each([
+    [360, 640, 132.75, 236],
+    [400, 400, 236, 236],
+    [640, 360, 236 * 640 / 360, 236],
+    [1000, 200, 420, 84]
+  ])("fits a %s x %s annotated preview inside its tile without cropping", async (sourceWidth, sourceHeight, width, height) => {
+    installCanvasFactory();
+    const source = { width: sourceWidth, height: sourceHeight } as ImageBitmap;
+    await composeSwingCardPng(content({ keyframes: [keyframe({ preview: source })] }));
+
+    const context = createdCanvases[0].context!;
+    const [, x, y, drawnWidth, drawnHeight] = context.drawImage.mock.calls[0];
+    const [, labelX, labelY] = context.fillText.mock.calls.find(([text]) => text === "Address")!;
+    const tileTop = labelY - 236 - 20;
+    expect(context.drawImage).toHaveBeenCalledTimes(1);
+    expect(context.drawImage.mock.calls[0][0]).toBe(source);
+    expect(context.drawImage.mock.calls[0]).toHaveLength(5);
+    expect(drawnWidth).toBeCloseTo(width);
+    expect(drawnHeight).toBeCloseTo(height);
+    expect(drawnWidth / drawnHeight).toBeCloseTo(sourceWidth / sourceHeight);
+    expect(x).toBeCloseTo(labelX + (420 - width) / 2);
+    expect(y).toBeCloseTo(tileTop + (236 - height) / 2);
+  });
+
+  it("keeps eight portrait frames, labels, and all warnings inside the card", async () => {
+    installCanvasFactory();
+    const keyframes = Array.from({ length: 8 }, (_, index) => keyframe({
+      phaseLabel: `Phase ${index + 1}`,
+      preview: { width: 360, height: 640 } as ImageBitmap
+    }));
+    await composeSwingCardPng(content({
+      keyframes,
+      metricPayload: undefined,
+      warnings: ["NO_KEYFRAMES_SELECTED", "KEYFRAME_UNAVAILABLE", "METRICS_UNAVAILABLE", "PHASE_REVIEW_REQUIRED", "PROMPT_LIMITED_EVIDENCE"]
+    }));
+    const context = createdCanvases[0].context!;
+    const labels = context.fillText.mock.calls.filter(([text]) => /^Phase \d$/.test(text));
+    expect(labels).toHaveLength(8);
+    const warningsStart = context.fillText.mock.calls.findIndex(([text]) => text === "Warnings and limitations");
+    const promptStart = context.fillText.mock.calls.findIndex(([text]) => text === "Manual LLM upload prompt");
+    const warnings = context.fillText.mock.calls.slice(warningsStart + 1, promptStart);
+    expect(warnings).toHaveLength(5);
+    for (const [index, [, x, y]] of labels.entries()) {
+      const [, imageX, imageY, width, height] = context.drawImage.mock.calls[index];
+      expect(imageX).toBeGreaterThanOrEqual(x);
+      expect(imageX + width).toBeLessThanOrEqual(x + 420);
+      expect(imageY + height).toBeLessThan(y - 10);
+    }
+    for (const [text, x, y] of [...labels, ...warnings]) {
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(1600 - 40);
+      expect(x + context.measureText(text).width).toBeLessThanOrEqual(960 - 40);
+    }
+  });
+
   it("preserves low-confidence fixture warnings when PNG composition returns no blob", async () => {
     installCanvasFactoryWithToBlob((callback) => callback(null));
     const metricPayload = metricFixture("low-confidence-payload.json");
