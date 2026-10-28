@@ -17,8 +17,9 @@ frame pixels must not be uploaded, sent to model providers, or shared with
 remote services unless a future feature adds a separate, explicit opt-in flow
 for that action.
 
-The current application implements local file selection, local Pose Landmarker
-inference, and user-initiated local Swing Card PNG, print/PDF, and prompt-copy
+The current application implements local file selection and preview playback,
+local Pose Landmarker inference, and user-initiated local Swing Card PNG,
+print/PDF, and prompt-copy
 workflows. It does not implement camera capture, raw-video or landmark
 persistence, remote sharing, or remote model APIs. The current consent
 acknowledgement is a local scaffold, not a durable legal or privacy record.
@@ -98,6 +99,28 @@ reports `WORKER_SHUTDOWN_TIMEOUT` at the session boundary while preserving
 the caller’s stop/clear-data destination. No diagnostics are transmitted.
 Evidence: `test/unit/worker-recovery.test.ts` and injected silent-worker
 recovery tests in `test/smoke/app.spec.ts`.
+
+### Local preview playback
+
+The capture screen previews the selected file through a volatile blob URL,
+without initializing the pose model. Native controls and a keyboard-accessible
+Play/Pause action operate on that local clip. Incidental capture-screen renders
+retain its playback position. Replacement, clear-local-data, leaving capture
+(including analysis start), and page exit pause and detach the media and revoke
+its URL. Returning to capture creates a fresh preview of the selected file.
+No preview video, frames, playback state, or diagnostics are persisted or sent.
+Analysis explicitly seeks each requested sample, including the initial zero-time
+frame, before bitmap extraction. This avoids depending on initial frame
+availability for media outside the viewport after leaving the preview screen;
+requested and observed source times stay paired.
+
+Decode/load errors and a 30-second load watchdog show useful local guidance
+with `PREVIEW_LOAD_FAILED` or `PREVIEW_LOAD_TIMEOUT`; browser throttling can
+delay watchdog delivery. A rejected play request reports `PREVIEW_PLAY_FAILED`
+and permits retry. Preview errors release the blob URL and detach media;
+choosing a file again retries loading. These codes contain no file or media
+characteristics. Evidence: `src/local-video-preview.ts`, its unit tests, and
+synthetic desktop/mobile preview cases in `test/smoke/app.spec.ts`.
 
 ### Future storage requirements
 

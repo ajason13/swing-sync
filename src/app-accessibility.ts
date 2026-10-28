@@ -4,6 +4,7 @@ const staticFocusKeys = [
   "safety-consent",
   "camera-placeholder",
   "video-picker",
+  "preview-toggle",
   "analysis-start",
   "stage-heading",
   "workflow-next",

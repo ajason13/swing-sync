@@ -41,9 +41,8 @@ export class VideoFrameSource implements FrameSource {
   seek(timestampMs: number): Promise<number> {
     if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
     const timestampSeconds = timestampMs / 1000;
-    if (!this.video.seeking && Math.abs(this.video.currentTime - timestampSeconds) <= 0.0005) {
-      return Promise.resolve(this.video.currentTime * 1000);
-    }
+    // Even t=0 needs an explicit seek: an offscreen video may report loaded
+    // data at its initial position before a frame is usable for bitmap reads.
     return this.waitForMedia(
       "seeked",
       () => this.video.currentTime * 1000,
