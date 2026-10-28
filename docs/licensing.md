@@ -138,11 +138,20 @@ Bundle compliance is checked separately through a Vite/Rollup license gate that
 must be validated against a synthetic prohibited package fixture installed as a
 local dev package.
 
-The current scaffold has no production runtime dependencies, so
-`docs/sbom.json` may contain an empty `components` array after
-`scripts/filter-sbom.js` removes dev-only and extraneous packages from the
-CycloneDX generator output. Once runtime dependencies are added, production
-components must appear in the SBOM and dev-only packages must remain absent.
+The current production runtime dependency is exact
+`@mediapipe/tasks-vision@0.10.35` (Apache-2.0), matching `package.json`, the
+lockfile, and the production component in [the SBOM](./sbom.json).
+`scripts/filter-sbom.js` removes dev-only and extraneous packages; production
+components must remain present and dev-only packages must remain absent.
+
+The npm SBOM does not inventory the separately vendored Pose Landmarker Full
+float16 version 1 model or establish its rights. The
+[approved model/SDK record](./models-licensing.md) and
+[exact model asset record](./model-assets/pose-landmarker-full-float16-v1.md)
+cover the packaged WASM runtime and model delivery decisions; the asset verifier
+checks their pinned hashes. The model is served same-origin, runtime provider
+fetch is not approved, and service-worker model caching remains unapproved.
+These existing exact-version decisions do not approve upgrades or public release.
 
 The SBOM is stored in `docs/` and may also be attached to GitHub releases. It is
 not served from `public/` by default.

@@ -36,6 +36,49 @@ describe("docs claim verification", () => {
     expect(errorsFor()).toEqual([]);
   });
 
+  it("keeps the licensing inventory aligned with production dependencies and asset records", () => {
+    const manifest = JSON.parse(currentDocs["package.json"]);
+    const sbom = JSON.parse(readFileSync("docs/sbom.json", "utf8"));
+    const inventory = readFileSync("docs/licensing.md", "utf8");
+    const modelPolicy = readFileSync("docs/models-licensing.md", "utf8");
+    const components = sbom.components.map((component: { group?: string; name: string; version: string }) =>
+      [`${component.group ? component.group + "/" : ""}${component.name}`, component.version]);
+    expect(Object.fromEntries(components)).toEqual(manifest.dependencies);
+    for (const [name, version] of Object.entries(manifest.dependencies)) {
+      expect(inventory).toContain(`${name}@${version}`);
+      expect(modelPolicy).toContain(`${name}@${version}`);
+    }
+    expect(inventory).not.toContain("no production runtime dependencies");
+    expect(inventory).toContain("./model-assets/pose-landmarker-full-float16-v1.md");
+    expect(inventory).toContain("npm SBOM does not inventory the separately vendored");
+  });
+
+  it("records implemented clear-data behavior and its limits without stale release entries", () => {
+    const privacy = currentDocs["docs/privacy-architecture.md"];
+    const gate = currentDocs["docs/release-review-gate.md"];
+    expect(privacy).toContain("swing-sync:safety-consent:v1");
+    expect(privacy).toContain("unrelated origin keys are preserved");
+    expect(privacy).toContain("could not clear all local app data");
+    expect(privacy).toContain("not device-level erasure");
+    expect(privacy).toContain("downloaded files and clipboard contents are outside this");
+    expect(gate).toContain("./privacy-architecture.md#implemented-clear-local-data-behavior");
+    expect(gate).not.toMatch(/SS-021 behavior is not implemented|absence of SS-021|SS-021 clear-local-data\s+behavior and deletion UX/);
+  });
+
+  it("distinguishes the delivered protocol from study execution and validation readiness", () => {
+    const gate = currentDocs["docs/release-review-gate.md"].replace(/\s+/g, " ");
+    const protocol = readFileSync("docs/accuracy-validation-protocol.md", "utf8").replace(/\s+/g, " ");
+    expect(gate).toContain("./accuracy-validation-protocol.md#readiness-classification");
+    expect(gate).toContain("not study execution or validated results");
+    for (const text of ["IMPACT_NOT_CONFIRMED", "not validation-ready"]) {
+      expect(protocol).toContain(text);
+      expect(gate).toContain(text);
+    }
+    expect(gate).toContain("Real-person media requires");
+    expect(gate).toContain("Current outcome: PENDING");
+    expect(gate).toContain("PUBLIC RELEASE BLOCKED — HUMAN SIGN-OFF NOT RECORDED");
+  });
+
   // Wording regression checks, not evidence of runtime capability. Existing
   // frame-processing, phase-review and Swing Card behavior tests cover that.
   it.each(["README.md", "docs/limitations.md"] as const)(
