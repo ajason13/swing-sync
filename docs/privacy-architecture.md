@@ -2,9 +2,10 @@
 
 **DRAFT - pending human/privacy review before public release.**
 
-This document defines Swing Sync's local-first privacy architecture for future
-video analysis work. It is product and engineering guidance, not legal advice
-or a guarantee of privacy, security, deletion, or regulatory compliance.
+This document defines Swing Sync's local-first privacy architecture for current
+local video analysis and future data-handling features. It is product and
+engineering guidance, not legal advice or a guarantee of privacy, security,
+deletion, or regulatory compliance.
 
 The [release review gate](./release-review-gate.md) records the pending
 qualified-human review package for any future public release.
@@ -62,6 +63,32 @@ block the action instead of silently sending data.
 
 ## Video Lifecycle
 
+### Implemented clear-local-data behavior
+
+SS-021 shipped in [PR #22](https://github.com/ajason13/swing-sync/pull/22).
+The current **Clear local app data** control cancels pending Swing Card actions,
+closes active analysis, resets volatile app state (including selected video,
+frames, phase review, and export state), and removes and verifies removal of
+registered app-owned localStorage keys. The only registered persisted user key
+is `swing-sync:safety-consent:v1`; unrelated origin keys are preserved.
+
+If storage access, removal, or verification is blocked, the UI reports that it
+could not clear all local app data and treats the acknowledgement as not
+recorded. This is not device-level erasure. Browser or operating-system storage
+behavior may vary; downloaded files and clipboard contents are outside this
+control. New storage APIs or persisted analysis require explicit registration
+and clear-path coverage before adoption.
+
+Evidence: `src/app-events.ts`, `src/analysis-lifecycle.ts`, `src/app-state.ts`,
+`src/consent-state.ts`; `test/unit/consent-state.test.ts`,
+`test/unit/app-events.test.ts`, `test/unit/app-state.test.ts`, and the
+clear-data/refresh and blocked-storage cases in `test/smoke/app.spec.ts`.
+These checks cover named paths and environments, not every browser or failure.
+Silent-worker shutdown bounds remain separate proposed hardening in
+[issue #61](https://github.com/ajason13/swing-sync/issues/61).
+
+### Future storage requirements
+
 Future video lifecycle behavior should be documented and implemented before any
 raw swing video storage ships:
 
@@ -74,8 +101,8 @@ raw swing video storage ships:
   for review, history, or export.
 - **Refresh or close:** Unsaved raw video and volatile frames should be treated
   as session state unless the user has chosen a feature that stores them.
-- **Deletion:** A clear-local-data action should remove Swing Sync's app-level
-  references and local browser storage for the current origin.
+- **Deletion:** Extend the implemented clear-local-data path to every new
+  app-owned storage location; preserve unrelated origin data.
 - **Uninstall or browser data clearing:** The browser or operating system may
   remove site data according to platform behavior and user settings.
 
@@ -149,14 +176,16 @@ Optional remote sharing copy:
 Clear-local-data copy:
 
 > Clearing local data removes Swing Sync's app data for this browser origin,
-> including local acknowledgement state and future stored swing analysis data.
+> including local acknowledgement state and future app-owned analysis state if
+> registered. Downloaded files and clipboard contents are outside this control.
 > Browser or device storage systems may retain lower-level remnants outside the
 > app's control, so this is not device-level erasure.
 
 ## Future Implementation Gates
 
-Before shipping video processing or remote analysis, add tests or verification
-for:
+Current local processing has bounded verification in the named unit/smoke
+suites and privacy verifier. Before extending storage, processing, or remote
+analysis, retain or extend coverage for:
 
 - raw video upload blocked by default;
 - frame pixels blocked from network transit;

@@ -66,13 +66,13 @@ required for a public release; it does not mean the wording is rejected.
 | `docs/privacy-architecture.md` — `Default Privacy Posture` | Current implementation | Local file selection, Pose Landmarker inference, local PNG/print/PDF/prompt-copy; no camera, raw-video/landmark persistence, remote sharing, or remote model API | Reviewers and users | `Code/test-enforced fact` | Runtime modules; privacy/unit/smoke tests | Reconfirm against frozen candidate and exact build | Engineering owner; privacy reviewer | Data-flow trace and candidate verification | Yes | Pending |
 | `docs/privacy-architecture.md` — `Data Classes` | Data inventory | Classes raw video, frames, landmarks, metrics, exports, prompts/outputs, and acknowledgement state | Reviewers and implementers | `Documented design intent` | Privacy doc; runtime data contracts | Which classes actually exist, persist, or leave control in candidate scope? | Privacy reviewer; engineering owner | Current data map plus export inspection | Yes | Pending |
 | `docs/privacy-architecture.md` — `Local-First Processing Flow` | Lifecycle | Fail-closed local processing and explicit opt-in design | Reviewers and implementers | `Documented design intent` | Privacy verifier; network smoke tests | Future-oriented steps must not be mistaken for current behavior | Privacy reviewer; engineering owner | Step-by-step current/future classification | Yes | Pending |
-| `docs/privacy-architecture.md` — `Video Lifecycle` deletion bullets | Storage and deletion | Browser/device storage varies; clear-local-data and deletion language is future-oriented and cannot promise erasure | Reviewers and users | `Qualified-human review required` | Storage standard; acknowledgement source | SS-021 behavior is not implemented; device-level deletion cannot be inferred | Privacy reviewer; product owner | Storage evidence, user-copy decision, SS-021 result | Yes | Pending |
+| `docs/privacy-architecture.md` — `Video Lifecycle` current behavior and future storage requirements | Storage and deletion | SS-021 clears registered app-owned state with failure feedback; browser/device storage varies and device-level erasure is not provided | Reviewers and users | `Code/test-enforced fact` | Current lifecycle/source/test evidence linked below | Exact candidate behavior and copy still require privacy review; downloaded files and clipboard contents remain outside app control | Privacy reviewer; product owner | Candidate storage evidence and human user-copy decision | Yes | Pending |
 | `docs/privacy-architecture.md` — `Export Policy` | Export sensitivity | Local user-initiated exports may contain identifying or sensitive metrics/images/text and exclude raw video by default | Reviewers and users | `Code/test-enforced fact` | Swing Card generator/actions; smoke tests | Exact artifact contents and manual-sharing risks require review | Privacy/safety reviewer; engineering owner | Rendered artifacts and data-class inspection | Yes | Pending |
 | `docs/privacy-architecture.md` — `Optional Remote Model or Coach Sharing`, current status; `src/model-consent.ts` registry | Remote sharing | The production provider registry is empty and the current UI exposes no configured remote-send path | Reviewers and users | `Code/test-enforced fact` | Empty provider registry; remote panel; unit and smoke tests | Reconfirm registry and built candidate; absence is bounded to inspected/tested paths | Privacy reviewer; engineering owner | Frozen-candidate registry/build and network evidence | Yes | Pending |
 | `docs/privacy-architecture.md` — `Optional Remote Model or Coach Sharing`, “Before any remote” requirements | Future provider review and consent | A future remote provider must document terms, data classes, destinations, retention, human review, and opt-in/revocation before implementation | Reviewers and implementers | `Documented design intent` | Privacy architecture and repository governance | Future provider facts, user flow, and enforcement do not yet exist | Privacy/legal/licensing reviewers; future engineering owner | Approved future provider/data/consent specification, implementation, and tests | No for current local candidate | Deferred / non-goal |
 | `docs/privacy-architecture.md` — MediaPipe gate and observability paragraph | Provider metrics and telemetry | Pinned `0.10.35`, version-specific response, observed network checks, and local sanitized errors | Reviewers and implementers | `Unresolved assumption` | Provider issue; generic notice; asset/network tests | Generic current notice and exact-version evidence require human reconciliation | Qualified privacy reviewer; engineering owner | Exact artifact/network evidence and scoped disposition | Yes | Pending |
 | `docs/privacy-architecture.md` — `User-Facing Copy Drafts` | Draft privacy copy | Local processing, export, remote sharing, and future clear-data text | Future users/reviewers | `Qualified-human review required` | Draft only; runtime differs by feature status | Which drafts should publish, and when? | Privacy/legal/product reviewers | Copy-to-runtime mapping and wording decision | Yes | Pending |
-| `docs/limitations.md` — pose/metric, camera, educational, and fixture sections | Accuracy, evidence, medical, safety | Results are estimates; tests/fixtures do not prove real-world correctness, safety, efficacy, or compliance | Users/reviewers | `Qualified-human review required` | Algorithms, fixtures, unit/smoke tests | SS-022 validation is pending; prominence and evidence sufficiency need review | Product, safety/medical-scope, and evidence reviewers | Validation plan/results and claim review | Yes | Pending |
+| `docs/limitations.md` — pose/metric, camera, educational, and fixture sections | Accuracy, evidence, medical, safety | Results are estimates; tests/fixtures do not prove real-world correctness, safety, efficacy, or compliance | Users/reviewers | `Qualified-human review required` | Algorithms, fixtures, unit/smoke tests | SS-022 protocol is implemented; study execution and validated results are not established; prominence and evidence sufficiency need review | Product, safety/medical-scope, and evidence reviewers | Validation plan/results and claim review | Yes | Pending |
 | `docs/limitations.md` — privacy/export and remote sections | Privacy, export, browser, remote | Exported data can be sensitive; browser controls vary; provider registry is empty | Users/reviewers | `Code/test-enforced fact` | Runtime exports; registry; browser tests | Claims remain environment-bounded and manual sharing is external | Privacy reviewer; engineering owner | Candidate-specific browser/export evidence | Yes | Pending |
 | `docs/limitations.md` — document-level accessibility omission; SS-019 evidence | Accessibility | The current limitations page has no dedicated accessibility section; SS-019 automated/manual evidence remains bounded and does not establish certification | Users/reviewers | `Unresolved assumption` | SS-019 tests and manual QA record | Whether public limitations need explicit accessibility wording and which manual risks remain | Accessibility reviewer; release owner | Candidate manual/automated evidence and publication decision | Conditional | Pending |
 | `docs/deployment.md` — draft banner, current posture, and no-backend implications | Deployment | Static frontend/no app backend; no app-owned accounts, secrets, server rate limits/logs, or cloud retention | Operators/reviewers | `Code/test-enforced fact` | Source tree; deployment verifier | Chosen host and candidate configuration are not yet named | Security/privacy reviewer; deployer | Frozen host/build configuration and evidence | Yes | Pending |
@@ -98,6 +98,41 @@ required for a public release; it does not mean the wording is rejected.
 | `src/swing-card-generator.ts` — PNG/print/prompt content | Generated content | Selected keyframes, metrics, warnings, and manual-upload prompt; no anonymity/privacy guarantee | Export recipients and third-party-service users | `Code/test-enforced fact` | Generator tests and smoke tests | Export can be identifying and leaves app control after sharing | Privacy/safety/legal reviewers | Rendered samples and data-class review | Yes | Pending |
 | `src/coaching-prompt.ts` and `src/coaching-contract.ts` | AI coaching contract/output | Evidence-bounded JSON, unavailable/review-required states, prohibited medical/privacy/legal absolutes | Manual model-chat users | `Code/test-enforced fact` | Coaching tests and safety verifier | External model behavior is not controlled; guardrails are not approval | Safety/medical-scope/privacy reviewers | Contract tests, sample outputs, and human review | Yes | Pending |
 | Historical `docs/ss-*` and `docs/handoffs/*` research, prompt, response, audit, source-packet, and handoff artifacts | Repository-public evidence | Historical evidence may repeat superseded or sensitive wording and is non-authoritative | Repository readers | `Unresolved assumption` | Tracked history and artifact manifests | Release owner must decide publication boundary and context labels for both historical namespaces | Release owner; legal/privacy/safety/trademark reviewers | Complete `docs/ss-*` and `docs/handoffs/*` manifests plus publication decision | Yes if public | Pending; excluded from normalization and uniqueness checks |
+
+### Current Implementation And Study Evidence
+
+Inventory refreshed against main `586e868` and the focused issue #59 docs diff.
+These are repository facts and readiness limits, not a public-release decision.
+
+- **Runtime dependencies/assets — `Code/test-enforced fact`:**
+  `package.json`, lockfile, and [SBOM](./sbom.json) identify exact
+  `@mediapipe/tasks-vision@0.10.35` (Apache-2.0). The
+  [model/SDK decision](./models-licensing.md) and
+  [model asset record](./model-assets/pose-landmarker-full-float16-v1.md)
+  separately cover approved WASM/model assets and hashes, same-origin delivery,
+  no approved runtime provider fetch, and no approved service-worker model
+  caching. See [licensing inventory](./licensing.md#sbom-policy).
+- **Clear-local-data — `Code/test-enforced fact`:**
+  [SS-021 / PR #22](https://github.com/ajason13/swing-sync/pull/22) implemented
+  registered-key removal and verification, volatile analysis/export reset, and
+  blocked-storage feedback that treats acknowledgement as not recorded. See
+  [current lifecycle and source/test evidence](./privacy-architecture.md#implemented-clear-local-data-behavior).
+  This is not device-level erasure; unrelated origin data, downloaded files,
+  and clipboard contents are outside its scope. Silent-worker shutdown
+  recovery remains [issue #61](https://github.com/ajason13/swing-sync/issues/61).
+- **Study readiness — `Documented design intent`:**
+  [SS-022 / PR #23](https://github.com/ajason13/swing-sync/pull/23) delivered the
+  [future accuracy validation protocol](./accuracy-validation-protocol.md#readiness-classification),
+  not study execution or validated results. Landmark availability/visibility,
+  overlays, eligibility, warnings, correction provenance, and phase-review
+  workflow are ready only for future supported face-on validation. Impact is
+  exploratory (`IMPACT_NOT_CONFIRMED`); seven geometry primitives need method
+  design/reference margins; four metric payload slots are exploratory/not
+  validation-ready. Biomechanical, medical, safety, coaching, improvement, and
+  unsupported-view inference are not ready. Real-person media requires the
+  protocol's separate consent, privacy, rights, and access decisions before use;
+  [issue #70](https://github.com/ajason13/swing-sync/issues/70) tracks that entry
+  decision. This inventory records no study execution or human approval.
 
 ### Bounded Public-Document Standard Claim-Scan Result
 
@@ -146,7 +181,7 @@ without the accountable reviewer and release owner recording a scoped decision.
 | Are intended use, educational/non-medical positioning, safety instructions, and consumer net impression appropriate? | Qualified safety/medical-scope and legal reviewers | Full public copy, runtime/export samples, audience/channels | Safety/medical-scope and legal reviewers | Blocking | Pending |
 | Are evidence, accuracy, and limitation statements supported and prominent, and are reviewer qualifications adequate? | Evidence/domain reviewer and release owner | Named tests, fixture limits, SS-022 status, reviewer credentials | Evidence reviewer and release owner | Blocking | Pending |
 | Is the current data inventory complete across local memory, browser storage, exports, logs, network, and service-worker paths? | Qualified privacy reviewer and engineering owner | Data-flow map, source trace, browser/network evidence | Privacy reviewer | Blocking | Pending |
-| Are local-storage and deletion limitations accurate, including the absence of SS-021 clear-local-data behavior and device-level erasure guarantees? | Qualified privacy reviewer | Storage APIs, browser behavior, SS-021 status, copy | Privacy reviewer | Blocking | Pending |
+| Are local-storage and deletion limitations accurate, including implemented SS-021 registered-state clearing, blocked-storage feedback, and the limits on device-level erasure? | Qualified privacy reviewer | Current SS-021 source/tests, storage APIs, browser behavior, copy | Privacy reviewer | Blocking | Pending |
 | Are export sensitivity and third-party manual-sharing warnings adequate for PNG, print/PDF, copied prompt, and generated coaching content? | Privacy/legal/safety reviewers | Actual candidate artifacts and third-party-sharing flow | Privacy reviewer and release owner | Blocking | Pending |
 | What are the intended audience/age posture, release territories, and required privacy or consumer notices? | Legal/privacy/product reviewers | Product plan, territories, audience research, data practices | Legal/privacy reviewers and release owner | Blocking | Pending |
 | How should the current generic MediaPipe notice be reconciled with exact `@mediapipe/tasks-vision@0.10.35` evidence and observed network behavior? | Qualified privacy reviewer and engineering owner | Generic notice, issue response, lockfile/artifact, network tests | Privacy reviewer | Blocking | Pending |
@@ -336,8 +371,9 @@ incident policy.
 
 Deferred work includes production-host approval; release entity, business,
 territory, audience, and distribution decisions; trademark clearance; any
-provider/model upgrade or remote provider decision; SS-021 clear-local-data
-behavior and deletion UX; and SS-022 real-user/video accuracy validation.
+provider/model upgrade or remote provider decision; new storage integration
+with the implemented SS-021 clear-local-data path; and separately approved
+real-user/video study execution under the implemented SS-022 protocol.
 
 SS-020 changes no runtime behavior or copy, export format/data class, provider,
 model, SDK, dependency, lockfile, licensing policy, notice, SBOM, bundle,
