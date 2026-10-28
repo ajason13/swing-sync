@@ -8,6 +8,9 @@ import {
 import type { PoseFrameResult } from "./pose-contract";
 import { PoseSession, type PoseSessionStatus } from "./pose-session";
 
+// Per metadata load or seek; browser timer throttling can delay delivery.
+export const MEDIA_WAIT_TIMEOUT_MS = 30_000;
+
 export class VideoFrameSource implements FrameSource {
   private disposed = false;
   private pendingRejects = new Set<(error: Error) => void>();
@@ -19,64 +22,78 @@ export class VideoFrameSource implements FrameSource {
 
   load(): Promise<{ durationSeconds: number; width: number; height: number }> {
     if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
-    this.video.src = this.objectUrl;
-    return new Promise((resolve, reject) => {
-      const onLoaded = () => {
-        cleanup();
-        resolve({
-          durationSeconds: this.video.duration,
-          width: this.video.videoWidth,
-          height: this.video.videoHeight
-        });
-      };
-      const onError = () => {
-        cleanup();
-        reject(new Error("MEDIA_LOAD_FAILED"));
-      };
-      const cleanup = () => {
-        this.video.removeEventListener("loadedmetadata", onLoaded);
-        this.video.removeEventListener("error", onError);
-        this.pendingRejects.delete(onDisposed);
-      };
-      const onDisposed = (error: Error) => {
-        cleanup();
-        reject(error);
-      };
-      this.pendingRejects.add(onDisposed);
-      this.video.addEventListener("loadedmetadata", onLoaded);
-      this.video.addEventListener("error", onError);
-      this.video.load();
-    });
+    return this.waitForMedia(
+      "loadedmetadata",
+      () => ({
+        durationSeconds: this.video.duration,
+        width: this.video.videoWidth,
+        height: this.video.videoHeight
+      }),
+      () => {
+        this.video.src = this.objectUrl;
+        this.video.load();
+      },
+      "MEDIA_LOAD_FAILED",
+      "MEDIA_LOAD_TIMEOUT"
+    );
   }
 
   seek(timestampMs: number): Promise<number> {
     if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
     const timestampSeconds = timestampMs / 1000;
-    if (Math.abs(this.video.currentTime - timestampSeconds) <= 0.0005) {
+    if (!this.video.seeking && Math.abs(this.video.currentTime - timestampSeconds) <= 0.0005) {
       return Promise.resolve(this.video.currentTime * 1000);
     }
+    return this.waitForMedia(
+      "seeked",
+      () => this.video.currentTime * 1000,
+      () => { this.video.currentTime = timestampSeconds; },
+      "MEDIA_SEEK_FAILED",
+      "MEDIA_SEEK_TIMEOUT"
+    );
+  }
+
+  private waitForMedia<T>(
+    event: "loadedmetadata" | "seeked",
+    result: () => T,
+    start: () => void,
+    failureCode: string,
+    timeoutCode: string
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
-      const onSeeked = () => {
-        cleanup();
-        resolve(this.video.currentTime * 1000);
-      };
-      const onError = () => {
-        cleanup();
-        reject(new Error("MEDIA_SEEK_FAILED"));
-      };
+      let settled = false;
       const cleanup = () => {
-        this.video.removeEventListener("seeked", onSeeked);
+        settled = true;
+        clearTimeout(timer);
+        this.video.removeEventListener(event, onComplete);
         this.video.removeEventListener("error", onError);
-        this.pendingRejects.delete(onDisposed);
+        this.pendingRejects.delete(onRejected);
       };
-      const onDisposed = (error: Error) => {
+      const onRejected = (error: Error) => {
+        if (settled) return;
         cleanup();
         reject(error);
       };
-      this.pendingRejects.add(onDisposed);
-      this.video.addEventListener("seeked", onSeeked);
+      const onError = () => onRejected(new Error(failureCode));
+      const onComplete = () => {
+        if (settled) return;
+        try {
+          const value = result();
+          cleanup();
+          resolve(value);
+        } catch {
+          onError();
+        }
+      };
+      const timer = setTimeout(() => onRejected(new Error(timeoutCode)), MEDIA_WAIT_TIMEOUT_MS);
+      this.pendingRejects.add(onRejected);
+      this.video.addEventListener(event, onComplete);
       this.video.addEventListener("error", onError);
-      this.video.currentTime = timestampSeconds;
+      try {
+        start();
+      } catch {
+        onError();
+      }
     });
   }
 

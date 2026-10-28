@@ -27,6 +27,18 @@ Low-confidence, missing, or inconsistent landmarks should be interpreted as a
 reason to review the video manually or record another clip, not as a statement
 about the user's health or movement quality.
 
+## Local Media Waits
+
+Each metadata load and each frame seek has a 30-second timeout. A wait that
+reaches the timeout stops local analysis with `MEDIA_LOAD_TIMEOUT` or
+`MEDIA_SEEK_TIMEOUT`; use **Retry local analysis** or select another local clip.
+Slow completion before the deadline remains supported. Cancellation and failure
+remove pending media listeners and timers, and the controller releases the
+source's object URL. Late completion events do not resume the stopped run.
+Browser throttling or a suspended page can delay timer delivery; this is not a
+wall-clock guarantee while the page is suspended. These bounds cover media
+waits, not model worker initialization, inference, or shutdown.
+
 ## Camera Setup
 
 For clearer review, use a stable camera, good lighting, and enough space to keep
