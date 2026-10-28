@@ -1561,3 +1561,53 @@ test("cancels pending Swing Card actions on navigation and clear-local-data", as
     else await expect(page.getByRole("button", { name: "Begin analysis" })).toBeDisabled();
   }
 });
+
+for (const operation of ["load", "seek"] as const) {
+  test(`recovers from a stalled media ${operation} with a fresh local retry`, async ({ page }) => {
+    await page.clock.install();
+    await page.evaluate((operation) => {
+      const originalAdd = HTMLMediaElement.prototype.addEventListener;
+      const originalRevoke = URL.revokeObjectURL;
+      const control = { stall: true, revoked: 0 };
+      Object.assign(window, { __mediaStall: control });
+      URL.revokeObjectURL = (url) => {
+        control.revoked += 1;
+        originalRevoke.call(URL, url);
+      };
+      HTMLMediaElement.prototype.addEventListener = function (
+        type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions
+      ) {
+        if (control.stall && type === (operation === "load" ? "loadedmetadata" : "seeked")) {
+          this.dataset.mediaWaitStalled = "true";
+          return;
+        }
+        originalAdd.call(this, type, listener, options);
+      };
+    }, operation);
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    await page.getByRole("button", { name: "Begin analysis" }).click();
+    await expect(page.locator("#analysis-video")).toHaveAttribute("data-media-wait-stalled", "true", {
+      timeout: 20_000
+    });
+    await page.clock.fastForward(30_000);
+    const code = operation === "load" ? "MEDIA_LOAD_TIMEOUT" : "MEDIA_SEEK_TIMEOUT";
+    await expect(page.locator("#processing-status")).toContainText(`Local pose analysis stopped (${code})`);
+    await expect(page.getByRole("button", { name: "Retry local analysis" })).toBeVisible();
+    await expect(page.locator("#analysis-video")).not.toHaveAttribute("src");
+    await expect(page.locator("[data-pose-summary]")).toContainText(
+      operation === "load" ? "0 of 0 video frames processed" : "1 of 8 video frames processed"
+    );
+    expect(await page.evaluate(() =>
+      (window as typeof window & { __mediaStall: { revoked: number } }).__mediaStall.revoked
+    )).toBe(1);
+    await page.evaluate(() => {
+      (window as typeof window & { __mediaStall: { stall: boolean } }).__mediaStall.stall = false;
+    });
+    await page.getByRole("button", { name: "Retry local analysis" }).click();
+    await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", {
+      timeout: 30_000
+    });
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+  });
+}
