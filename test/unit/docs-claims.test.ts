@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { verifyDocsClaims } from "../../scripts/verify-docs-claims.js";
 
 const currentDocs = {
+  "package.json": readFileSync("package.json", "utf8"),
+  "public/manifest.webmanifest": readFileSync("public/manifest.webmanifest", "utf8"),
   "README.md": readFileSync("README.md", "utf8"),
   "docs/limitations.md": readFileSync("docs/limitations.md", "utf8"),
   "CONTRIBUTING.md": readFileSync("CONTRIBUTING.md", "utf8"),
@@ -32,6 +34,43 @@ function without(value: string, requiredText: string) {
 describe("docs claim verification", () => {
   it("accepts the current configured public docs and pending release gate", () => {
     expect(errorsFor()).toEqual([]);
+  });
+
+  // Wording regression checks, not evidence of runtime capability. Existing
+  // frame-processing, phase-review and Swing Card behavior tests cover that.
+  it.each(["README.md", "docs/limitations.md"] as const)(
+    "requires the current sampling, metric and coaching limits in %s",
+    (path) => {
+      for (const [text, key] of [
+        ["eight uniformly spaced samples", "sampling"],
+        ["Phase labels", "sampleReview"],
+        ["No geometry or tempo metric values", "metricsUnavailable"],
+        ["No hosted coaching responses", "coachingUnavailable"]
+      ]) {
+        expect(errorsFor({ [path]: currentDocs[path].replace(text, "Omitted") }))
+          .toContain(`${path}: missing canonical ${key} string`);
+      }
+    }
+  );
+
+  it.each(["package.json", "index.html", "public/manifest.webmanifest"] as const)(
+    "rejects missing metadata or an AI-coach description in %s",
+    (path) => {
+      expect(errorsFor({ [path]: null })).toContain(`${path}: required file is missing`);
+      expect(errorsFor({ [path]: currentDocs[path].replace(
+        "Local-first educational golf swing review with sampled frames and pose overlays.",
+        "Local-first open-source AI golf swing analysis coach."
+      ) }).some((error: string) => error.includes("unimplemented capability"))).toBe(true);
+    }
+  );
+
+  it.each([
+    "The app provides swing phase detection.",
+    "Inspect the detected swing phases.",
+    "The app generates geometry and tempo metrics."
+  ])("rejects stale capability claims even beside current limitations: %s", (claim) => {
+    expect(errorsFor({ "README.md": currentDocs["README.md"] + "\n" + claim })
+      .some((error: string) => error.includes("unimplemented capability"))).toBe(true);
   });
 
   it("fails when the canonical release-gate file is missing", () => {

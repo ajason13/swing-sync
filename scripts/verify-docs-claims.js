@@ -1,7 +1,14 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
+// These checks constrain published wording; source inspection and behavior tests
+// are still required to establish what the application actually does.
 const requiredStrings = {
+  sampling: "up to eight uniformly spaced samples across the selected video.",
+  sampleReview: "Phase labels are provisional, assigned by sample order for user review; they are not motion-based event detection.",
+  metricsUnavailable: "No geometry or tempo metric values are currently generated. Review confirmation does not calculate metrics; Swing Card metric entries remain unavailable.",
+  coachingUnavailable: "No hosted coaching responses are currently generated. Copy prompt prepares text for a separate, manual interaction with another service.",
+  metadataDescription: "Local-first educational golf swing review with sampled frames and pose overlays.",
   nonAffiliation:
     "Swing Sync is an independent open-source project. It is not affiliated with,\n" +
     "endorsed by, sponsored by, or approved by any golf equipment maker, tour,\n" +
@@ -61,6 +68,9 @@ const requiredStrings = {
 };
 
 const files = {
+  "package.json": { headings: [], requiredStrings: ["metadataDescription"], links: [] },
+  "index.html": { headings: [], requiredStrings: ["metadataDescription"], links: [] },
+  "public/manifest.webmanifest": { headings: [], requiredStrings: ["metadataDescription"], links: [] },
   "README.md": {
     headings: [
       "# Swing Sync",
@@ -77,6 +87,10 @@ const files = {
       "localFirst",
       "draftReview",
       "readmeNonMedical",
+      "sampling",
+      "sampleReview",
+      "metricsUnavailable",
+      "coachingUnavailable",
     ],
     links: [
       "./docs/safety-terms.md",
@@ -102,7 +116,7 @@ const files = {
       "## Fixture And Test Limits",
       "## Draft Review Status",
     ],
-    requiredStrings: ["localFirst", "nonMedical", "draftReview"],
+    requiredStrings: ["localFirst", "nonMedical", "draftReview", "sampling", "sampleReview", "metricsUnavailable", "coachingUnavailable"],
     links: [
       "./safety-terms.md",
       "./privacy-architecture.md",
@@ -250,6 +264,12 @@ const files = {
 };
 
 const bannedPatterns = {
+  "unimplemented capability": [
+    "swing phase detection",
+    "detected swing phases",
+    "geometry and tempo metrics",
+    "ai golf swing analysis coach",
+  ],
   "privacy/anonymity": [
     "anonymous",
     "anonymized",
@@ -352,6 +372,7 @@ const allowedMatchUnits = new Set(
 );
 
 const negativeFixtures = {
+  "unimplemented capability": "The app provides swing phase detection and geometry and tempo metrics.",
   "privacy/anonymity": "Swing Sync is anonymous and never leaves your device.",
   "deletion/security": "Swing Sync provides guaranteed deletion.",
   "medical/injury": "Swing Sync can diagnose pain and prevents injury.",
@@ -454,7 +475,7 @@ export function verifyDocsClaims(fileReader = readFileFromDisk) {
           ? "Swing Sync is not medical advice, pain diagnosis, rehabilitation guidance,\nphysical therapy, or a substitute for qualified medical care or professional\ngolf coaching."
           : requiredStrings[stringKey];
       const hasExpected =
-        stringKey === "releaseGateBlocked"
+        ["releaseGateBlocked", "sampling", "sampleReview", "metricsUnavailable", "coachingUnavailable"].includes(stringKey)
           ? normalizeText(content).includes(normalizeText(expected))
           : content.includes(expected);
       if (!hasExpected) {
