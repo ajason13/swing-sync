@@ -1611,3 +1611,81 @@ for (const operation of ["load", "seek"] as const) {
     expect(externalRequests(requestsFor(page))).toEqual([]);
   });
 }
+
+for (const stage of ["init", "inference", "shutdown"] as const) {
+  test(`bounds silent worker ${stage} and recovers locally`, async ({ page }) => {
+    await page.clock.install();
+    await page.evaluate((stage) => {
+      const control = { silence: true, observed: "", terminated: 0 };
+      Object.assign(window, { __workerStall: control });
+      const OriginalWorker = window.Worker;
+      window.Worker = class extends OriginalWorker {
+        constructor(url: string | URL, options?: WorkerOptions) {
+          super(url, options);
+          // Intercept only delivery to the application. The real worker still
+          // owns and closes transferred bitmaps as in normal inference.
+        }
+        override addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
+          if (type !== "message") return super.addEventListener(type, listener, options);
+          super.addEventListener(type, (event: MessageEvent) => {
+            if (control.silence && event.data.type === (stage === "init" ? "ready" : stage === "inference" ? "result" : "torn-down")) {
+              control.observed = event.data.type;
+              return;
+            }
+            if (typeof listener === "function") listener.call(this, event);
+            else listener.handleEvent(event);
+          }, options);
+        }
+        override terminate() { control.terminated += 1; super.terminate(); }
+      };
+    }, stage);
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    await page.getByRole("button", { name: "Begin analysis" }).click();
+    if (stage === "shutdown") {
+      await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+      await page.locator("#clear-local-data").click();
+    }
+    await expect.poll(() => page.evaluate(() =>
+      (window as typeof window & { __workerStall: { observed: string } }).__workerStall.observed
+    ), { timeout: 30_000 }).toBe(stage === "init" ? "ready" : stage === "inference" ? "result" : "torn-down");
+    await page.clock.fastForward(stage === "init" ? 60_000 : stage === "inference" ? 30_000 : 2_000);
+    if (stage === "shutdown") {
+      await expect(page.locator("#app-announcer")).toContainText("Local Swing Sync user state was cleared");
+      await expect(page.locator("#video-file")).toHaveValue("");
+      await expect(page.getByRole("button", { name: "Begin analysis" })).toBeDisabled();
+    } else {
+      await expect(page.locator("#processing-status")).toContainText(stage === "init" ? "WORKER_INIT_TIMEOUT" : "WORKER_INFERENCE_TIMEOUT");
+    }
+    if (stage === "shutdown") await expect(page.locator("#analysis-video")).toHaveCount(0);
+    else await expect(page.locator("#analysis-video")).not.toHaveAttribute("src");
+    expect(await page.evaluate(() =>
+      (window as typeof window & { __workerStall: { terminated: number } }).__workerStall.terminated
+    )).toBe(1);
+    await page.evaluate(() => {
+      (window as typeof window & { __workerStall: { silence: boolean } }).__workerStall.silence = false;
+    });
+    if (stage === "shutdown") {
+      await page.getByRole("checkbox").check();
+      await page.locator("#video-file").setInputFiles(poseFixture);
+      await page.getByRole("button", { name: "Begin analysis" }).click();
+    } else await page.getByRole("button", { name: "Retry local analysis" }).click();
+    await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+    // Exercise Stop while the initialized worker withholds its shutdown reply.
+    if (stage === "shutdown") {
+      await page.evaluate(() => {
+        const control = (window as typeof window & { __workerStall: { silence: boolean; observed: string } }).__workerStall;
+        control.silence = true; control.observed = "";
+      });
+      await page.getByRole("button", { name: "Stop local analysis" }).click();
+      await expect.poll(() => page.evaluate(() =>
+        (window as typeof window & { __workerStall: { observed: string } }).__workerStall.observed
+      )).toBe("torn-down");
+      await page.clock.fastForward(2_000);
+      await expect(page.locator("#app-announcer")).toContainText("Local analysis stopped and volatile resources were released.");
+    }
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+    expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+    await expectNoBrowserStorage(page);
+  });
+}

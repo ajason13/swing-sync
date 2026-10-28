@@ -13,6 +13,10 @@ class FakeWorker {
     this.listeners.set(type, [...(this.listeners.get(type) ?? []), callback]);
   }
 
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    this.listeners.set(type, (this.listeners.get(type) ?? []).filter((value) => value !== listener));
+  }
+
   postMessage(message: PoseWorkerRequest): void {
     if (this.throwOnPost) throw new DOMException("Clone failed", "DataCloneError");
     this.posted.push(message);
