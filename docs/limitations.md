@@ -12,9 +12,16 @@ motion blur, camera angle, distance from the camera, occlusion, loose clothing,
 club visibility, background clutter, browser performance, device performance,
 and dropped or low-quality frames.
 
-Metrics and phase labels are derived from sampled video frames and pose
-landmarks. They should be treated as estimates for review, not as proof of
-biomechanical correctness, performance improvement, or injury risk.
+The current app uses up to eight uniformly spaced samples across the selected
+video. Phase labels are provisional, assigned by sample order for user review;
+they are not motion-based event detection. Samples may miss exact events,
+including impact; body landmarks alone cannot confirm ball contact. Reassigning
+labels only selects among these samples and does not locate arbitrary frames.
+
+No geometry or tempo metric values are currently generated. Review confirmation
+does not calculate metrics; Swing Card metric entries remain unavailable.
+Pose overlays and reviewed labels are not proof of biomechanical correctness,
+performance improvement, or injury risk.
 
 Low-confidence, missing, or inconsistent landmarks should be interpreted as a
 reason to review the video manually or record another clip, not as a statement
@@ -62,6 +69,9 @@ The production remote model provider registry is currently empty. SS-013 added
 a provider-neutral adapter scaffold, but there are no configured remote model
 providers, provider SDKs, API keys, server routes, or active hosted-model calls
 in the current production app.
+
+No hosted coaching responses are currently generated. Copy prompt prepares text
+for a separate, manual interaction with another service.
 
 Any future remote review feature must identify the provider, destination, data
 classes, terms, privacy practices, and opt-in/revocation flow before anything is

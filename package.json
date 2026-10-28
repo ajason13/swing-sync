@@ -4,7 +4,7 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Local-first open-source AI golf swing analysis coach.",
+  "description": "Local-first educational golf swing review with sampled frames and pose overlays.",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/aggregate-notices.js",

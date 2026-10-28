@@ -1,8 +1,8 @@
 # Swing Sync
 
 Swing Sync is a local-first browser app for educational golf swing review. It
-helps users inspect selected swing videos in the browser, review pose-derived
-movement signals, and export a Swing Card for their own practice notes.
+helps users inspect sampled frames and pose overlays from local swing videos
+and export a Swing Card for their own practice notes.
 
 Swing Sync is not medical advice, pain diagnosis, rehabilitation guidance,
 physical therapy, or a substitute for qualified medical care or professional
@@ -10,9 +10,15 @@ golf coaching.
 
 ## Current Capabilities
 
-The current app runs local video selection, local Pose Landmarker inference on
-sampled frames, swing phase detection, geometry and tempo metrics, visual
-review surfaces, and local Swing Card export/copy workflows.
+The current app runs local video selection and local Pose Landmarker inference
+on up to eight uniformly spaced samples across the selected video. Phase labels
+are provisional, assigned by sample order for user review; they are not
+motion-based event detection. Samples may miss exact events, including impact.
+
+No geometry or tempo metric values are currently generated. Review confirmation
+does not calculate metrics; Swing Card metric entries remain unavailable.
+No hosted coaching responses are currently generated. Copy prompt prepares text
+for a separate, manual interaction with another service.
 
 SS-012 added local-only educational coaching prompt and response contracts, but
 no model call is made from those contracts. SS-013 added a provider-neutral
@@ -54,19 +60,30 @@ Vite prints the local URL when it starts (normally `http://localhost:5173`).
 2. Read the safety acknowledgement and select its checkbox. Analysis remains
    unavailable until it is acknowledged.
 3. Under **Capture or choose your swing**, select **Choose a video** and pick a
-   local swing video file. Camera capture is not currently available.
+   local swing video file, already trimmed to one complete swing. Camera
+   capture, playback preview, and in-app trimming are not currently available.
 4. Select **Begin analysis**. The app loads the local pose model and processes
    sampled video frames in the browser. You can stop the local analysis, or
    retry it if processing fails.
 5. When processing completes, select **Review phase labels** to inspect the
-   detected swing phases, keyframes, and available geometry and tempo metrics.
-   Treat these as estimates for educational review, not medical, biomechanical,
-   or professional-coaching conclusions.
-6. Create a Swing Card from the completed review when useful:
+   sampled keyframes and provisional phase labels. Complete **Required video
+   declarations**: **View** (currently **Face-on side view**), **Handedness**,
+   **Horizontally mirrored**, and the trimmed-swing/setup checkbox. Unsupported
+   inputs remain unavailable for confirmation. Adjust each label's sample
+   selector if needed, keeping assignments in chronological order; this selects
+   among the existing samples, not arbitrary event frames. Check the provisional
+   label acknowledgement, then select **Confirm phase review**. Confirmation
+   records your review; it does not establish exact event timing or accuracy.
+6. Select **Open Swing Card export** when useful. Export can show unavailable
+   keyframes or metrics and review warnings, including before confirmation:
+
    - **Download PNG** saves a local image summary.
    - **Print / Save as PDF** opens the browser print flow.
    - **Copy prompt** copies educational review context that you may choose to
-     paste into another service yourself.
+     paste into another service yourself. It does not request a model response.
+
+   **Remote model review unavailable** remains visible because no provider is
+   configured.
 7. Use **Clear local app data** to remove Swing Sync's registered app data for
    this browser origin, including the safety acknowledgement. It does not erase
    downloaded files or guarantee device-level deletion.

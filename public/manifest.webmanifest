@@ -1,7 +1,7 @@
 {
   "name": "Swing Sync",
   "short_name": "Swing Sync",
-  "description": "Local-first golf swing analysis workflow scaffold.",
+  "description": "Local-first educational golf swing review with sampled frames and pose overlays.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f3f5f1",
