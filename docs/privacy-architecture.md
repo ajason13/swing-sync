@@ -84,8 +84,20 @@ Evidence: `src/app-events.ts`, `src/analysis-lifecycle.ts`, `src/app-state.ts`,
 `test/unit/app-events.test.ts`, `test/unit/app-state.test.ts`, and the
 clear-data/refresh and blocked-storage cases in `test/smoke/app.spec.ts`.
 These checks cover named paths and environments, not every browser or failure.
-Silent-worker shutdown bounds remain separate proposed hardening in
-[issue #61](https://github.com/ajason13/swing-sync/issues/61).
+Worker waits use per-operation watchdogs: 60 seconds for initialization, 30
+seconds for each inference, and 2 seconds for shutdown. A timeout terminates
+the worker; stop and clear-data settle pending processing before waiting for
+bounded shutdown. Browser timer throttling or suspension may delay these
+callbacks, so these are not wall-clock guarantees. Main-thread previews are
+closed during cleanup; transferred inference bitmaps belong to the worker,
+which closes them after inference or releases its resources on termination.
+Late worker messages cannot revive a closed session. Sanitized local codes
+include `WORKER_INIT_TIMEOUT`, `WORKER_INFERENCE_TIMEOUT`,
+`WORKER_CONSTRUCTION_FAILED`, and `WORKER_MESSAGE_ERROR`; forced shutdown
+reports `WORKER_SHUTDOWN_TIMEOUT` at the session boundary while preserving
+the caller’s stop/clear-data destination. No diagnostics are transmitted.
+Evidence: `test/unit/worker-recovery.test.ts` and injected silent-worker
+recovery tests in `test/smoke/app.spec.ts`.
 
 ### Future storage requirements
 

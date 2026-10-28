@@ -118,13 +118,14 @@ export class VideoFrameSource implements FrameSource {
   }
 }
 
-class PoseFrameProcessor implements FrameProcessor {
+export class PoseFrameProcessor implements FrameProcessor {
   private session?: PoseSession;
   private initializeResolve?: () => void;
   private initializeReject?: (error: Error) => void;
   private resultResolve?: (result: PoseFrameResult) => void;
   private resultReject?: (error: Error) => void;
   private closeResolve?: () => void;
+  private closePromise?: Promise<void>;
 
   initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -144,10 +145,21 @@ class PoseFrameProcessor implements FrameProcessor {
   }
 
   process(bitmap: ImageBitmap, timestampMs: number): Promise<PoseFrameResult> {
+    if (this.resultReject) {
+      bitmap.close();
+      return Promise.reject(new Error("POSE_SESSION_BUSY"));
+    }
     return new Promise((resolve, reject) => {
       this.resultResolve = resolve;
       this.resultReject = reject;
-      if (!this.session?.submitFrame(bitmap, timestampMs)) {
+      if (!this.session) {
+        bitmap.close();
+        this.resultResolve = undefined;
+        this.resultReject = undefined;
+        reject(new Error("POSE_SESSION_CLOSED"));
+        return;
+      }
+      if (!this.session.submitFrame(bitmap, timestampMs)) {
         this.resultResolve = undefined;
         this.resultReject = undefined;
         reject(new Error("POSE_SESSION_BUSY"));
@@ -156,11 +168,14 @@ class PoseFrameProcessor implements FrameProcessor {
   }
 
   close(): Promise<void> {
+    if (this.closePromise) return this.closePromise;
     if (!this.session) return Promise.resolve();
-    return new Promise((resolve) => {
+    this.rejectPending(new Error("POSE_SESSION_CLOSED"));
+    this.closePromise = new Promise((resolve) => {
       this.closeResolve = resolve;
-      this.session?.teardown();
     });
+    this.session.teardown();
+    return this.closePromise;
   }
 
   abort(code: string): void {
@@ -177,22 +192,27 @@ class PoseFrameProcessor implements FrameProcessor {
     }
     if (status === "error") {
       const error = new Error(code ?? "POSE_SESSION_FAILED");
-      this.initializeReject?.(error);
-      this.resultReject?.(error);
-      this.initializeResolve = undefined;
-      this.initializeReject = undefined;
-      this.resultResolve = undefined;
-      this.resultReject = undefined;
+      this.rejectPending(error);
       this.closeResolve?.();
       this.closeResolve = undefined;
       this.session = undefined;
       return;
     }
     if (status === "closed") {
+      this.rejectPending(new Error(code ?? "POSE_SESSION_CLOSED"));
       this.closeResolve?.();
       this.closeResolve = undefined;
       this.session = undefined;
     }
+  }
+
+  private rejectPending(error: Error): void {
+    this.initializeReject?.(error);
+    this.resultReject?.(error);
+    this.initializeResolve = undefined;
+    this.initializeReject = undefined;
+    this.resultResolve = undefined;
+    this.resultReject = undefined;
   }
 }
 
