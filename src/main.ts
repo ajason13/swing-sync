@@ -11,17 +11,20 @@ import { bindAppEvents } from "./app-events";
 import { renderApp } from "./app-renderer";
 import { createInitialAppState } from "./app-state";
 import { createSafetyConsentStore } from "./consent-state";
+import { LocalVideoPreview } from "./local-video-preview";
 import { renderSelectedKeyframeCanvas } from "./keyframe-overlay-renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 const announcer = document.querySelector<HTMLDivElement>("#app-announcer");
 const state = createInitialAppState();
 const consent = createSafetyConsentStore();
+const preview = new LocalVideoPreview();
 
 function requestRender(request: RenderRequest = {}): void {
   if (!app) return;
   const priorFocusKey = capturePriorFocusKey(app);
   renderApp(app, state, consent.hasSafetyConsent(), request.visibleStatusText);
+  preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined);
   bindAppEvents(app, {
     state,
     consent,
@@ -56,7 +59,12 @@ const lifecycle = new AnalysisLifecycle({
 requestRender();
 
 window.addEventListener("beforeunload", () => {
+  preview.close();
   void lifecycle.closeActive();
+});
+window.addEventListener("pagehide", () => preview.close());
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted && app) preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined);
 });
 document.addEventListener("securitypolicyviolation", () => {
   lifecycle.abortWithNetworkBlocked();

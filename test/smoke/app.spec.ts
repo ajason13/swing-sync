@@ -324,6 +324,9 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   const primary = page.locator("#analysis-button");
   await expect(page.locator("[data-video-picker]")).toBeFocused();
   await page.keyboard.press("Tab");
+  await expect(page.locator("#local-video-preview")).toBeFocused();
+  await page.locator("[data-preview-toggle]").focus();
+  await page.keyboard.press("Tab");
   await expect(primary).toBeFocused();
   await expect(primary).toHaveCSS("background-color", "rgb(36, 91, 59)");
   const primaryFocus = await primary.evaluate((element) => ({
@@ -1234,7 +1237,9 @@ test("releases the selected object URL when analysis stops", async ({ page }) =>
         }
       ).__poseObjectUrls
   );
-  expect(urls.revoked).toEqual(urls.created);
+  const activePreviewUrl = await page.locator("#local-video-preview").getAttribute("src");
+  expect(activePreviewUrl).toBeTruthy();
+  expect(urls.revoked).toEqual(urls.created.filter((url) => url !== activePreviewUrl));
 });
 
 test("fits the mobile viewport without horizontal page overflow", async ({ page }) => {
@@ -1596,11 +1601,11 @@ for (const operation of ["load", "seek"] as const) {
     await expect(page.getByRole("button", { name: "Retry local analysis" })).toBeVisible();
     await expect(page.locator("#analysis-video")).not.toHaveAttribute("src");
     await expect(page.locator("[data-pose-summary]")).toContainText(
-      operation === "load" ? "0 of 0 video frames processed" : "1 of 8 video frames processed"
+      operation === "load" ? "0 of 0 video frames processed" : "0 of 8 video frames processed"
     );
     expect(await page.evaluate(() =>
       (window as typeof window & { __mediaStall: { revoked: number } }).__mediaStall.revoked
-    )).toBe(1);
+    )).toBe(2);
     await page.evaluate(() => {
       (window as typeof window & { __mediaStall: { stall: boolean } }).__mediaStall.stall = false;
     });
@@ -1689,3 +1694,143 @@ for (const stage of ["init", "inference", "shutdown"] as const) {
     await expectNoBrowserStorage(page);
   });
 }
+
+test("previews and pauses a local clip before model initialization with keyboard and narrow controls", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  const video = page.getByLabel("Local video preview", { exact: true });
+  const play = page.getByRole("button", { name: "Play preview", exact: true });
+  await expect(play).toBeEnabled();
+  expect(requestsFor(page).filter((url) => /pose_landmarker|\.wasm|pose-worker/.test(url))).toEqual([]);
+  await play.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Pause preview", exact: true })).toBeEnabled();
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0);
+  await page.keyboard.press("Space");
+  await expect(play).toBeEnabled();
+  expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+  // A consent render preserves the decoded element and current position.
+  await video.evaluate((element: HTMLVideoElement) => { element.currentTime = 0.5; });
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.seeking)).toBe(false);
+  const url = await video.getAttribute("src");
+  await page.getByRole("checkbox").check();
+  await expect(video).toHaveAttribute("src", url!);
+  expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeCloseTo(0.5, 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  await expectNoBrowserStorage(page);
+});
+
+test("releases local preview on replacement clearing navigation and analysis without stale clip callbacks", async ({ page }) => {
+  await page.evaluate(() => {
+    const revoke = URL.revokeObjectURL;
+    const revoked: string[] = [];
+    Object.assign(window, { __previewRevoked: revoked, __oldPreview: undefined });
+    URL.revokeObjectURL = (url) => { revoked.push(url); revoke.call(URL, url); };
+  });
+  const video = page.locator("#local-video-preview");
+  const revoked = () => page.evaluate(() => (window as typeof window & { __previewRevoked: string[] }).__previewRevoked);
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  const firstUrl = await video.getAttribute("src");
+  await page.evaluate(() => Object.assign(window, { __oldPreview: document.querySelector("#local-video-preview") }));
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  expect(await revoked()).toEqual([firstUrl]);
+  await page.evaluate(() => {
+    const old = (window as typeof window & { __oldPreview: HTMLVideoElement }).__oldPreview;
+    if (old.hasAttribute("src") || !old.paused) throw new Error("Old preview still owns media");
+    old.dispatchEvent(new Event("error"));
+    old.dispatchEvent(new Event("loadeddata"));
+  });
+  await expect(page.locator("#local-preview-status")).toContainText("Preview ready");
+  const secondUrl = await video.getAttribute("src");
+  await page.locator("[data-step='review']").click();
+  expect(await revoked()).toEqual([firstUrl, secondUrl]);
+  await expect(video).toHaveCount(0);
+  await page.locator("[data-step='capture']").click();
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  const thirdUrl = await video.getAttribute("src");
+  await page.getByRole("button", { name: "Clear local app data" }).click();
+  expect(await revoked()).toEqual([firstUrl, secondUrl, thirdUrl]);
+  await expect(video).toHaveCount(0);
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  const fourthUrl = await video.getAttribute("src");
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  expect(await revoked()).toContain(fourthUrl);
+  await expect(video).toHaveCount(0);
+  await expect(page.locator("#processing-status")).toContainText("Local frame processing completed", { timeout: 20_000 });
+});
+
+test("shows accessible local preview decode guidance and recovers by replacing an unreadable clip", async ({ page }) => {
+  await page.locator("#video-file").setInputFiles({ name: "unreadable.webm", mimeType: "video/webm", buffer: Buffer.from("invalid synthetic input") });
+  await expect(page.locator("#local-preview-status")).toHaveAttribute("role", "status");
+  await expect(page.locator("#local-preview-status")).toContainText("Choose another local video");
+  await expect(page.locator("#local-preview-status")).toContainText("PREVIEW_LOAD_FAILED");
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeDisabled();
+  await expect(page.locator("#local-video-preview")).not.toHaveAttribute("src");
+  expect(requestsFor(page).filter((url) => /pose_landmarker|\.wasm|pose-worker/.test(url))).toEqual([]);
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+});
+
+test("analyzes the initial frame after preview when the processing video starts below the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 600 });
+  await page.evaluate(() => {
+    const create = window.createImageBitmap.bind(window);
+    const observations: { offscreen: boolean; atStart: boolean }[] = [];
+    Object.assign(window, { __initialFrameObservations: observations });
+    window.createImageBitmap = ((...args: Parameters<typeof createImageBitmap>) => {
+      const source = args[0];
+      if (source instanceof HTMLVideoElement && source.id === "analysis-video" && observations.length === 0) {
+        observations.push({ offscreen: source.getBoundingClientRect().top >= innerHeight, atStart: source.currentTime === 0 });
+      }
+      return (create as (...args: Parameters<typeof createImageBitmap>) => Promise<ImageBitmap>)(...args);
+    }) as typeof createImageBitmap;
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Play preview", exact: true }).click();
+  await page.getByRole("button", { name: "Pause preview", exact: true }).click();
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+  expect(await page.evaluate(() => (window as typeof window & {
+    __initialFrameObservations: { offscreen: boolean; atStart: boolean }[];
+  }).__initialFrameObservations)).toEqual([{ offscreen: true, atStart: true }]);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+});
+
+test("bounds preview loading and releases media across page exit and restore", async ({ page }) => {
+  await page.clock.install();
+  await page.evaluate(() => {
+    const add = HTMLMediaElement.prototype.addEventListener;
+    Object.assign(window, { __stallPreviewReady: true });
+    HTMLMediaElement.prototype.addEventListener = function (
+      type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions
+    ) {
+      if (this.id === "local-video-preview" && type === "loadeddata" &&
+        (window as typeof window & { __stallPreviewReady: boolean }).__stallPreviewReady) return;
+      add.call(this, type, listener, options);
+    };
+  });
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.locator("#local-preview-status")).toContainText("Loading");
+  await page.clock.fastForward(30_000);
+  await expect(page.locator("#local-preview-status")).toContainText("PREVIEW_LOAD_TIMEOUT");
+  await expect(page.locator("#local-video-preview")).not.toHaveAttribute("src");
+  await page.evaluate(() => { (window as typeof window & { __stallPreviewReady: boolean }).__stallPreviewReady = false; });
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  const originalUrl = await page.locator("#local-video-preview").getAttribute("src");
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+  await expect(page.locator("#local-video-preview")).not.toHaveAttribute("src");
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+  await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
+  await expect(page.locator("#local-video-preview")).not.toHaveAttribute("src", originalUrl!);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+});

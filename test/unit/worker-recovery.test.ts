@@ -139,7 +139,10 @@ describe("worker lifecycle watchdogs", () => {
 
 it("cancels a silent initialization, retries with a new worker, and releases retained previews on inference timeout", async () => {
   class VideoStub extends EventTarget {
-    duration = 2; videoWidth = 100; videoHeight = 100; currentTime = 0; src = "";
+    duration = 2; videoWidth = 100; videoHeight = 100; src = "";
+    private position = 0;
+    get currentTime() { return this.position; }
+    set currentTime(value: number) { this.position = value; this.dispatchEvent(new Event("seeked")); }
     load() { if (this.src) this.dispatchEvent(new Event("loadedmetadata")); }
     pause() {} removeAttribute() { this.src = ""; }
   }

@@ -73,6 +73,8 @@ describe("browser frame source", () => {
 
   it("preserves the abort code and releases the preview without creating an inference after abort", async () => {
     const video = new FakeVideo();
+    const requestSeek = vi.fn();
+    Object.defineProperty(video, "currentTime", { get: () => 0, set: requestSeek });
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
     const messages: string[] = [];
@@ -102,6 +104,8 @@ describe("browser frame source", () => {
       const run = controller.start();
       await vi.waitFor(() => expect(video.load).toHaveBeenCalledOnce());
       video.dispatchEvent(new Event("loadedmetadata"));
+      await vi.waitFor(() => expect(requestSeek).toHaveBeenCalledWith(0));
+      video.dispatchEvent(new Event("seeked"));
       await vi.waitFor(() => expect(createBitmap).toHaveBeenCalledOnce());
       abort("UNEXPECTED_NETWORK_BLOCKED");
       releasePreview(preview);
@@ -299,10 +303,17 @@ describe("bounded media waits", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("returns an already settled position without installing a watchdog", async () => {
+  it("waits for a decoded seek even at the initial zero position", async () => {
     const video = new FakeVideo();
     const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
-    await expect(source.seek(0)).resolves.toBe(0);
+    const result = source.seek(0);
+    const settled = vi.fn();
+    void result.then(settled);
+    await Promise.resolve();
+    expect(settled).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+    video.dispatchEvent(new Event("seeked"));
+    await expect(result).resolves.toBe(0);
     expect(vi.getTimerCount()).toBe(0);
   });
 });
