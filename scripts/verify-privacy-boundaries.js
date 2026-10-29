@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 function fail(message) {
   console.error(message);
@@ -139,7 +139,7 @@ const prohibitedEndpointPatterns = [
 const sourceFiles = [
   indexPath,
   ...listScannableFiles("src"),
-  ...listScannableFiles("scripts").filter((path) => path !== privacyVerifierPath)
+  ...listScannableFiles("scripts").filter((path) => resolve(path) !== resolve(privacyVerifierPath))
 ];
 
 for (const [label, pattern] of prohibitedEndpointPatterns) {
