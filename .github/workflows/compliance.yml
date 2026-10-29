@@ -11,7 +11,17 @@ permissions:
 
 jobs:
   compliance:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.check-name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Preserve the existing Ubuntu check name for branch-rule compatibility.
+          - os: ubuntu-latest
+            check-name: compliance
+          - os: windows-2025
+            check-name: compliance-windows
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,6 +34,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Record runner and tool versions
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --input-type=module -e 'import os from "node:os"; console.log(JSON.stringify({head:process.env.HEAD_SHA,checkout:process.env.GITHUB_SHA,os:os.type(),release:os.release(),arch:os.arch(),image:process.env.ImageOS,imageVersion:process.env.ImageVersion,node:process.version},null,2))'
+          npm --version
+          npx playwright --version
 
       - name: Check TypeScript
         run: npm run typecheck
@@ -49,6 +67,9 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Record Chromium version
+        run: node --input-type=module -e 'import {chromium} from "playwright"; const browser = await chromium.launch(); console.log(browser.version()); await browser.close()'
+
       - name: Run browser regression tests
         run: npm run test:smoke
 
@@ -62,6 +83,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results
-          path: test-results/
+          name: playwright-test-results-${{ matrix.os }}
+          path: |
+            test-results/
+            test-results-dev/
+            test-results-csp-preview/
           retention-days: 7
