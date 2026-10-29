@@ -228,7 +228,8 @@ export function createBrowserFrameController(
   video: HTMLVideoElement,
   file: File,
   events: FrameProcessingEvents,
-  interval?: AnalysisInterval
+  interval?: AnalysisInterval,
+  requestedTimestamps?: readonly number[]
 ): { controller: FrameProcessingController; abort(code: string): void } {
   let activeProcessor: PoseFrameProcessor | undefined;
   const dependencies: FrameProcessingDependencies = {
@@ -238,7 +239,7 @@ export function createBrowserFrameController(
       return activeProcessor;
     }
   };
-  const controller = new FrameProcessingController(dependencies, events, interval);
+  const controller = new FrameProcessingController(dependencies, events, interval, requestedTimestamps);
   return {
     controller,
     abort: (code) => {

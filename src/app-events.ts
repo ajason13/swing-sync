@@ -16,6 +16,7 @@ import {
   type AppState
 } from "./app-state";
 import type { SafetyConsentStore } from "./consent-state";
+import { calculateSampleTimestamps } from "./frame-processing";
 import { declarationValue } from "./phase-review-renderer";
 import { copySwingCardPrompt, downloadSwingCard, printSwingCard } from "./swing-card-actions";
 import { getNextWorkflowStep, getWorkflowStep, type WorkflowStepId } from "./workflow";
@@ -75,6 +76,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
   root.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
     button.addEventListener("click", async () => {
       const nextStep = button.dataset.step as WorkflowStepId;
+      if (state.eventFrameBusy && nextStep !== state.activeStep) await lifecycle.stopEventFrame();
       const opensCompletedReview =
         state.activeStep === "processing" && state.processingState === "completed" && nextStep === "review";
       const preservesReviewData =
@@ -180,6 +182,20 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
     setPhaseDeclaration(state, "setup", (event.currentTarget as HTMLInputElement).checked ? "confirmed" : "undeclared");
     rebuildPhaseReviewState(state);
     requestRender(phaseRenderRequest("phase-setup", before, state));
+  });
+  root.querySelector<HTMLButtonElement>("[data-event-stop]")?.addEventListener("click", () => { void lifecycle.stopEventFrame(); });
+  root.querySelectorAll<HTMLButtonElement>("[data-event-select]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = root.querySelector<HTMLInputElement>("#event-time");
+      const value = input?.value.trim() ?? "";
+      let timestamp = value === "" ? NaN : Number(value) * 1000;
+      const delta = Number(button.dataset.eventSelect);
+      if (delta && Number.isFinite(timestamp)) {
+        const bounds = calculateSampleTimestamps(state.videoDuration ?? NaN, state.analysisInterval);
+        timestamp = Math.max(bounds[0], Math.min(bounds[bounds.length - 1], Math.round(timestamp + delta)));
+      }
+      void lifecycle.assignEventFrame(state.selectedKeyframeIndex, timestamp);
+    });
   });
   root.querySelectorAll<HTMLSelectElement>("[data-phase-index]").forEach((select) => {
     select.addEventListener("change", () => {

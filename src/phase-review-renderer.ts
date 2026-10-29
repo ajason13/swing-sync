@@ -1,3 +1,4 @@
+import { calculateSampleTimestamps } from "./frame-processing";
 import { getSelectedPhasePreview, type AppState } from "./app-state";
 import { overlayStatusText } from "./keyframe-overlay-renderer";
 import { isValidCorrection, phaseDefinitions, type PhaseDeclarations } from "./phase-review";
@@ -5,6 +6,8 @@ import { isValidCorrection, phaseDefinitions, type PhaseDeclarations } from "./p
 export function renderPhaseReview(state: AppState): string {
   const proposal = state.phaseReviewState?.automaticProposal;
   const reviewRequired = proposal?.evidenceStatus === "review-required";
+  const busy = state.eventFrameBusy;
+  const validOrder = isValidCorrection(state.phaseDraft, state.phaseOutputs);
   const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
   const warning =
     ready
@@ -20,7 +23,7 @@ export function renderPhaseReview(state: AppState): string {
         <h3 id="phase-review-heading" tabindex="-1" data-focus-key="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</h3>
         <p>${warning}</p>
       </div>
-      <fieldset class="phase-declarations">
+      <fieldset class="phase-declarations" ${busy ? "disabled" : ""}>
         <legend>Required video declarations</legend>
         ${renderDeclarationSelect("phase-view", "View", state.phaseDeclarations.view, "phase-declaration:view", [
           ["undeclared", "Select view"],
@@ -50,11 +53,11 @@ export function renderPhaseReview(state: AppState): string {
               <div class="phase-assignment">
                 <div><h3>${phase.label}</h3><small>Ordered phase ${index + 1}</small></div>
                 <label class="visually-hidden" for="${controlId}">${phase.label} sample</label>
-                <select id="${controlId}" data-phase-index="${index}" data-focus-key="phase-assignment:${index}" ${reviewRequired && !ready ? "" : "disabled"}>
-                  ${phaseDefinitions
+                <select id="${controlId}" data-phase-index="${index}" data-focus-key="phase-assignment:${index}" ${reviewRequired && !busy ? "" : "disabled"}>
+                  ${state.phaseOutputs
                     .map(
-                      (_, sampleIndex) =>
-                        `<option value="${sampleIndex}" ${sampleIndex === selected ? "selected" : ""}>Sample ${sampleIndex + 1}</option>`
+                      (output, sampleIndex) => sampleIndex >= 8 && sampleIndex !== state.manualFrameIndices[index] ? "" :
+                        `<option value="${sampleIndex}" ${sampleIndex === selected ? "selected" : ""}>${sampleIndex < 8 ? `Sample ${sampleIndex + 1}` : "Selected event"} · ${(output.requestedTimestampMs / 1000).toFixed(3)} s</option>`
                     )
                     .join("")}
                 </select>
@@ -62,17 +65,18 @@ export function renderPhaseReview(state: AppState): string {
           })
           .join("")}
       </div>
+      <p class="action-note" id="phase-order-status">${validOrder ? "Assignments follow source-time order." : "Confirmation requires available poses and nondecreasing source times for all eight phases."} Reusing a time is allowed; it does not prove distinct events. Impact remains unconfirmed.</p>
       <label class="phase-confirmation">
         <input id="phase-confirmation" type="checkbox" data-focus-key="phase-confirmation" ${state.phaseConfirmation ? "checked" : ""} ${
-          reviewRequired && !ready ? "" : "disabled"
+          reviewRequired && !busy ? "" : "disabled"
         } />
         <span>I reviewed these provisional labels. They may not represent each exact swing event.</span>
       </label>
       <div class="action-row">
         <button class="primary-action" type="button" data-confirm-phase-review data-focus-key="phase-confirm" aria-describedby="phase-review-status" ${
-          reviewRequired && state.phaseConfirmation && isValidCorrection(state.phaseDraft) && !ready ? "" : "disabled"
+          reviewRequired && state.phaseConfirmation && validOrder && !ready && !busy ? "" : "disabled"
         }>Confirm phase review</button>
-        <button class="secondary-action" type="button" data-open-export data-focus-key="open-export">Open Swing Card export</button>
+        <button class="secondary-action" type="button" data-open-export data-focus-key="open-export" ${busy ? "disabled" : ""}>Open Swing Card export</button>
         <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
       </div>
     </section>
@@ -80,7 +84,10 @@ export function renderPhaseReview(state: AppState): string {
 }
 
 function renderKeyframeOverlayReview(state: AppState): string {
-  const { phase: selectedPhase, sampleIndex } = getSelectedPhasePreview(state);
+  const { phase: selectedPhase, sampleIndex, output } = getSelectedPhasePreview(state);
+  const sampleLabel = sampleIndex < 8 ? `Sample ${sampleIndex + 1}` : "Selected event";
+  const times = output ? `Requested ${(output.requestedTimestampMs / 1000).toFixed(3)} s; observed seek ${(output.observedSeekTimestampMs / 1000).toFixed(3)} s.` : "Frame unavailable.";
+  const bounds = state.videoDuration ? calculateSampleTimestamps(state.videoDuration, state.analysisInterval) : undefined;
   const overlayStatus = overlayStatusText(state.latestOverlayResult?.status);
 
   return `
@@ -89,19 +96,33 @@ function renderKeyframeOverlayReview(state: AppState): string {
         <div>
           <p class="placeholder-kicker">Annotated keyframes</p>
           <h3 id="keyframe-review-heading">${selectedPhase.label}</h3>
-          <p class="action-note">Sample ${sampleIndex + 1}</p>
+          <p class="action-note">${sampleLabel}</p>
+          <p class="action-note">${times}</p>
         </div>
         <span class="stage-status">Annotated still</span>
       </div>
       <div class="keyframe-canvas-wrap">
-        <canvas class="keyframe-canvas" data-keyframe-canvas role="img" aria-label="Annotated keyframe: ${selectedPhase.label}, Sample ${sampleIndex + 1}" aria-describedby="keyframe-overlay-status"></canvas>
+        <canvas class="keyframe-canvas" data-keyframe-canvas role="img" aria-label="Annotated keyframe: ${selectedPhase.label}, ${sampleLabel}" aria-describedby="keyframe-overlay-status"></canvas>
       </div>
       <p class="action-note" id="keyframe-overlay-status" data-overlay-status role="status" aria-live="polite" aria-atomic="true">${overlayStatus}</p>
+      ${bounds ? `<fieldset class="event-frame-controls" aria-describedby="event-frame-help event-frame-status" ${state.phaseReviewState?.automaticProposal.evidenceStatus === "review-required" ? "" : "disabled"}>
+        <legend>Select a frame for ${selectedPhase.label}</legend>
+        <p id="event-frame-help" class="action-note">Complete the required declarations for a supported eight-sample run, then seek within ${(bounds[0] / 1000).toFixed(3)}–${(bounds[bounds.length - 1] / 1000).toFixed(3)} s. Steps request 0.033 s, not an exact decoded frame. Observed seek time is the browser playback position, not a verified capture time. Each selection runs pose inference on that same local image. Missing poses prevent confirmation.</p>
+        <label for="event-time">Source time (seconds)</label>
+        <input id="event-time" type="number" min="${bounds[0] / 1000}" max="${bounds[bounds.length - 1] / 1000}" step="0.001" value="${(output?.requestedTimestampMs ?? bounds[0]) / 1000}" data-focus-key="event-time" ${state.eventFrameBusy ? "readonly" : ""} />
+        <div class="action-row">
+          <button type="button" class="secondary-action" data-event-select="-33" data-focus-key="event-earlier" ${state.eventFrameBusy ? "disabled" : ""}>Earlier (0.033 s)</button>
+          <button type="button" class="secondary-action" data-event-select="33" data-focus-key="event-later" ${state.eventFrameBusy ? "disabled" : ""}>Later (0.033 s)</button>
+          <button type="button" class="primary-action" data-event-select="0" data-focus-key="event-assign" ${state.eventFrameBusy ? "disabled" : ""}>Use time for ${selectedPhase.label}</button>
+          ${state.eventFrameBusy ? `<button type="button" class="secondary-action" data-event-stop data-focus-key="event-stop">Stop frame selection</button>` : ""}
+        </div>
+        <p id="event-frame-status" class="action-note">${state.eventFrameStatus || "Original samples are provisional. Select event times and explicitly review their phase labels."}</p>
+      </fieldset>` : ""}
       <div class="keyframe-strip" role="group" aria-label="Select keyframe">
         ${phaseDefinitions
           .map((phase, index) => {
             const isSelected = state.selectedKeyframeIndex === index;
-            return `<button class="keyframe-button ${isSelected ? "is-selected" : ""}" type="button" data-keyframe-index="${index}" data-focus-key="keyframe:${index}" aria-pressed="${isSelected ? "true" : "false"}">
+            return `<button class="keyframe-button ${isSelected ? "is-selected" : ""}" type="button" ${state.eventFrameBusy ? "disabled" : ""} data-keyframe-index="${index}" data-focus-key="keyframe:${index}" aria-pressed="${isSelected ? "true" : "false"}">
               <span>${index + 1}</span>
               <strong>${phase.label}</strong>
             </button>`;

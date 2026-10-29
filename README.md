@@ -15,6 +15,14 @@ on up to eight uniformly spaced samples across the selected interval.
 The interval defaults to the full clip and can be adjusted and previewed locally
 before analysis. Phase labels are provisional, assigned by sample order for user
 review; they are not motion-based event detection. Samples may miss exact events, including impact.
+During review, select a phase and enter a source time or seek in 0.033-second
+steps to assign a frame beyond the original samples. These are time seeks, not
+guaranteed individual decoded frames. The app shows requested and observed seek
+times, re-runs local pose inference for the selected image, and requires renewed
+review after changes. Assignments must follow source-time order; repeated times
+are allowed, but missing poses prevent confirmation. Impact remains unconfirmed.
+Review and Swing Card exports use the same assigned images. At most eight
+original samples and one selected frame per phase are retained in memory.
 
 No geometry or tempo metric values are currently generated. Review confirmation
 does not calculate metrics; Swing Card metric entries remain unavailable.

@@ -69,6 +69,15 @@ export function calculateSampleTimestamps(durationSeconds: number, interval?: An
   return timestamps;
 }
 
+// Explicit requests use the same source-time bounds as uniform sampling.
+export function validateRequestedTimestamps(duration: number, interval: AnalysisInterval | undefined, requests: readonly number[]): number[] {
+  const samples = calculateSampleTimestamps(duration, interval);
+  if (!requests.length || requests.length > SAMPLE_BUDGET || requests.some((time, index) =>
+    !Number.isFinite(time) || time < samples[0] || time > samples[samples.length - 1] ||
+    (index > 0 && time <= requests[index - 1]))) throw new Error("INVALID_EVENT_TIME");
+  return [...requests];
+}
+
 export function calculatePreviewDimensions(width: number, height: number): {
   width: number;
   height: number;
@@ -95,18 +104,29 @@ export class FrameProcessingController {
   private currentPreview?: ImageBitmap;
   private totalSamples = 0;
   private readonly interval?: AnalysisInterval;
+  private readonly requestedTimestamps?: readonly number[];
 
   constructor(
     private readonly dependencies: FrameProcessingDependencies,
     private readonly events: FrameProcessingEvents,
-    interval?: AnalysisInterval
+    interval?: AnalysisInterval,
+    requestedTimestamps?: readonly number[]
   ) {
     // A run/retry owns a snapshot, even if a caller later edits its selection.
     this.interval = interval ? { ...interval } : undefined;
+    this.requestedTimestamps = requestedTimestamps ? [...requestedTimestamps] : undefined;
   }
 
   getOutputs(): readonly SampledFrameOutput[] {
     return this.outputs;
+  }
+
+  /** Transfer bitmap ownership to the caller before closing the source/processor. */
+  takeOutputs(): SampledFrameOutput[] {
+    if (this.state !== "completed") return [];
+    const outputs = this.outputs;
+    this.outputs = [];
+    return outputs;
   }
 
   async start(): Promise<void> {
@@ -172,7 +192,9 @@ export class FrameProcessingController {
     try {
       const metadata = await source.load();
       this.assertActive(generation);
-      const timestamps = calculateSampleTimestamps(metadata.durationSeconds, this.interval);
+      const timestamps = this.requestedTimestamps
+        ? validateRequestedTimestamps(metadata.durationSeconds, this.interval, this.requestedTimestamps)
+        : calculateSampleTimestamps(metadata.durationSeconds, this.interval);
       const previewDimensions = calculatePreviewDimensions(metadata.width, metadata.height);
       this.totalSamples = timestamps.length;
       this.events.onProgress(0, timestamps.length);

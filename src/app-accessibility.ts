@@ -1,6 +1,11 @@
 import type { WorkflowStepId } from "./workflow";
 
 const staticFocusKeys = [
+  "event-time",
+  "event-earlier",
+  "event-later",
+  "event-assign",
+  "event-stop",
   "safety-consent",
   "camera-placeholder",
   "video-picker",
