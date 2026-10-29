@@ -20,7 +20,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: "npm run build && node_modules/.bin/vite preview --host 127.0.0.1 --port 4174",
+    command: "npm run build && node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4174",
     url: "http://127.0.0.1:4174",
     reuseExistingServer: false,
     timeout: 60_000

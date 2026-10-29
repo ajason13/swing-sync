@@ -322,10 +322,11 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   await page.getByRole("checkbox").check();
   await page.locator("#video-file").setInputFiles(poseFixture);
   const primary = page.locator("#analysis-button");
+  // Media metadata renders interval controls; finish that render before testing tab order.
+  await expect(page.locator("#interval-start")).toBeEnabled();
   await expect(page.locator("[data-video-picker]")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.locator("#local-video-preview")).toBeFocused();
-  await expect(page.locator("#interval-start")).toBeEnabled();
   await page.locator("[data-preview-toggle]").focus();
   await page.keyboard.press("Tab");
   await expect(page.locator("#interval-start")).toBeFocused();

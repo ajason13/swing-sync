@@ -1,12 +1,15 @@
-import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { runNodeCli } from "./run-node-cli.js";
+
+const require = createRequire(import.meta.url);
+const scanner = require.resolve("@onebeyond/license-checker");
 
 const allowed = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "CC0-1.0", "0BSD"];
 
-function runFixture(name, expectedStatus) {
-  const result = spawnSync(
-    "npx",
+function runFixture(name, expectedLicense) {
+  const result = runNodeCli(
+    scanner,
     [
-      "@onebeyond/license-checker",
       "scan",
       "--start",
       `./test/fixtures/${name}`,
@@ -18,21 +21,19 @@ function runFixture(name, expectedStatus) {
     { encoding: "utf8", stdio: "pipe" }
   );
 
-  if (expectedStatus === "fail" && result.status === 0) {
-    console.error(`Expected ${name} to fail license audit, but it passed.`);
-    process.exit(1);
-  }
-
-  if (expectedStatus === "pass" && result.status !== 0) {
-    console.error(`Expected ${name} to pass license audit, but it failed.`);
-    console.error(result.stdout);
-    console.error(result.stderr);
+  const output = `${result.stdout}\n${result.stderr}`;
+  const passed = expectedLicense === null
+    ? result.status === 0
+    : result.status === 1 && output.includes("packages with licenses defined by the provided option:") && output.includes(expectedLicense);
+  if (!passed) {
+    console.error(`License fixture ${name} did not produce the expected ${expectedLicense ?? "permitted"} policy result (exit ${result.status}).`);
+    console.error(output);
     process.exit(1);
   }
 }
 
-runFixture("prohibited-license", "fail");
-runFixture("permitted-license", "pass");
-runFixture("mpl-license", "fail");
+runFixture("prohibited-license", "GPL-3.0-only");
+runFixture("permitted-license", null);
+runFixture("mpl-license", "MPL-2.0");
 
 console.log("Synthetic license fixtures behaved as expected.");

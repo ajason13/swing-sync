@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { runNpm } from "./run-node-cli.js";
 
 const sbomPath = "docs/sbom.json";
 
@@ -15,12 +15,12 @@ function flattenProductionNames(node, names = new Set()) {
   return names;
 }
 
-const result = spawnSync("npm", ["ls", "--omit=dev", "--json", "--long"], {
+const result = runNpm(["ls", "--omit=dev", "--json", "--long"], {
   encoding: "utf8",
   stdio: "pipe"
 });
 
-if (result.status !== 0 && !result.stdout) {
+if (result.status !== 0) {
   console.error(result.stderr);
   throw new Error("Unable to resolve production dependency tree for SBOM filtering.");
 }

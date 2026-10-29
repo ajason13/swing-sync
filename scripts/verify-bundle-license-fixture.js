@@ -1,6 +1,6 @@
-import { spawnSync } from "node:child_process";
+import { runNpm } from "./run-node-cli.js";
 
-const result = spawnSync("npm", ["run", "build:bundle-license-fixture"], {
+const result = runNpm(["run", "build:bundle-license-fixture"], {
   encoding: "utf8",
   stdio: "pipe"
 });
