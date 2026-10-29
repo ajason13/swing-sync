@@ -44,7 +44,7 @@ describe("Vite development CSP", () => {
     async (_fixtureName, html) => {
       const root = await mkdtemp(join(tmpdir(), "swing-sync-csp-"));
       await writeFile(join(root, "index.html"), html);
-      const server = await createServer({ ...createViteConfig({ command: "serve" }), root, logLevel: "silent", server: { host: "127.0.0.1", port: 0 } });
+      const server = await createServer({ ...createViteConfig({ command: "serve" }), root, logLevel: "silent", server: { host: "127.0.0.1", port: 0, fs: { allow: [root] } } });
       try {
         await server.listen();
         const address = server.httpServer?.address();

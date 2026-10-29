@@ -1,1 +1,4 @@
+# Keep hash-pinned fixtures/assets and canonical policy text identical on every host.
+* text=auto eol=lf
+
 public/mediapipe/wasm/*.js whitespace=-trailing-space,-blank-at-eof

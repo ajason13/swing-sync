@@ -76,7 +76,10 @@ describe("license fixture failure classification", () => {
 
   it("cannot accept a missing npm entry as a successful bundle rejection", () => {
     const result = spawnSync(process.execPath, ["scripts/verify-bundle-license-fixture.js"], {
-      encoding: "utf8", env: { ...process.env, npm_execpath: join(tempRoot(), "missing-npm-cli.js") }
+      encoding: "utf8", env: {
+        ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toLowerCase() !== "npm_execpath")),
+        npm_execpath: join(tempRoot(), "missing-npm-cli.js")
+      }
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Tooling failure");
