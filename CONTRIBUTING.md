@@ -28,6 +28,31 @@ Known local note: earlier work recorded Node 24 silent-hang risk for browser
 smoke attempts. Use the pinned Node 22 environment unless a separate story
 updates the project baseline.
 
+### Automated host coverage
+
+Pull requests and pushes to `main`/`master` run the same compliance workflow on
+`ubuntu-latest` and `windows-2025` (GitHub-hosted Windows Server 2025 x64).
+Both hosts use Node 22 and `npm ci`, then run typecheck, unit tests, license
+audit, bundle-license fixtures, SBOM generation, build/compliance, and all three
+Chromium smoke suites (standard, development CSP/styles, production-preview CSP).
+Windows uses the runner's default PowerShell shell and repository-local tools;
+Git Bash and a global Vite installation are not required.
+
+The existing `compliance` check covers Ubuntu; `compliance-windows` covers
+Windows. Matrix failures do not cancel the other host. Each job logs the head
+SHA, checkout SHA, OS/image, architecture, Node/npm, Playwright and Chromium
+versions. Failed browser runs upload all three smoke output directories in
+separate OS-named artifacts retained for seven days. Use approved synthetic
+fixtures only; these artifacts can contain browser traces and page content.
+
+The selected Windows Server host is within
+[Playwright's documented Windows requirements](https://playwright.dev/docs/intro#system-requirements);
+the actual hosted image and tool versions are recorded per run. This automated
+server coverage does not establish Windows 10/11 laptop, ARM64, or physical
+mobile-device compatibility. Native Windows setup and laptop validation remain
+tracked in [#96](https://github.com/ajason13/swing-sync/issues/96), and the broader
+browser/device study remains in [#73](https://github.com/ajason13/swing-sync/issues/73).
+
 ## Task Workflow
 
 Start from synchronized `main` unless the current task states otherwise. Put
