@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer } from "vite";
@@ -42,16 +42,18 @@ describe("Vite development CSP", () => {
   ])(
     "B2: fails the actual Vite dev-server request for %s CSP HTML",
     async (_fixtureName, html) => {
-      const root = await mkdtemp(join(tmpdir(), "swing-sync-csp-"));
+      // Windows temp paths can use 8.3 aliases, which Vite intentionally rejects.
+      const root = await realpath(await mkdtemp(join(tmpdir(), "swing-sync-csp-")));
       await writeFile(join(root, "index.html"), html);
-      const server = await createServer({ ...createViteConfig({ command: "serve" }), root, logLevel: "silent", server: { host: "127.0.0.1", port: 0, fs: { allow: [root] } } });
+      const server = await createServer({ ...createViteConfig({ command: "serve" }), root, logLevel: "silent", server: { host: "127.0.0.1", port: 0 } });
       try {
         await server.listen();
         const address = server.httpServer?.address();
         if (!address || typeof address === "string") throw new Error("Vite dev server did not expose a TCP address.");
         const response = await fetch(`http://127.0.0.1:${address.port}/`);
-        expect(response.status).toBe(500);
-        expect(await response.text()).toMatch(/Content-Security-Policy/);
+        const body = await response.text();
+        expect(response.status, body).toBe(500);
+        expect(body).toMatch(/Content-Security-Policy/);
       } finally {
         await server.close();
         await rm(root, { recursive: true, force: true });

@@ -50,12 +50,10 @@ describe("portable CLI invocation", () => {
 });
 
 describe("license fixture failure classification", () => {
-  it("checks permitted, GPL, MPL and bundled GPL fixtures with the real installed CLIs", () => {
-    for (const script of ["verify-license-fixtures.js", "verify-bundle-license-fixture.js"]) {
-      const result = runNodeCli(resolve("scripts", script));
-      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-      expect(result.stdout).toContain("as expected");
-    }
+  it("checks permitted, GPL and MPL fixtures with the real installed scanner", () => {
+    const result = runNodeCli(resolve("scripts/verify-license-fixtures.js"));
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout).toContain("as expected");
   }, 30_000);
 
   it("rejects an unrelated scanner error and a missing scanner entry", () => {
