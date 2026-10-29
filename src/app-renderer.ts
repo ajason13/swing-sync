@@ -1,4 +1,5 @@
 import type { AppState } from "./app-state";
+import { isValidAnalysisInterval } from "./analysis-interval";
 import { selectCanBeginAnalysis } from "./app-state";
 import type { FrameProcessingState } from "./frame-processing";
 import { phaseDefinitions } from "./phase-review";
@@ -97,6 +98,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
           aria-label="Local video preview" aria-describedby="local-preview-status"></video>
         <p id="local-preview-status" class="action-note" role="status" aria-live="polite">Loading local video preview…</p>
         <button class="secondary-action" type="button" data-preview-toggle data-focus-key="preview-toggle" disabled>Play preview</button>
+        ${renderAnalysisInterval(state)}
       </section>` : ""}
       <div class="action-row">
         <button id="analysis-button" class="primary-action" type="button" data-focus-key="analysis-start" aria-describedby="app-visible-status" ${
@@ -118,7 +120,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
           <p data-pose-summary>${processingSummaryText(state)}</p>
         </div>
       </div>
-      <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
+      <video id="analysis-video" class="analysis-video" muted playsinline preload="auto" aria-label="Selected local video"></video>
       <div class="action-row">
         <button class="secondary-action" type="button" data-cancel-analysis data-focus-key="stop-analysis">Stop local analysis</button>
         <button class="secondary-action" type="button" data-retry-analysis data-focus-key="retry-analysis" hidden>Retry local analysis</button>
@@ -158,6 +160,29 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
   }
 
   return renderSwingCardExport(state);
+}
+
+function renderAnalysisInterval(state: AppState): string {
+  const interval = state.analysisInterval;
+  const duration = state.videoDuration;
+  const valid = !!interval && isValidAnalysisInterval(duration ?? NaN, interval);
+  const value = (number: number | undefined) => Number.isFinite(number) ? String(number) : "";
+  return `<fieldset class="analysis-interval" ${duration === undefined ? "disabled" : ""} aria-describedby="interval-status">
+    <legend>Analysis interval</legend>
+    <label for="interval-start">Start (seconds)
+      <input id="interval-start" type="number" min="0" max="${value(duration)}" step="any" value="${value(interval?.startSeconds)}"
+        data-focus-key="interval-start" aria-invalid="${!!interval && !valid}" />
+    </label>
+    <label for="interval-end">End (seconds)
+      <input id="interval-end" type="number" min="0" max="${value(duration)}" step="any" value="${value(interval?.endSeconds)}"
+        data-focus-key="interval-end" aria-invalid="${!!interval && !valid}" />
+    </label>
+    <p id="interval-status" class="action-note" role="status">${duration === undefined
+      ? "Load the preview to choose an interval. Analysis uses the full clip unless you select an interval."
+      : valid ? `Selected source time: ${value(interval?.startSeconds)}–${value(interval?.endSeconds)} seconds of ${value(duration)}. Analysis samples only this interval.`
+        : `Enter a finite start and end with 0 ≤ start < end ≤ ${value(duration)} seconds. Analysis is blocked until the interval is valid.`}</p>
+    <button class="secondary-action" type="button" data-interval-preview data-focus-key="interval-preview" disabled>Preview interval</button>
+  </fieldset>`;
 }
 
 export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {

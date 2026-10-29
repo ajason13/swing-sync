@@ -48,7 +48,7 @@ export class AnalysisLifecycle {
       onState: (state, code) => this.handleProcessingState(token, state, code),
       onProgress: (completed, total) => this.handleProcessingProgress(token, completed, total),
       onOutput: (output) => this.handleProcessingOutput(token, output)
-    });
+    }, this.options.state.analysisInterval);
     this.frameController = browserController.controller;
     this.abortFrameController = browserController.abort;
     await this.frameController.start();

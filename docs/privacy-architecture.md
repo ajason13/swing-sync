@@ -110,7 +110,9 @@ retain its playback position. Replacement, clear-local-data, leaving capture
 its URL. Returning to capture creates a fresh preview of the selected file.
 No preview video, frames, playback state, or diagnostics are persisted or sent.
 Analysis explicitly seeks each requested sample, including the initial zero-time
-frame, before bitmap extraction. This avoids depending on initial frame
+frame, before bitmap extraction. The seek must settle and current-frame data
+(`readyState >= HAVE_CURRENT_DATA`) must be available before bitmap reads; both
+conditions share the same cancelable 30-second seek deadline. This avoids depending on initial frame
 availability for media outside the viewport after leaving the preview screen;
 requested and observed source times stay paired.
 
@@ -121,6 +123,34 @@ and permits retry. Preview errors release the blob URL and detach media;
 choosing a file again retries loading. These codes contain no file or media
 characteristics. Evidence: `src/local-video-preview.ts`, its unit tests, and
 synthetic desktop/mobile preview cases in `test/smoke/app.spec.ts`.
+
+### Selected analysis interval
+
+After decoding the preview, start/end controls select a finite ordered interval
+within the source duration. The default is the full clip; analysis started
+before preview readiness also uses the full clip. Preview interval plays from
+the selected start and pauses when a media time update or completed seek reaches
+the end. Browser event delivery can allow a brief playback overshoot; this is
+not frame-accurate trimming. Native playback controls still explore the full
+clip. No trimmed file is created or persisted.
+
+Processing snapshots the selected interval and validates it against its own
+decoded duration before inference. Sample requests keep original source times,
+start at the selected start, and stop before the selected end (normally at
+least one millisecond before it). Very short intervals may yield fewer than
+eight distinct requests and remain subject to existing review evidence limits.
+Requested time, observed seek time, preview, and pose stay paired; observed seek
+time is not a guarantee of the decoded frame's presentation timestamp.
+Interval edits clear prior phase/metric readiness, counters, and pending export
+state; navigating back to capture releases the previous processing resources.
+Changing files or clearing local data resets the interval. Retry retains the
+original run's interval snapshot. Invalid selections block analysis with local
+input guidance; processing rejects invalid bounds as `INVALID_ANALYSIS_INTERVAL`.
+No timestamps, intervals, or new diagnostics are logged, persisted, or sent.
+
+Evidence: interval/state/preview tests in `test/unit/frame-processing.test.ts`,
+`test/unit/app-state.test.ts`, `test/unit/local-video-preview.test.ts`, and
+synthetic interval playback-to-analysis coverage in `test/smoke/app.spec.ts`.
 
 ### Future storage requirements
 

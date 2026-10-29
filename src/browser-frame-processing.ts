@@ -6,6 +6,7 @@ import {
   type FrameSource
 } from "./frame-processing";
 import type { PoseFrameResult } from "./pose-contract";
+import type { AnalysisInterval } from "./analysis-interval";
 import { PoseSession, type PoseSessionStatus } from "./pose-session";
 
 // Per metadata load or seek; browser timer throttling can delay delivery.
@@ -48,7 +49,8 @@ export class VideoFrameSource implements FrameSource {
       () => this.video.currentTime * 1000,
       () => { this.video.currentTime = timestampSeconds; },
       "MEDIA_SEEK_FAILED",
-      "MEDIA_SEEK_TIMEOUT"
+      "MEDIA_SEEK_TIMEOUT",
+      () => !this.video.seeking && this.video.readyState >= 2 // HAVE_CURRENT_DATA
     );
   }
 
@@ -57,14 +59,17 @@ export class VideoFrameSource implements FrameSource {
     result: () => T,
     start: () => void,
     failureCode: string,
-    timeoutCode: string
+    timeoutCode: string,
+    isReady: () => boolean = () => true
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       let settled = false;
+      let operationCompleted = false;
+      const events = event === "seeked" ? [event, "loadeddata", "canplay"] : [event];
       const cleanup = () => {
         settled = true;
         clearTimeout(timer);
-        this.video.removeEventListener(event, onComplete);
+        for (const type of events) this.video.removeEventListener(type, onComplete);
         this.video.removeEventListener("error", onError);
         this.pendingRejects.delete(onRejected);
       };
@@ -74,8 +79,12 @@ export class VideoFrameSource implements FrameSource {
         reject(error);
       };
       const onError = () => onRejected(new Error(failureCode));
-      const onComplete = () => {
+      const onComplete = (completedEvent: Event) => {
         if (settled) return;
+        if (completedEvent.type === event) operationCompleted = true;
+        // A seek event can precede current-frame data. Keep both in one bounded,
+        // cancelable operation; data events before seek completion cannot finish it.
+        if (!operationCompleted || !isReady()) return;
         try {
           const value = result();
           cleanup();
@@ -86,7 +95,7 @@ export class VideoFrameSource implements FrameSource {
       };
       const timer = setTimeout(() => onRejected(new Error(timeoutCode)), MEDIA_WAIT_TIMEOUT_MS);
       this.pendingRejects.add(onRejected);
-      this.video.addEventListener(event, onComplete);
+      for (const type of events) this.video.addEventListener(type, onComplete);
       this.video.addEventListener("error", onError);
       try {
         start();
@@ -218,7 +227,8 @@ export class PoseFrameProcessor implements FrameProcessor {
 export function createBrowserFrameController(
   video: HTMLVideoElement,
   file: File,
-  events: FrameProcessingEvents
+  events: FrameProcessingEvents,
+  interval?: AnalysisInterval
 ): { controller: FrameProcessingController; abort(code: string): void } {
   let activeProcessor: PoseFrameProcessor | undefined;
   const dependencies: FrameProcessingDependencies = {
@@ -228,7 +238,7 @@ export function createBrowserFrameController(
       return activeProcessor;
     }
   };
-  const controller = new FrameProcessingController(dependencies, events);
+  const controller = new FrameProcessingController(dependencies, events, interval);
   return {
     controller,
     abort: (code) => {

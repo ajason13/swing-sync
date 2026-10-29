@@ -11,6 +11,8 @@ import {
   setPhaseConfirmation,
   setPhaseDeclaration,
   setPhaseDraftAssignment,
+  selectCanBeginAnalysis,
+  setAnalysisInterval,
   type AppState
 } from "./app-state";
 import type { SafetyConsentStore } from "./consent-state";
@@ -63,6 +65,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
       requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });
       return;
     }
+    if (!selectCanBeginAnalysis(state, true)) return;
     selectWorkflowStep(state, "processing");
     const message = "Loading approved local pose assets. No video data leaves this device.";
     requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
@@ -114,6 +117,22 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
   fileInput?.addEventListener("cancel", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
   fileInput?.addEventListener("focus", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
   fileInput?.addEventListener("focusin", () => applyAccessibilityIntent({ focusKey: "video-picker" }));
+
+  for (const edge of ["start", "end"] as const) {
+    root.querySelector<HTMLInputElement>(`#interval-${edge}`)?.addEventListener("change", async (event) => {
+      if (!state.analysisInterval) return;
+      const value = (event.currentTarget as HTMLInputElement).value;
+      const interval = { ...state.analysisInterval, [`${edge}Seconds`]: value.trim() === "" ? NaN : Number(value) };
+      // Invalidate pending exports before the asynchronous controller cleanup.
+      setAnalysisInterval(state, interval);
+      await lifecycle.closeActive();
+      // change fires before blur. Let keyboard/mouse focus reach its destination
+      // before replacing the controls and preserving their current focus key.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      if (state.activeStep !== "capture") return;
+      requestRender({ announcement: "Analysis interval changed. Analyze again before reviewing or exporting." });
+    });
+  }
 
   root.querySelector<HTMLButtonElement>("[data-placeholder-action='camera']")?.addEventListener("click", () => {
     const message = "Camera capture remains out of scope. Choose a local video file.";

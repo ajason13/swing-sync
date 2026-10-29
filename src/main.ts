@@ -9,7 +9,7 @@ import {
 import { AnalysisLifecycle } from "./analysis-lifecycle";
 import { bindAppEvents } from "./app-events";
 import { renderApp } from "./app-renderer";
-import { createInitialAppState } from "./app-state";
+import { createInitialAppState, setVideoDuration } from "./app-state";
 import { createSafetyConsentStore } from "./consent-state";
 import { LocalVideoPreview } from "./local-video-preview";
 import { renderSelectedKeyframeCanvas } from "./keyframe-overlay-renderer";
@@ -18,13 +18,18 @@ const app = document.querySelector<HTMLDivElement>("#app");
 const announcer = document.querySelector<HTMLDivElement>("#app-announcer");
 const state = createInitialAppState();
 const consent = createSafetyConsentStore();
-const preview = new LocalVideoPreview();
+const preview = new LocalVideoPreview((duration) => {
+  setVideoDuration(state, duration);
+  // Metadata readiness must not replace a user action's visible status.
+  const visibleStatusText = app?.querySelector<HTMLElement>("#app-visible-status")?.textContent ?? undefined;
+  requestRender({ visibleStatusText });
+});
 
 function requestRender(request: RenderRequest = {}): void {
   if (!app) return;
   const priorFocusKey = capturePriorFocusKey(app);
   renderApp(app, state, consent.hasSafetyConsent(), request.visibleStatusText);
-  preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined);
+  preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined, state.analysisInterval);
   bindAppEvents(app, {
     state,
     consent,
@@ -64,7 +69,7 @@ window.addEventListener("beforeunload", () => {
 });
 window.addEventListener("pagehide", () => preview.close());
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted && app) preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined);
+  if (event.persisted && app) preview.mount(app, state.activeStep === "capture" ? state.selectedVideo : undefined, state.analysisInterval);
 });
 document.addEventListener("securitypolicyviolation", () => {
   lifecycle.abortWithNetworkBlocked();

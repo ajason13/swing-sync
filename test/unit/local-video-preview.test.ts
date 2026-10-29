@@ -5,6 +5,7 @@ class FakeVideo extends EventTarget {
   src = "";
   paused = true;
   currentTime = 0;
+  duration = 2;
   load = vi.fn();
   pause = vi.fn(() => { this.paused = true; this.dispatchEvent(new Event("pause")); });
   play = vi.fn(async () => { this.paused = false; this.dispatchEvent(new Event("play")); });
@@ -16,11 +17,13 @@ function surface() {
   const video = new FakeVideo();
   const status = { textContent: "" };
   const button = new FakeButton();
+  const intervalButton = new FakeButton();
   const root = {
     querySelector: (selector: string) => selector === "#local-video-preview" ? video
-      : selector === "#local-preview-status" ? status : button
+      : selector === "#local-preview-status" ? status : selector === "[data-preview-toggle]" ? button
+      : selector === "[data-interval-preview]" ? intervalButton : null
   } as unknown as ParentNode;
-  return { video, status, button, root };
+  return { video, status, button, intervalButton, root };
 }
 function setup() {
   vi.useFakeTimers();
@@ -31,6 +34,64 @@ function setup() {
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe("local preview lifecycle", () => {
+  it("reports decoded duration once, previews the interval and pauses at its end", async () => {
+    const { file } = setup();
+    const onDuration = vi.fn();
+    const preview = new LocalVideoPreview(onDuration);
+    const ui = surface();
+    preview.mount(ui.root, file, { startSeconds: 0.5, endSeconds: 1.5 });
+    expect(ui.intervalButton.disabled).toBe(true);
+    ui.video.dispatchEvent(new Event("loadeddata"));
+    ui.video.dispatchEvent(new Event("loadeddata"));
+    expect(onDuration).toHaveBeenCalledExactlyOnceWith(2);
+    expect(ui.intervalButton.disabled).toBe(false);
+    ui.intervalButton.dispatchEvent(new Event("click"));
+    await Promise.resolve();
+    expect(ui.video.currentTime).toBe(0.5);
+    expect(ui.video.paused).toBe(false);
+    ui.video.currentTime = 1;
+    ui.video.dispatchEvent(new Event("timeupdate"));
+    expect(ui.video.paused).toBe(false);
+    ui.video.currentTime = 1.6;
+    ui.video.dispatchEvent(new Event("timeupdate"));
+    expect(ui.video.currentTime).toBe(1.5);
+    expect(ui.video.paused).toBe(true);
+    preview.close();
+  });
+
+  it("stops interval playback on edits, disables invalid selections, and detaches retired controls", async () => {
+    const { preview, file } = setup();
+    const ui = surface();
+    preview.mount(ui.root, file, { startSeconds: 0.5, endSeconds: 1.5 });
+    ui.video.dispatchEvent(new Event("loadeddata"));
+    ui.intervalButton.dispatchEvent(new Event("click"));
+    await Promise.resolve();
+    const next = surface();
+    preview.mount(next.root, file, { startSeconds: 1.5, endSeconds: 1 });
+    expect(ui.video.paused).toBe(true);
+    expect(next.intervalButton.disabled).toBe(true);
+    ui.intervalButton.dispatchEvent(new Event("click"));
+    next.intervalButton.dispatchEvent(new Event("click"));
+    expect(ui.video.play).toHaveBeenCalledOnce();
+    preview.close();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("reports an interval play rejection and ignores stale interval playback callbacks", async () => {
+    const { preview, file } = setup();
+    const ui = surface();
+    preview.mount(ui.root, file, { startSeconds: 0.5, endSeconds: 1.5 });
+    ui.video.dispatchEvent(new Event("loadeddata"));
+    ui.video.play.mockRejectedValueOnce(new Error("private detail"));
+    ui.intervalButton.dispatchEvent(new Event("click"));
+    await Promise.resolve();
+    expect(ui.status.textContent).toContain("PREVIEW_PLAY_FAILED");
+    expect(ui.status.textContent).not.toContain("private detail");
+    preview.close();
+    ui.video.dispatchEvent(new Event("timeupdate"));
+    expect(ui.video.src).toBe("");
+  });
+
   it("plays and pauses without pose processing and preserves the media element across capture rerenders", async () => {
     const { preview, file, create } = setup();
     const first = surface();

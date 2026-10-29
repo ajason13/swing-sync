@@ -11,12 +11,15 @@ import {
 } from "./phase-review";
 import type { PoseOverlayRenderResult } from "./pose-renderer";
 import type { WorkflowStepId } from "./workflow";
+import { isValidAnalysisInterval, type AnalysisInterval } from "./analysis-interval";
 
 export const initialSwingCardStatus = "Swing Card export is generated locally after review data exists.";
 
 export interface AppState {
   activeStep: WorkflowStepId;
   selectedVideo: File | undefined;
+  videoDuration: number | undefined;
+  analysisInterval: AnalysisInterval | undefined;
   processingState: FrameProcessingState;
   poseStatusCode: string | undefined;
   extractedFrameCount: number;
@@ -39,6 +42,8 @@ export function createInitialAppState(): AppState {
   return {
     activeStep: "capture",
     selectedVideo: undefined,
+    videoDuration: undefined,
+    analysisInterval: undefined,
     processingState: "idle",
     poseStatusCode: undefined,
     extractedFrameCount: 0,
@@ -75,6 +80,7 @@ export function selectCanBeginAnalysis(state: AppState, consentAccepted: boolean
     state.activeStep === "capture" &&
     consentAccepted &&
     !!state.selectedVideo &&
+    (!state.analysisInterval || isValidAnalysisInterval(state.videoDuration ?? NaN, state.analysisInterval)) &&
     !["loading", "processing"].includes(state.processingState)
   );
 }
@@ -85,7 +91,25 @@ export function selectWorkflowStep(state: AppState, step: WorkflowStepId): void 
 }
 
 export function selectLocalVideo(state: AppState, video: File): void {
+  resetPhaseReview(state);
+  resetProcessingCounters(state);
   state.selectedVideo = video;
+  state.videoDuration = undefined;
+  state.analysisInterval = undefined;
+}
+
+export function setVideoDuration(state: AppState, duration: number): void {
+  if (!isValidAnalysisInterval(duration, { startSeconds: 0, endSeconds: duration })) return;
+  if (state.videoDuration === duration) return;
+  state.videoDuration = duration;
+  setAnalysisInterval(state, { startSeconds: 0, endSeconds: duration });
+}
+
+export function setAnalysisInterval(state: AppState, interval: AnalysisInterval): void {
+  if (state.analysisInterval?.startSeconds === interval.startSeconds && state.analysisInterval.endSeconds === interval.endSeconds) return;
+  state.analysisInterval = { ...interval };
+  resetPhaseReview(state);
+  resetProcessingCounters(state);
 }
 
 export function setProcessingState(state: AppState, processingState: FrameProcessingState, code?: string): void {
