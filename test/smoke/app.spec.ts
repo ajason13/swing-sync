@@ -1927,3 +1927,49 @@ test("previews a selected interval and analyzes only its source times with inval
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
   await expectNoBrowserStorage(page);
 });
+
+test("waits for current frame data after a settled zero-time seek before reading local bitmaps", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 600 });
+  await page.evaluate(() => {
+    const evidence = { held: false, released: false, reads: [] as number[] };
+    Object.assign(window, { __currentDataEvidence: evidence });
+    const add = HTMLMediaElement.prototype.addEventListener;
+    const readyState = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "readyState")!.get!;
+    let firstSeek = true;
+    HTMLMediaElement.prototype.addEventListener = function (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
+      if (this.id !== "analysis-video" || type !== "seeked") return add.call(this, type, listener, options);
+      const video = this;
+      add.call(this, type, (event) => {
+        if (firstSeek) {
+          firstSeek = false;
+          evidence.held = true;
+          Object.defineProperty(video, "readyState", { configurable: true, get: () => evidence.held ? 1 : readyState.call(video) });
+          setTimeout(() => {
+            evidence.held = false;
+            evidence.released = true;
+            video.dispatchEvent(new Event("loadeddata"));
+          }, 50);
+        }
+        if (typeof listener === "function") listener.call(video, event);
+        else listener.handleEvent(event);
+      }, { once: true });
+    };
+    const create = window.createImageBitmap.bind(window);
+    window.createImageBitmap = ((...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
+      if (args[0] instanceof HTMLVideoElement && args[0].id === "analysis-video") evidence.reads.push(args[0].readyState);
+      return Reflect.apply(create, window, args);
+    }) as typeof createImageBitmap;
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+  const evidence = await page.evaluate(() => (window as typeof window & {
+    __currentDataEvidence: { released: boolean; reads: number[] };
+  }).__currentDataEvidence);
+  expect(evidence.released).toBe(true);
+  expect(evidence.reads).toHaveLength(16);
+  expect(evidence.reads.every((state) => state >= 2)).toBe(true);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+});

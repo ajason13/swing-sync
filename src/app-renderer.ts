@@ -120,7 +120,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
           <p data-pose-summary>${processingSummaryText(state)}</p>
         </div>
       </div>
-      <video id="analysis-video" class="analysis-video" muted playsinline aria-label="Selected local video"></video>
+      <video id="analysis-video" class="analysis-video" muted playsinline preload="auto" aria-label="Selected local video"></video>
       <div class="action-row">
         <button class="secondary-action" type="button" data-cancel-analysis data-focus-key="stop-analysis">Stop local analysis</button>
         <button class="secondary-action" type="button" data-retry-analysis data-focus-key="retry-analysis" hidden>Retry local analysis</button>

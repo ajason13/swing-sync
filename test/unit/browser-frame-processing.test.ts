@@ -5,6 +5,8 @@ import { FrameProcessingController } from "../../src/frame-processing";
 
 class FakeVideo extends EventTarget {
   currentTime = 0;
+  readyState = 2;
+  seeking = false;
   duration = 2;
   videoWidth = 1920;
   videoHeight = 1080;
@@ -145,6 +147,55 @@ describe("bounded media waits", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it.each(["loadeddata", "canplay"])("waits for current data after seeked before bitmap reads (%s)", async (dataEvent) => {
+    const video = new FakeVideo();
+    video.readyState = 1;
+    const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
+    const createBitmap = vi.fn().mockResolvedValue({ close: vi.fn() });
+    vi.stubGlobal("createImageBitmap", createBitmap);
+    try {
+      const result = source.seek(500).then(() => source.createPreview(640, 360));
+      // A data event before the seek settles cannot return the old frame.
+      video.readyState = 2;
+      video.dispatchEvent(new Event(dataEvent));
+      await Promise.resolve();
+      expect(createBitmap).not.toHaveBeenCalled();
+      video.readyState = 1;
+      video.dispatchEvent(new Event("seeked"));
+      video.dispatchEvent(new Event(dataEvent));
+      await Promise.resolve();
+      expect(createBitmap).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(1);
+      video.readyState = 2;
+      video.dispatchEvent(new Event(dataEvent));
+      await result;
+      expect(createBitmap).toHaveBeenCalledOnce();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      source.dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(["timeout", "dispose"])("settles a missing-data wait on %s and removes all listeners", async (operation) => {
+    const video = new FakeVideo();
+    video.readyState = 1;
+    const add = vi.spyOn(video, "addEventListener");
+    const remove = vi.spyOn(video, "removeEventListener");
+    const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
+    const result = source.seek(0);
+    const rejected = expect(result).rejects.toThrow(operation === "timeout" ? "MEDIA_SEEK_TIMEOUT" : "MEDIA_SOURCE_DISPOSED");
+    video.dispatchEvent(new Event("seeked"));
+    if (operation === "timeout") await vi.advanceTimersByTimeAsync(MEDIA_WAIT_TIMEOUT_MS);
+    else source.dispose();
+    await rejected;
+    expect(vi.getTimerCount()).toBe(0);
+    expect(remove.mock.calls).toEqual(add.mock.calls);
+    video.readyState = 2;
+    video.dispatchEvent(new Event("loadeddata"));
+    source.dispose();
   });
 
   for (const operation of ["load", "seek"] as const) {
@@ -298,7 +349,13 @@ describe("bounded media waits", () => {
     const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
     const result = source.seek(500);
     expect(vi.getTimerCount()).toBe(1);
+    const settled = vi.fn();
+    void result.then(settled);
     video.dispatchEvent(new Event("seeked"));
+    await Promise.resolve();
+    expect(settled).not.toHaveBeenCalled();
+    video.seeking = false;
+    video.dispatchEvent(new Event("canplay"));
     await expect(result).resolves.toBe(500);
     expect(vi.getTimerCount()).toBe(0);
   });

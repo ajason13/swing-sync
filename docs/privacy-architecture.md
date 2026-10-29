@@ -110,7 +110,9 @@ retain its playback position. Replacement, clear-local-data, leaving capture
 its URL. Returning to capture creates a fresh preview of the selected file.
 No preview video, frames, playback state, or diagnostics are persisted or sent.
 Analysis explicitly seeks each requested sample, including the initial zero-time
-frame, before bitmap extraction. This avoids depending on initial frame
+frame, before bitmap extraction. The seek must settle and current-frame data
+(`readyState >= HAVE_CURRENT_DATA`) must be available before bitmap reads; both
+conditions share the same cancelable 30-second seek deadline. This avoids depending on initial frame
 availability for media outside the viewport after leaving the preview screen;
 requested and observed source times stay paired.
 

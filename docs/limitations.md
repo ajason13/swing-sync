@@ -31,7 +31,8 @@ about the user's health or movement quality.
 
 ## Local Media Waits
 
-Each metadata load and each frame seek has a 30-second timeout. A wait that
+Each metadata load and each frame seek has a 30-second timeout. Seek completion
+also requires current-frame data for bitmap reads within that same deadline. A wait that
 reaches the timeout stops local analysis with `MEDIA_LOAD_TIMEOUT` or
 `MEDIA_SEEK_TIMEOUT`; use **Retry local analysis** or select another local clip.
 Slow completion before the deadline remains supported. Cancellation and failure
