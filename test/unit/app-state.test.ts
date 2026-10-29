@@ -10,12 +10,52 @@ import {
   setSwingCardBusy,
   setSwingCardStatus
 } from "../../src/app-state";
+import { setAnalysisInterval, setVideoDuration } from "../../src/app-state";
 
 function file(): File {
   return new File(["video"], "swing.mp4", { type: "video/mp4" });
 }
 
 describe("app state transitions", () => {
+  it("initializes a full interval and retains user selection when the same file is decoded again", () => {
+    const state = createInitialAppState();
+    setVideoDuration(state, NaN);
+    expect(state.analysisInterval).toBeUndefined();
+    setVideoDuration(state, 2);
+    expect(state.analysisInterval).toEqual({ startSeconds: 0, endSeconds: 2 });
+    setAnalysisInterval(state, { startSeconds: 0.5, endSeconds: 1.5 });
+    setVideoDuration(state, 2);
+    expect(state.analysisInterval).toEqual({ startSeconds: 0.5, endSeconds: 1.5 });
+    selectLocalVideo(state, file());
+    expect(state.analysisInterval).toBeUndefined();
+    expect(state.videoDuration).toBeUndefined();
+  });
+
+  it("invalidates phase, metric and export readiness even for invalid interval edits", () => {
+    const state = createInitialAppState();
+    selectLocalVideo(state, file());
+    setVideoDuration(state, 2);
+    state.phaseConfirmation = true;
+    state.phaseOutputs = [{} as never];
+    state.phaseDraft = [{ phaseId: "address", sampleIndex: 0 } as never];
+    state.phaseReviewState = { readyForFutureMetrics: true } as never;
+    state.latestOverlayResult = {} as never;
+    state.extractedFrameCount = 8;
+    state.swingCardBusy = true;
+    const token = state.swingCardToken;
+    setAnalysisInterval(state, { startSeconds: 1, endSeconds: 0.5 });
+    expect(state.phaseOutputs).toEqual([]);
+    expect(state.phaseDraft).toEqual([]);
+    expect(state.phaseReviewState).toBeUndefined();
+    expect(state.latestOverlayResult).toBeUndefined();
+    expect(state.phaseConfirmation).toBe(false);
+    expect(state.swingCardBusy).toBe(false);
+    expect(state.swingCardToken).not.toBe(token);
+    expect(state.extractedFrameCount).toBe(0);
+    expect(selectCanBeginAnalysis(state, true)).toBe(false);
+    setAnalysisInterval(state, { startSeconds: 0.5, endSeconds: 2 });
+    expect(selectCanBeginAnalysis(state, true)).toBe(true);
+  });
   it("keeps Begin analysis gating in one selector", () => {
     const state = createInitialAppState();
 

@@ -13,7 +13,9 @@ club visibility, background clutter, browser performance, device performance,
 and dropped or low-quality frames.
 
 The current app uses up to eight uniformly spaced samples across the selected
-video. Phase labels are provisional, assigned by sample order for user review;
+interval. The interval defaults to the full clip. Interval preview can briefly
+overshoot its end due to browser event delivery; it is not frame-accurate trimming.
+Phase labels are provisional, assigned by sample order for user review;
 they are not motion-based event detection. Samples may miss exact events,
 including impact; body landmarks alone cannot confirm ball contact. Reassigning
 labels only selects among these samples and does not locate arbitrary frames.

@@ -1,4 +1,5 @@
 import type { PoseFrameResult } from "./pose-contract";
+import { isValidAnalysisInterval, type AnalysisInterval } from "./analysis-interval";
 
 export const SAMPLE_BUDGET = 8;
 export const PREVIEW_MAX_LONG_EDGE_PX = 640;
@@ -47,22 +48,22 @@ export interface FrameProcessingDependencies {
   createProcessor(): FrameProcessor;
 }
 
-export function calculateSampleTimestamps(durationSeconds: number): number[] {
-  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+export function calculateSampleTimestamps(durationSeconds: number, interval?: AnalysisInterval): number[] {
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0 || !Number.isFinite(durationSeconds * 1000)) {
     throw new Error("INVALID_DURATION");
   }
 
-  const durationMs = Math.floor(durationSeconds * 1000);
-  if (durationMs < 0) {
-    throw new Error("INVALID_DURATION");
-  }
-
-  const endTimestampMs = Math.max(0, durationMs - 1);
-  if (endTimestampMs === 0) return [0];
+  const selected = interval ?? { startSeconds: 0, endSeconds: durationSeconds };
+  if (!isValidAnalysisInterval(durationSeconds, selected)) throw new Error("INVALID_ANALYSIS_INTERVAL");
+  const startTimestampMs = selected.startSeconds * 1000;
+  // Stay before the selected end, including the media's undecodable terminal edge.
+  // Sub-millisecond intervals still have one usable request at their exact start.
+  const endTimestampMs = Math.max(startTimestampMs, Math.floor(selected.endSeconds * 1000) - 1);
+  if (endTimestampMs === startTimestampMs) return [startTimestampMs];
 
   const timestamps: number[] = [];
   for (let index = 0; index < SAMPLE_BUDGET; index += 1) {
-    const timestamp = Math.round((index * endTimestampMs) / (SAMPLE_BUDGET - 1));
+    const timestamp = Math.min(endTimestampMs, startTimestampMs + Math.round((index * (endTimestampMs - startTimestampMs)) / (SAMPLE_BUDGET - 1)));
     if (timestamps.at(-1) !== timestamp) timestamps.push(timestamp);
   }
   return timestamps;
@@ -93,11 +94,16 @@ export class FrameProcessingController {
   private outputs: SampledFrameOutput[] = [];
   private currentPreview?: ImageBitmap;
   private totalSamples = 0;
+  private readonly interval?: AnalysisInterval;
 
   constructor(
     private readonly dependencies: FrameProcessingDependencies,
-    private readonly events: FrameProcessingEvents
-  ) {}
+    private readonly events: FrameProcessingEvents,
+    interval?: AnalysisInterval
+  ) {
+    // A run/retry owns a snapshot, even if a caller later edits its selection.
+    this.interval = interval ? { ...interval } : undefined;
+  }
 
   getOutputs(): readonly SampledFrameOutput[] {
     return this.outputs;
@@ -166,7 +172,7 @@ export class FrameProcessingController {
     try {
       const metadata = await source.load();
       this.assertActive(generation);
-      const timestamps = calculateSampleTimestamps(metadata.durationSeconds);
+      const timestamps = calculateSampleTimestamps(metadata.durationSeconds, this.interval);
       const previewDimensions = calculatePreviewDimensions(metadata.width, metadata.height);
       this.totalSamples = timestamps.length;
       this.events.onProgress(0, timestamps.length);

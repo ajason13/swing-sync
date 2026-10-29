@@ -11,9 +11,10 @@ golf coaching.
 ## Current Capabilities
 
 The current app runs local video selection and local Pose Landmarker inference
-on up to eight uniformly spaced samples across the selected video. Phase labels
-are provisional, assigned by sample order for user review; they are not
-motion-based event detection. Samples may miss exact events, including impact.
+on up to eight uniformly spaced samples across the selected interval.
+The interval defaults to the full clip and can be adjusted and previewed locally
+before analysis. Phase labels are provisional, assigned by sample order for user
+review; they are not motion-based event detection. Samples may miss exact events, including impact.
 
 No geometry or tempo metric values are currently generated. Review confirmation
 does not calculate metrics; Swing Card metric entries remain unavailable.

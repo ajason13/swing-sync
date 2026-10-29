@@ -6,6 +6,7 @@ import {
   type FrameSource
 } from "./frame-processing";
 import type { PoseFrameResult } from "./pose-contract";
+import type { AnalysisInterval } from "./analysis-interval";
 import { PoseSession, type PoseSessionStatus } from "./pose-session";
 
 // Per metadata load or seek; browser timer throttling can delay delivery.
@@ -218,7 +219,8 @@ export class PoseFrameProcessor implements FrameProcessor {
 export function createBrowserFrameController(
   video: HTMLVideoElement,
   file: File,
-  events: FrameProcessingEvents
+  events: FrameProcessingEvents,
+  interval?: AnalysisInterval
 ): { controller: FrameProcessingController; abort(code: string): void } {
   let activeProcessor: PoseFrameProcessor | undefined;
   const dependencies: FrameProcessingDependencies = {
@@ -228,7 +230,7 @@ export function createBrowserFrameController(
       return activeProcessor;
     }
   };
-  const controller = new FrameProcessingController(dependencies, events);
+  const controller = new FrameProcessingController(dependencies, events, interval);
   return {
     controller,
     abort: (code) => {

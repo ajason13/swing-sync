@@ -325,7 +325,14 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   await expect(page.locator("[data-video-picker]")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.locator("#local-video-preview")).toBeFocused();
+  await expect(page.locator("#interval-start")).toBeEnabled();
   await page.locator("[data-preview-toggle]").focus();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#interval-start")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#interval-end")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("[data-interval-preview]")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(primary).toBeFocused();
   await expect(primary).toHaveCSS("background-color", "rgb(36, 91, 59)");
@@ -1833,4 +1840,90 @@ test("bounds preview loading and releases media across page exit and restore", a
   await expect(page.getByRole("button", { name: "Play preview", exact: true })).toBeEnabled();
   await expect(page.locator("#local-video-preview")).not.toHaveAttribute("src", originalUrl!);
   expect(externalRequests(requestsFor(page))).toEqual([]);
+});
+
+test("previews a selected interval and analyzes only its source times with invalidation at narrow width", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.evaluate(() => {
+    const requests: number[] = [];
+    const seeks: number[] = [];
+    Object.assign(window, { __intervalEvidence: { requests, seeks } });
+    const OriginalWorker = window.Worker;
+    window.Worker = class extends OriginalWorker {
+      override postMessage(message: unknown, options?: Transferable[] | StructuredSerializeOptions) {
+        const frame = message as { type?: string; timestampMs?: number };
+        if (frame.type === "frame") requests.push(frame.timestampMs!);
+        if (Array.isArray(options)) super.postMessage(message, options);
+        else super.postMessage(message, options);
+      }
+    };
+    const create = window.createImageBitmap.bind(window);
+    window.createImageBitmap = ((...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
+      const source = args[0];
+      if (source instanceof HTMLVideoElement && source.id === "analysis-video" && args.length === 2) {
+        seeks.push(source.currentTime * 1000);
+      }
+      return Reflect.apply(create, window, args);
+    }) as typeof createImageBitmap;
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  const start = page.getByLabel("Start (seconds)", { exact: true });
+  const end = page.getByLabel("End (seconds)", { exact: true });
+  const begin = page.getByRole("button", { name: "Begin analysis", exact: true });
+  await expect(start).toBeEnabled();
+  await start.fill("0.6");
+  await start.press("Tab");
+  await expect(end).toBeFocused();
+  await end.fill("0.2");
+  await end.press("Tab");
+  await expect(begin).toBeDisabled();
+  await expect(page.locator("#interval-status")).toContainText("Analysis is blocked");
+  await expect(page.getByRole("button", { name: "Preview interval", exact: true })).toBeDisabled();
+  await start.fill("");
+  await start.press("Tab");
+  await expect(begin).toBeDisabled();
+  await start.fill("0.2");
+  await start.press("Tab");
+  await end.fill("0.6");
+  await end.press("Tab");
+  await expect(begin).toBeEnabled();
+  await page.getByRole("button", { name: "Preview interval", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  const video = page.locator("#local-video-preview");
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThanOrEqual(0.2);
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+  expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeCloseTo(0.6, 2);
+  expect(requestsFor(page).filter((url) => /pose_landmarker|\.wasm|pose-worker/.test(url))).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await begin.click();
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+  const evidence = await page.evaluate(() => (window as typeof window & {
+    __intervalEvidence: { requests: number[]; seeks: number[] };
+  }).__intervalEvidence);
+  expect(evidence.requests).toEqual([200, 257, 314, 371, 428, 485, 542, 599]);
+  expect(evidence.seeks).toHaveLength(8);
+  evidence.seeks.forEach((time, index) => expect(time).toBeCloseTo(evidence.requests[index], 2));
+  await page.getByRole("button", { name: "Review phase labels", exact: true }).click();
+  await expect(page.locator("[data-phase-index]")).toHaveCount(8);
+  await page.locator("[data-step='capture']").click();
+  await expect(start).toHaveValue("0.2");
+  await expect(end).toHaveValue("0.6");
+  await start.fill("0.3");
+  await start.press("Tab");
+  await page.locator("[data-step='export']").click();
+  await expect(page.getByRole("heading", { name: "Swing Card unavailable" })).toBeVisible();
+  await page.locator("[data-step='capture']").click();
+  await expect(start).toHaveValue("0.3");
+  await begin.click();
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+  const rerun = await page.evaluate(() => (window as typeof window & { __intervalEvidence: { requests: number[] } }).__intervalEvidence.requests.slice(8));
+  expect(rerun).toHaveLength(8);
+  expect(rerun[0]).toBe(300);
+  expect(rerun.at(-1)).toBe(599);
+  await page.getByRole("button", { name: "Clear local app data" }).click();
+  await expect(start).toHaveCount(0);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+  await expectNoBrowserStorage(page);
 });

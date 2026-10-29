@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 // These checks constrain published wording; source inspection and behavior tests
 // are still required to establish what the application actually does.
 const requiredStrings = {
-  sampling: "up to eight uniformly spaced samples across the selected video.",
+  sampling: "up to eight uniformly spaced samples across the selected interval.",
   sampleReview: "Phase labels are provisional, assigned by sample order for user review; they are not motion-based event detection.",
   metricsUnavailable: "No geometry or tempo metric values are currently generated. Review confirmation does not calculate metrics; Swing Card metric entries remain unavailable.",
   coachingUnavailable: "No hosted coaching responses are currently generated. Copy prompt prepares text for a separate, manual interaction with another service.",

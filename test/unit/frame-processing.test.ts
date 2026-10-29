@@ -7,6 +7,7 @@ import {
   type FrameProcessor,
   type FrameSource
 } from "../../src/frame-processing";
+import type { AnalysisInterval } from "../../src/analysis-interval";
 import { poseThresholds, type PoseFrameResult } from "../../src/pose-contract";
 
 function bitmap() {
@@ -88,7 +89,7 @@ class FakeProcessor implements FrameProcessor {
   }
 }
 
-function harness(source: FakeSource, processor = new FakeProcessor()) {
+function harness(source: FakeSource, processor = new FakeProcessor(), interval?: AnalysisInterval) {
   const states: string[] = [];
   const progress: [number, number][] = [];
   const outputs: PoseFrameResult[] = [];
@@ -99,12 +100,32 @@ function harness(source: FakeSource, processor = new FakeProcessor()) {
   };
   const controller = new FrameProcessingController(
     { createSource: () => source, createProcessor: () => processor },
-    events
+    events,
+    interval
   );
   return { controller, processor, states, progress, outputs };
 }
 
 describe("deterministic sample timestamps", () => {
+  it("samples the selected source interval without rebasing or requesting its terminal edge", () => {
+    expect(calculateSampleTimestamps(10, { startSeconds: 2, endSeconds: 3 })).toEqual(
+      [2000, 2143, 2285, 2428, 2571, 2714, 2856, 2999]
+    );
+    expect(calculateSampleTimestamps(2, { startSeconds: 0, endSeconds: 2 })).toEqual(calculateSampleTimestamps(2));
+    expect(calculateSampleTimestamps(2, { startSeconds: 1.998, endSeconds: 2 })).toEqual([1998, 1999]);
+    expect(calculateSampleTimestamps(2, { startSeconds: 0.0005, endSeconds: 0.0009 })).toEqual([0.5]);
+    const fractional = calculateSampleTimestamps(2, { startSeconds: 0.5005, endSeconds: 0.5058 });
+    expect(fractional[0]).toBeCloseTo(500.5);
+    expect(fractional.every((time, index) => time >= 500.49 && time < 505.8 && (index === 0 || time > fractional[index - 1]))).toBe(true);
+  });
+
+  it.each([
+    { startSeconds: -1, endSeconds: 1 }, { startSeconds: 1, endSeconds: 1 },
+    { startSeconds: 1.5, endSeconds: 1 }, { startSeconds: 0, endSeconds: 3 },
+    { startSeconds: NaN, endSeconds: 1 }, { startSeconds: 0, endSeconds: Infinity }
+  ])("rejects invalid intervals before producing requests: %j", (interval) => {
+    expect(() => calculateSampleTimestamps(2, interval)).toThrow("INVALID_ANALYSIS_INTERVAL");
+  });
   it("pins representative short and normal duration arrays", () => {
     expect(calculateSampleTimestamps(0.001)).toEqual([0]);
     expect(calculateSampleTimestamps(0.005)).toEqual([0, 1, 2, 3, 4]);
@@ -130,6 +151,64 @@ describe("preview dimensions", () => {
 });
 
 describe("frame processing controller", () => {
+  it("cancels an interval seek, ignores late output, and retries the same bounds with fresh resources", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((done) => { release = done; });
+    const sources = [new FakeSource(undefined, gate), new FakeSource()];
+    const processors = [new FakeProcessor(), new FakeProcessor()];
+    let run = 0;
+    const controller = new FrameProcessingController({
+      createSource: () => sources[run],
+      createProcessor: () => processors[run++]
+    }, { onState: () => undefined, onProgress: () => undefined, onOutput: () => undefined },
+    { startSeconds: 0.5, endSeconds: 1.5 });
+    const pending = controller.start();
+    await vi.waitFor(() => expect(sources[0].sought).toEqual([500]));
+    await controller.cancel();
+    expect(sources[0].disposed).toBe(true);
+    expect(processors[0].closed).toBe(true);
+    release();
+    await pending;
+    expect(sources[0].previews).toEqual([]);
+    expect(controller.getOutputs()).toEqual([]);
+    await controller.retry();
+    expect(sources[1].sought).toEqual([500, 643, 785, 928, 1071, 1214, 1356, 1499]);
+    expect(controller.getOutputs().every((output) => output.pose.timestampMs === output.requestedTimestampMs)).toBe(true);
+    await controller.close();
+    expect(sources[1].disposed).toBe(true);
+    expect(sources[1].previews.every((preview) => vi.mocked(preview.close).mock.calls.length === 1)).toBe(true);
+  });
+
+  it("keeps interval, observed seek, preview and pose provenance paired and releases outputs on close", async () => {
+    const source = new FakeSource();
+    const interval = { startSeconds: 0.5, endSeconds: 1.5 };
+    const { controller, processor } = harness(source, new FakeProcessor(), interval);
+    interval.startSeconds = 0; // The controller owns its original snapshot.
+    await controller.start();
+    expect(source.sought).toEqual([500, 643, 785, 928, 1071, 1214, 1356, 1499]);
+    expect(processor.processed).toEqual(source.sought);
+    controller.getOutputs().forEach((output, index) => {
+      expect(output.requestedTimestampMs).toBe(source.sought[index]);
+      expect(output.pose.timestampMs).toBe(source.sought[index]);
+      expect(output.observedSeekTimestampMs).toBe(source.sought[index] + 0.25);
+      expect(output.preview).toBe(source.previews[index]);
+    });
+    await controller.close();
+    expect(source.disposed).toBe(true);
+    expect(processor.closed).toBe(true);
+    expect(source.previews.every((preview) => vi.mocked(preview.close).mock.calls.length === 1)).toBe(true);
+  });
+
+  it("rejects an interval outside newly decoded duration before inference and releases resources", async () => {
+    const source = new FakeSource();
+    const { controller, processor, states } = harness(source, new FakeProcessor(), { startSeconds: 1, endSeconds: 3 });
+    await controller.start();
+    expect(states).toEqual(["loading", "failed:INVALID_ANALYSIS_INTERVAL"]);
+    expect(source.sought).toEqual([]);
+    expect(processor.initialized).toBe(false);
+    expect(source.disposed).toBe(true);
+    expect(processor.closed).toBe(true);
+  });
   it("ignores network aborts outside an active loading or processing run", async () => {
     const source = new FakeSource();
     const { controller, states } = harness(source);

@@ -5,7 +5,9 @@ import {
   completeProcessingWithOutputs,
   createInitialAppState,
   rebuildPhaseReviewState,
-  setPhaseDeclaration
+  setPhaseDeclaration,
+  selectLocalVideo,
+  setVideoDuration
 } from "../../src/app-state";
 import type { SafetyConsentStore } from "../../src/consent-state";
 import { poseThresholds } from "../../src/pose-contract";
@@ -76,6 +78,36 @@ function deferred() {
 }
 
 describe("app event binding", () => {
+  it("invalidates interval results synchronously, closes resources and blocks invalid analysis", async () => {
+    const state = createInitialAppState();
+    selectLocalVideo(state, new File(["synthetic"], "clip.webm"));
+    setVideoDuration(state, 2);
+    const input = new EventTargetStub();
+    input.value = "";
+    const begin = new EventTargetStub();
+    const root = new MapRoot({ "#interval-start": input, "#analysis-button": begin });
+    const gate = deferred();
+    const closeActive = vi.fn(() => gate.promise);
+    const startActive = vi.fn();
+    const requestRender = vi.fn();
+    state.swingCardBusy = true;
+    state.phaseConfirmation = true;
+    bindAppEvents(root as unknown as ParentNode, {
+      state, consent: { hasSafetyConsent: () => true, setSafetyConsent: () => undefined },
+      lifecycle: { closeActive, startActive } as never, requestRender, applyAccessibilityIntent: vi.fn()
+    });
+    const changed = input.dispatch("change");
+    expect(state.phaseConfirmation).toBe(false);
+    expect(state.swingCardBusy).toBe(false);
+    expect(state.analysisInterval?.startSeconds).toBeNaN();
+    await begin.dispatch("click");
+    expect(startActive).not.toHaveBeenCalled();
+    gate.resolve();
+    await changed;
+    expect(closeActive).toHaveBeenCalledOnce();
+    expect(requestRender).toHaveBeenLastCalledWith({ announcement: "Analysis interval changed. Analyze again before reviewing or exporting." });
+  });
+
   it("binds fresh DOM after repeated renders without duplicate effects", () => {
     const requestRender = vi.fn();
     const consent: SafetyConsentStore = {
@@ -124,6 +156,7 @@ describe("app event binding", () => {
       ["workflow step", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
       ["next step", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
       ["picker success", 'requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });'],
+      ["interval edit", 'requestRender({ announcement: "Analysis interval changed. Analyze again before reviewing or exporting." });'],
       ["camera", 'requestRender({ focusKey: "camera-placeholder", visibleStatusText: message, announcement: message });'],
       ["review entry", 'requestRender({ focusKey: "phase-review-heading", visibleStatusText: message, announcement: message });'],
       ["view declaration", 'requestRender(phaseRenderRequest("phase-declaration:view", before, state));'],
