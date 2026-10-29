@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { runNodeCli } from "./run-node-cli.js";
 
 function fail(message) {
   console.error(message);
@@ -49,7 +49,7 @@ function assertSbom() {
 }
 
 function assertNoticeFixture() {
-  const result = spawnSync("node", ["scripts/aggregate-notices.js", "--target=test/fixtures/compliance-notice"], {
+  const result = runNodeCli("scripts/aggregate-notices.js", ["--target=test/fixtures/compliance-notice"], {
     encoding: "utf8",
     stdio: "pipe"
   });

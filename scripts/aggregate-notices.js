@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { runNpm } from "./run-node-cli.js";
 
 const NOTICE_NAMES = ["NOTICE", "NOTICE.txt", "NOTICE.md"];
 const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
@@ -35,12 +35,12 @@ function collectProductionPackages(root) {
     return collectProductionPackagesFromFixture(root);
   }
 
-  const result = spawnSync("npm", ["ls", "--omit=dev", "--json", "--long"], {
+  const result = runNpm(["ls", "--omit=dev", "--json", "--long"], {
     encoding: "utf8",
     stdio: "pipe"
   });
 
-  if (result.status !== 0 && !result.stdout) {
+  if (result.status !== 0) {
     console.error(result.stderr);
     throw new Error("Unable to resolve production dependency tree.");
   }

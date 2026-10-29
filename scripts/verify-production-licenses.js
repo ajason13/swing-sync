@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { runNpm } from "./run-node-cli.js";
 
 const allowed = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "CC0-1.0", "0BSD"]);
 const blocked = new Set([
@@ -83,12 +83,12 @@ function selfTestLicenseExpressions() {
   }
 }
 
-const result = spawnSync("npm", ["ls", "--omit=dev", "--json", "--long"], {
+const result = runNpm(["ls", "--omit=dev", "--json", "--long"], {
   encoding: "utf8",
   stdio: "pipe"
 });
 
-if (result.status !== 0 && !result.stdout) {
+if (result.status !== 0) {
   console.error(result.stderr);
   fail("Unable to resolve production dependency tree.");
 }
