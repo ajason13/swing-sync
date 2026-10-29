@@ -825,10 +825,6 @@ button:disabled {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .review-placeholder {
-    grid-template-columns: minmax(0, 1fr) 180px;
-  }
-
   .keyframe-strip {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

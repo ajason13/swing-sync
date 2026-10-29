@@ -69,6 +69,90 @@ function createReviewReadyState() {
 }
 
 describe("app renderer contracts", () => {
+  it("derives capture prerequisites instead of showing a static ready badge", () => {
+    const root = new FakeElement() as unknown as HTMLElement;
+    const state = createInitialAppState();
+    renderApp(root, state, false);
+    expect(root.innerHTML).toContain('data-workflow-status>Safety acknowledgement needed</span>');
+    expect(root.innerHTML).not.toContain('data-placeholder-action="camera"');
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Choose a video</span>');
+    selectLocalVideo(state, new File(["video"], "synthetic.webm"));
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Ready to analyze</span>');
+    state.analysisInterval = { startSeconds: 2, endSeconds: 1 };
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Check analysis interval</span>');
+  });
+
+  it("renders current empty states with a return action and no mock metric values", () => {
+    const root = new FakeElement() as unknown as HTMLElement;
+    const state = createInitialAppState();
+    for (const step of ["processing", "review", "export"] as const) {
+      selectWorkflowStep(state, step);
+      renderApp(root, state, true);
+      expect(root.innerHTML).toContain('data-return-capture data-');
+      expect(root.innerHTML).toContain("Choose a video to analyze");
+      expect(root.innerHTML).not.toMatch(/Tempo|Balance|Rotation|Preview export|SS-\d+|separately reviewed story/);
+    }
+    selectWorkflowStep(state, "processing");
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-focus-key="stop-analysis" hidden');
+    expect(root.innerHTML).toContain('class="processing-mark" aria-hidden="true" hidden');
+    expect(root.innerHTML).toContain("No analysis running.");
+  });
+
+  it("shows review confirmation and card preparation from the current state", () => {
+    const root = new FakeElement() as unknown as HTMLElement;
+    const state = createReviewReadyState();
+    selectWorkflowStep(state, "review");
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Review needed</span>');
+    expect(root.innerHTML).toContain("You can export before confirmation with an unconfirmed-review warning.");
+    setPhaseConfirmation(state, true);
+    confirmPhaseReview(state);
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Review confirmed</span>');
+    expect(root.innerHTML).toContain("Impact remains unconfirmed, and no metrics are calculated.");
+    selectWorkflowStep(state, "export");
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Ready to export</span>');
+    expect(root.innerHTML).toContain("Keyframes and their availability warnings are prepared when you download or print.");
+    expect(root.innerHTML).not.toContain("One or more keyframes are unavailable.");
+    expect(root.innerHTML).not.toMatch(/SS-\d+|for this story/);
+    state.swingCardBusy = true;
+    renderApp(root, state, true);
+    expect(root.innerHTML).toContain('data-workflow-status>Preparing Swing Card</span>');
+  });
+
+  it("updates processing badges and activity controls without rerendering or adding live regions", () => {
+    const root = new FakeElement();
+    const state = createInitialAppState();
+    state.activeStep = "processing";
+    const badge = new FakeElement();
+    const mark = new FakeElement();
+    const stop = new FakeElement();
+    const returnAction = new FakeElement();
+    root.set("[data-workflow-status]", badge);
+    root.set(".processing-mark", mark);
+    root.set("[data-cancel-analysis]", stop);
+    root.set("[data-processing-return]", returnAction);
+    for (const [status, text, working] of [
+      ["idle", "No analysis running", false],
+      ["loading", "Loading local model", true],
+      ["processing", "Processing frames", true],
+      ["failed", "Analysis stopped", false],
+      ["completed", "Ready for review", false]
+    ] as const) {
+      setProcessingState(state, status);
+      updateProcessingProgressUi(root as unknown as ParentNode, state);
+      expect(badge.textContent).toBe(text);
+      expect(mark.hidden).toBe(!working);
+      expect(stop.hidden).toBe(status === "idle");
+      expect(returnAction.hidden).toBe(status !== "idle");
+    }
+  });
+
   it("preserves protected capture selectors and escapes selected file names", () => {
     const root = new FakeElement() as unknown as HTMLElement;
     const state = createInitialAppState();

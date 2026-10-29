@@ -12,30 +12,6 @@ import {
 import type { SafetyConsentStore } from "../../src/consent-state";
 import { poseThresholds } from "../../src/pose-contract";
 
-class FakeButton {
-  private listeners: (() => void)[] = [];
-
-  addEventListener(_event: "click", listener: () => void): void {
-    this.listeners.push(listener);
-  }
-
-  click(): void {
-    for (const listener of this.listeners) listener();
-  }
-}
-
-class FakeRoot {
-  constructor(private readonly button: FakeButton) {}
-
-  querySelector(selector: string) {
-    return selector === "[data-placeholder-action='camera']" ? this.button : null;
-  }
-
-  querySelectorAll() {
-    return [];
-  }
-}
-
 class EventTargetStub {
   dataset: Record<string, string> = {};
   files?: File[];
@@ -78,6 +54,27 @@ function deferred() {
 }
 
 describe("app event binding", () => {
+  it("returns empty review to capture through the same cleanup and announcement path as navigation", async () => {
+    const state = createInitialAppState();
+    state.activeStep = "review";
+    const control = new EventTargetStub();
+    const closeActive = vi.fn();
+    const requestRender = vi.fn();
+    bindAppEvents(new MapRoot({}, { "[data-return-capture]": [control] }) as unknown as ParentNode, {
+      state,
+      consent: { hasSafetyConsent: () => true, setSafetyConsent: () => undefined },
+      lifecycle: { closeActive } as never,
+      requestRender,
+      applyAccessibilityIntent: vi.fn()
+    });
+    await control.dispatch("click");
+    expect(closeActive).toHaveBeenCalledOnce();
+    expect(state.activeStep).toBe("capture");
+    expect(requestRender).toHaveBeenCalledExactlyOnceWith({
+      focusKey: "stage-heading", visibleStatusText: "Choose a local video opened.", announcement: "Choose a local video opened."
+    });
+  });
+
   it("invalidates interval results synchronously, closes resources and blocks invalid analysis", async () => {
     const state = createInitialAppState();
     selectLocalVideo(state, new File(["synthetic"], "clip.webm"));
@@ -108,35 +105,25 @@ describe("app event binding", () => {
     expect(requestRender).toHaveBeenLastCalledWith({ announcement: "Analysis interval changed. Analyze again before reviewing or exporting." });
   });
 
-  it("binds fresh DOM after repeated renders without duplicate effects", () => {
-    const requestRender = vi.fn();
-    const consent: SafetyConsentStore = {
-      hasSafetyConsent: () => false,
-      setSafetyConsent: () => undefined,
-      clearAppLocalData: () => "blocked"
-    };
+  it("binds each fresh file picker to its own input after repeated renders", async () => {
     const dependencies = {
       state: createInitialAppState(),
-      consent,
+      consent: { hasSafetyConsent: () => false, setSafetyConsent: () => undefined },
       lifecycle: {} as never,
-      requestRender,
+      requestRender: vi.fn(),
       applyAccessibilityIntent: vi.fn()
     };
-
-    const firstButton = new FakeButton();
-    bindAppEvents(new FakeRoot(firstButton) as unknown as ParentNode, dependencies);
-    firstButton.click();
-    expect(requestRender).toHaveBeenCalledTimes(1);
-    expect(requestRender).toHaveBeenLastCalledWith({
-      focusKey: "camera-placeholder",
-      visibleStatusText: "Camera capture remains out of scope. Choose a local video file.",
-      announcement: "Camera capture remains out of scope. Choose a local video file."
-    });
-
-    const secondButton = new FakeButton();
-    bindAppEvents(new FakeRoot(secondButton) as unknown as ParentNode, dependencies);
-    secondButton.click();
-    expect(requestRender).toHaveBeenCalledTimes(2);
+    const first = new PickerRoot();
+    const firstClick = vi.spyOn(first.input, "click");
+    bindAppEvents(first as unknown as ParentNode, dependencies);
+    await first.picker.dispatch("click");
+    expect(firstClick).toHaveBeenCalledOnce();
+    const second = new PickerRoot();
+    const secondClick = vi.spyOn(second.input, "click");
+    bindAppEvents(second as unknown as ParentNode, dependencies);
+    await second.picker.dispatch("click");
+    expect(secondClick).toHaveBeenCalledOnce();
+    expect(firstClick).toHaveBeenCalledOnce();
   });
 
   it("uses exactly one announcement channel for every mapped event", () => {
@@ -154,10 +141,8 @@ describe("app event binding", () => {
       ["video guard", 'requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });'],
       ["begin accepted", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
       ["workflow step", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
-      ["next step", 'requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });'],
       ["picker success", 'requestRender({ focusKey: "video-picker", visibleStatusText: message, announcement: message });'],
       ["interval edit", 'requestRender({ announcement: "Analysis interval changed. Analyze again before reviewing or exporting." });'],
-      ["camera", 'requestRender({ focusKey: "camera-placeholder", visibleStatusText: message, announcement: message });'],
       ["review entry", 'requestRender({ focusKey: "phase-review-heading", visibleStatusText: message, announcement: message });'],
       ["view declaration", 'requestRender(phaseRenderRequest("phase-declaration:view", before, state));'],
       ["handedness declaration", 'requestRender(phaseRenderRequest("phase-declaration:handedness", before, state));'],
@@ -185,12 +170,10 @@ describe("app event binding", () => {
       ["video guard", 'focusKey: "video-picker", visibleStatusText: message'],
       ["begin", 'focusKey: "stage-heading", visibleStatusText: message'],
       ["workflow", 'getWorkflowStep(state.activeStep).label} opened.'],
-      ["next", 'getNextWorkflowStep(state.activeStep).id'],
       ["picker success", 'Local video selected. It has not been analyzed or persisted.'],
       ["picker cancel", 'addEventListener("cancel", () => applyAccessibilityIntent'],
       ["picker focus", 'addEventListener("focus", () => applyAccessibilityIntent'],
       ["picker focusin", 'addEventListener("focusin", () => applyAccessibilityIntent'],
-      ["camera", 'focusKey: "camera-placeholder"'],
       ["review entry", 'focusKey: "phase-review-heading", visibleStatusText: message'],
       ["view declaration", 'phaseRenderRequest("phase-declaration:view"'],
       ["handedness declaration", 'phaseRenderRequest("phase-declaration:handedness"'],
@@ -485,7 +468,7 @@ describe("app event binding", () => {
     expect(beginRender).toHaveBeenCalledWith(expect.objectContaining({ focusKey: "stage-heading", announcement: expect.any(String) }));
     expect(startActive).toHaveBeenCalledOnce();
 
-    for (const selector of ["[data-next-step]", "[data-review-phases]", "[data-open-export]"] as const) {
+    for (const selector of ["[data-review-phases]", "[data-open-export]"] as const) {
       const control = new EventTargetStub();
       const state = createInitialAppState();
       if (selector === "[data-review-phases]") state.activeStep = "processing";

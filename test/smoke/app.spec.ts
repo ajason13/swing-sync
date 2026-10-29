@@ -245,10 +245,11 @@ async function completePhaseReview(page: Page): Promise<void> {
 }
 
 test("opens to capture flow and keeps analysis fail closed until consent and video", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "Capture or choose your swing" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Use camera" })).toBeVisible();
-  await expect(page.getByText("Camera capture is not part of this story")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review your swing" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a local video" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use camera" })).toHaveCount(0);
+  await expect(page.getByText("Camera recording is unavailable. Choose an existing video from your device.")).toBeVisible();
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Safety acknowledgement needed");
 
   const beginAnalysis = page.getByRole("button", { name: "Begin analysis" });
   await expect(beginAnalysis).toBeDisabled();
@@ -257,6 +258,7 @@ test("opens to capture flow and keeps analysis fail closed until consent and vid
     "First analysis is blocked until this acknowledgement is checked."
   );
   await page.getByRole("checkbox").check();
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Choose a video");
   await expect(beginAnalysis).toBeDisabled();
   await expect(beginAnalysis).toHaveAttribute("aria-describedby", "app-visible-status");
   await expect(page.locator("#app-visible-status")).toHaveText(
@@ -264,12 +266,10 @@ test("opens to capture flow and keeps analysis fail closed until consent and vid
   );
   await page.locator("#video-file").setInputFiles(poseFixture);
   await expect(beginAnalysis).toBeEnabled();
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Ready to analyze");
   await expect(page.locator("#app-visible-status")).toHaveText(
     "Local video selected. It has not been analyzed or persisted."
   );
-  await page.getByRole("button", { name: "Use camera" }).click();
-  await expect(page.locator("#app-announcer")).toContainText("Camera capture remains out of scope");
-  await expect(page.locator("#app-visible-status")).toContainText("Camera capture remains out of scope");
   await expect(page.locator("#app-visible-status")).not.toHaveAttribute("role", "status");
   await expect(page.locator("#app-visible-status")).not.toHaveAttribute("aria-live");
 });
@@ -345,7 +345,7 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   expect(primaryFocus.shadow).toContain("6px");
 
   await page.getByRole("button", { name: /Review/ }).click();
-  const secondary = page.locator("[data-next-step]");
+  const secondary = page.getByRole("button", { name: "Choose a video to analyze" });
   await expect(secondary).toHaveCSS("border-color", "rgb(96, 115, 103)");
   await page.getByRole("button", { name: /Capture/ }).click();
   await page.emulateMedia({ forcedColors: "active" });
@@ -497,24 +497,38 @@ test("runtime consent guard reports inline and focuses the acknowledgement", asy
   );
   await expect(page.locator("#app-visible-status")).toContainText("Please acknowledge the safety terms");
   await expect(consent).toBeFocused();
-  await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a local video" })).toBeVisible();
 });
 
-test("shows every required placeholder state", async ({ page }) => {
+test("shows actionable empty states without unavailable feature mockups", async ({ page }, testInfo) => {
+  if (testInfo.project.name === "mobile-chromium") await page.setViewportSize({ width: 320, height: 800 });
   await expect(page.getByRole("group", { name: "Local video source" })).toBeVisible();
-  for (const [buttonName, headingName] of [
-    ["Process", "Processing"],
-    ["Review", "Review"],
-    ["Export", "Export"]
+  for (const [buttonName, headingName, status] of [
+    ["Process", "Processing", "No analysis running"],
+    ["Review", "Review", "No frames to review"],
+    ["Export", "Export", "No card available"]
   ]) {
     await page.getByRole("button", { name: new RegExp(buttonName) }).click();
-    await expect(page.getByRole("heading", { name: headingName })).toBeVisible();
+    await expect(page.getByRole("heading", { name: headingName, exact: true })).toBeVisible();
     await expect(page.getByText("Local workflow")).toBeVisible();
+    await expect(page.locator("[data-workflow-status]")).toHaveText(status);
+    await expect(page.locator("[data-step='capture']")).toHaveCount(1);
+    await expect(page.locator("#app")).not.toContainText(/SS-\d+|for this story|Future metric readiness|Preview export state|Tempo|Balance|Rotation/);
+    await expectResponsiveGeometry(page, [".stage-description", "[data-workflow-status]", ".action-note"]);
+    const returnAction = page.getByRole("button", { name: "Choose a video to analyze" });
+    await returnAction.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "Choose a local video" })).toBeFocused();
+    await expect(page.locator("#app-announcer")).toHaveText("Choose a local video opened.");
   }
   await page.getByRole("button", { name: /Process/ }).click();
   await expect(page.getByRole("group", { name: "Local pose processing" })).toBeVisible();
+  await expect(page.locator(".processing-mark")).toBeHidden();
+  await expect(page.locator("#analysis-video")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Stop local analysis" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Retry local analysis" })).toBeHidden();
   await page.getByRole("button", { name: /Review/ }).click();
-  await expect(page.getByRole("group", { name: "Review placeholder" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "No frames to review" })).toBeVisible();
   await page.getByRole("button", { name: /Export/ }).click();
   await expect(page.getByRole("region", { name: "Swing Card unavailable" })).toBeVisible();
 });
@@ -556,6 +570,7 @@ test("keeps completed and failed processing terminal updates scoped to processin
   await page.locator("#video-file").setInputFiles(poseFixture);
   await page.getByRole("button", { name: "Begin analysis" }).click();
   await expect(page.locator("#processing-status")).toContainText("Loading the local pose model");
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Loading local model");
   const completedGlobalBefore = await page.locator("#app-announcer").textContent();
   await page.evaluate(() => {
     const counts = { global: 0, processing: 0 };
@@ -645,6 +660,8 @@ test("traverses capture processing review confirmation and export with keyboard 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Review phase labels" })).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("#processing-status")).toContainText("completed");
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Ready for review");
+  await expect(page.locator(".processing-mark")).toBeHidden();
   await expect(page.locator("#app-announcer, #processing-status")).toHaveCount(2);
   await expect(page.locator("#app-announcer")).toHaveAttribute("role", "status");
   await expect(page.locator("#processing-status")).toHaveAttribute("role", "status");
@@ -860,11 +877,12 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeEnabled();
   await page.getByRole("button", { name: "Confirm phase review" }).click();
   await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Review confirmed");
   await expect(page.locator("#phase-review-status p")).toHaveText(
-    "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here."
+    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and no metrics are calculated."
   );
   await expect(page.locator(".phase-review > .action-row .action-note")).toHaveText(
-    "Future metric readiness is available for a separately reviewed story. No metrics are generated here."
+    "Save a PNG, print a card, or copy its prompt from export. No metrics are calculated."
   );
 
   await page.getByRole("button", { name: /Export/ }).click();
@@ -1002,11 +1020,13 @@ test("downloads a local Swing Card PNG and exposes print and prompt controls", a
   await page.getByRole("button", { name: "Open Swing Card export" }).click();
 
   await expect(page.getByRole("heading", { name: "Downloadable summary" })).toBeVisible();
+  await expect(page.locator("[data-workflow-status]")).toHaveText("Ready to export");
+  await expect(page.locator("#app")).not.toContainText(/SS-\d+|for this story|Future metric readiness/);
   await expect(page.getByRole("heading", { name: "Remote model review unavailable" })).toBeVisible();
   await expect(page.getByRole("group", { name: "Swing Card contents" })).toBeVisible();
   await expect(page.getByRole("group", { name: "Remote model data disclosure" })).toBeVisible();
   await expect(page.locator("dl.remote-model-disclosure")).toHaveCount(1);
-  await expect(page.getByText("No reviewed provider is configured for this story.")).toBeVisible();
+  await expect(page.getByText("No reviewed provider is configured.")).toBeVisible();
   await expect(page.getByText("Metrics, Warnings and Limitations, Manual Swing Card Prompt")).toBeVisible();
   await expect(page.getByText("Raw Video, Frame Pixels, Selected Keyframe Images, Pose Landmarks")).toBeVisible();
   await expect(page.getByRole("button", { name: "Remote review unavailable" })).toBeDisabled();
@@ -1173,7 +1193,7 @@ test("keeps the UI responsive while the local model loads", async ({ page }) => 
   await page.getByRole("button", { name: "Begin analysis" }).click();
   await page.getByRole("button", { name: "Stop local analysis" }).click();
 
-  await expect(page.getByRole("heading", { name: "Capture or upload" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a local video" })).toBeVisible();
   await expect(page.locator("#app-announcer")).toContainText("volatile resources were released");
   await expect(page.locator("#app-visible-status")).toContainText("volatile resources were released");
 });
@@ -1332,7 +1352,7 @@ test("keeps real failure review and confirmed export usable at 320 CSS pixels", 
   await expectResponsiveGeometry(page, ["#app-visible-status", ".capture-options", ".source-option"]);
 
   await page.getByRole("button", { name: /Review/ }).click();
-  await expect(page.getByRole("group", { name: "Review placeholder" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "No frames to review" })).toBeVisible();
   await expectResponsiveGeometry(page, [".review-placeholder", ".metric-list"]);
   await page.getByRole("button", { name: /Export/ }).click();
   await expect(page.getByRole("region", { name: "Swing Card unavailable" })).toBeVisible();

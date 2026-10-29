@@ -23,7 +23,7 @@ async function expectStyledDevelopmentPage(browser: Browser, width: number): Pro
     });
   });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Capture or choose your swing" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review your swing" })).toBeVisible();
 
   for (const selector of ["#app-announcer", "#video-file"]) {
     const styles = await page.locator(selector).evaluate((element) => {

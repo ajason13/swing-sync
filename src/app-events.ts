@@ -19,7 +19,7 @@ import type { SafetyConsentStore } from "./consent-state";
 import { calculateSampleTimestamps } from "./frame-processing";
 import { declarationValue } from "./phase-review-renderer";
 import { copySwingCardPrompt, downloadSwingCard, printSwingCard } from "./swing-card-actions";
-import { getNextWorkflowStep, getWorkflowStep, type WorkflowStepId } from "./workflow";
+import { getWorkflowStep, type WorkflowStepId } from "./workflow";
 
 export interface AppEventsDependencies {
   state: AppState;
@@ -73,9 +73,13 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
     void lifecycle.startActive();
   });
 
-  root.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => {
+  const workflowButtons = [
+    ...root.querySelectorAll<HTMLButtonElement>("[data-step]"),
+    ...root.querySelectorAll<HTMLButtonElement>("[data-return-capture]")
+  ];
+  workflowButtons.forEach((button) => {
     button.addEventListener("click", async () => {
-      const nextStep = button.dataset.step as WorkflowStepId;
+      const nextStep = (button.dataset.step ?? "capture") as WorkflowStepId;
       if (state.eventFrameBusy && nextStep !== state.activeStep) await lifecycle.stopEventFrame();
       const opensCompletedReview =
         state.activeStep === "processing" && state.processingState === "completed" && nextStep === "review";
@@ -94,12 +98,6 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
       const message = `${getWorkflowStep(state.activeStep).label} opened.`;
       requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
     });
-  });
-
-  root.querySelector<HTMLButtonElement>("[data-next-step]")?.addEventListener("click", () => {
-    selectWorkflowStep(state, getNextWorkflowStep(state.activeStep).id);
-    const message = `${getWorkflowStep(state.activeStep).label} opened.`;
-    requestRender({ focusKey: "stage-heading", visibleStatusText: message, announcement: message });
   });
 
   root.querySelector<HTMLButtonElement>("[data-video-picker]")?.addEventListener("click", () => {
@@ -136,11 +134,6 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
     });
   }
 
-  root.querySelector<HTMLButtonElement>("[data-placeholder-action='camera']")?.addEventListener("click", () => {
-    const message = "Camera capture remains out of scope. Choose a local video file.";
-    requestRender({ focusKey: "camera-placeholder", visibleStatusText: message, announcement: message });
-  });
-
   root.querySelector<HTMLButtonElement>("[data-cancel-analysis]")?.addEventListener("click", () => {
     void lifecycle.stopActive();
   });
@@ -151,7 +144,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
 
   root.querySelector<HTMLButtonElement>("[data-review-phases]")?.addEventListener("click", () => {
     selectWorkflowStep(state, "review");
-    const message = "Review the provisional phase labels before future measurements become available.";
+    const message = "Complete the video declarations, inspect the provisional labels, and select event times where needed. No metrics are calculated.";
     requestRender({ focusKey: "phase-review-heading", visibleStatusText: message, announcement: message });
   });
 
@@ -253,7 +246,7 @@ function phaseMessage(key: PhaseSemanticKey): string {
     ? "Phase review confirmed."
     : key === "review-required"
       ? "Swing phase suggestions are ready for review."
-      : "Required video declarations and a supported eight-sample run are needed.";
+      : "Complete the video declarations. Review requires eight supported pose samples.";
 }
 
 function phaseRenderRequest(focusKey: RenderRequest["focusKey"], before: PhaseSemanticKey, state: AppState): RenderRequest {
