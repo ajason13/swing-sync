@@ -14,21 +14,21 @@ export function renderRemoteModelReviewPanel(): string {
           <p class="placeholder-kicker">Optional remote review</p>
           <h4 id="remote-model-heading">Remote model review unavailable</h4>
         </div>
-        <span class="stage-status">Off by default</span>
+        <span class="stage-status">Unavailable</span>
       </div>
       <p>Remote model review is optional and requires a separately reviewed provider before any data can leave this device. Manual Swing Card export and Copy prompt do not require provider configuration.</p>
       <div role="group" aria-label="Remote model data disclosure">
       <dl class="remote-model-disclosure">
         <div>
-          <dt>Provider registry</dt>
-          <dd>${providerAvailable ? "Reviewed provider configured." : "No reviewed provider is configured for this story."}</dd>
+          <dt>Remote provider</dt>
+          <dd>${providerAvailable ? "Reviewed provider configured." : "No reviewed provider is configured."}</dd>
         </div>
         <div>
-          <dt>Would send after future consent</dt>
+          <dt>Eligible data if remote review is enabled later with explicit consent</dt>
           <dd>${modelOutboundDataClasses.map(formatRemoteDataClass).join(", ")}</dd>
         </div>
         <div>
-          <dt>Will not send in SS-013</dt>
+          <dt>Blocked from remote review</dt>
           <dd>${modelBlockedOutboundDataClasses.map(formatRemoteDataClass).join(", ")}</dd>
         </div>
       </dl>

@@ -116,7 +116,7 @@ describe("analysis lifecycle ownership", () => {
     });
     await lifecycle.closeActive();
     expect(requestRender).not.toHaveBeenCalled();
-    requestRender({ focusKey: "stage-heading", announcement: "Capture or upload opened." });
+    requestRender({ focusKey: "stage-heading", announcement: "Choose a local video opened." });
     expect(requestRender).toHaveBeenCalledOnce();
   });
 
@@ -175,7 +175,7 @@ describe("analysis lifecycle ownership", () => {
 
     selectWorkflowStep(state, "review");
     root.reviewStatus.textContent =
-      "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here.";
+      "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and no metrics are calculated.";
     const confirmedReviewStatus = root.reviewStatus.textContent;
     const querySelector = vi.spyOn(root, "querySelector");
     applyAccessibilityIntent.mockClear();

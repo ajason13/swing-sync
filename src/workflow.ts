@@ -2,30 +2,26 @@ export const workflowSteps = [
   {
     id: "capture",
     shortLabel: "Capture",
-    label: "Capture or upload",
-    status: "Ready for consent",
-    description: "Choose how a future local analysis session will begin."
+    label: "Choose a local video",
+    description: "Choose a video, preview it, and select the interval to analyze. Acknowledge the safety terms before beginning analysis."
   },
   {
     id: "processing",
     shortLabel: "Process",
     label: "Processing",
-    status: "Local only",
-    description: "Load the approved local pose model and process selected video frames."
+    description: "Local analysis samples up to eight frames from your selected interval and estimates body poses. Wait for processing to finish, then review the provisional labels."
   },
   {
     id: "review",
     shortLabel: "Review",
     label: "Review",
-    status: "No results",
-    description: "Preview the stable layout for future swing feedback and metrics."
+    description: "Declare the video setup, inspect the provisional phase labels, and select event times where needed. Confirm your review when the assignments are ready. No metrics are calculated."
   },
   {
     id: "export",
     shortLabel: "Export",
     label: "Export",
-    status: "Local download",
-    description: "Download a local Swing Card or open the browser print dialog."
+    description: "Save a Swing Card as PNG, print or save as PDF where supported, or copy its prompt. Sharing the result with another service is a separate action you control."
   }
 ] as const;
 

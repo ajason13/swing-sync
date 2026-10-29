@@ -11,9 +11,9 @@ export function renderPhaseReview(state: AppState): string {
   const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
   const warning =
     ready
-      ? "Phase review is confirmed. Future metric readiness is available for a separately reviewed story; no metrics are generated here."
+      ? "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and no metrics are calculated."
       : proposal?.evidenceStatus === "unsupported-input"
-      ? "Select every required declaration and provide a supported active eight-sample run."
+      ? "Complete the video declarations below. Review requires eight supported pose samples; if samples are missing, choose a longer interval and analyze again."
       : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
 
   return `
@@ -77,7 +77,7 @@ export function renderPhaseReview(state: AppState): string {
           reviewRequired && state.phaseConfirmation && validOrder && !ready && !busy ? "" : "disabled"
         }>Confirm phase review</button>
         <button class="secondary-action" type="button" data-open-export data-focus-key="open-export" ${busy ? "disabled" : ""}>Open Swing Card export</button>
-        <p class="action-note">${ready ? "Future metric readiness is available for a separately reviewed story. No metrics are generated here." : "Future metric readiness remains locked until this review is valid and explicitly confirmed."}</p>
+        <p class="action-note">${ready ? "Save a PNG, print a card, or copy its prompt from export. No metrics are calculated." : "Complete the declarations, check assignments and time order, then acknowledge and confirm your review. You can export before confirmation with an unconfirmed-review warning."}</p>
       </div>
     </section>
   `;
@@ -107,7 +107,7 @@ function renderKeyframeOverlayReview(state: AppState): string {
       <p class="action-note" id="keyframe-overlay-status" data-overlay-status role="status" aria-live="polite" aria-atomic="true">${overlayStatus}</p>
       ${bounds ? `<fieldset class="event-frame-controls" aria-describedby="event-frame-help event-frame-status" ${state.phaseReviewState?.automaticProposal.evidenceStatus === "review-required" ? "" : "disabled"}>
         <legend>Select a frame for ${selectedPhase.label}</legend>
-        <p id="event-frame-help" class="action-note">Complete the required declarations for a supported eight-sample run, then seek within ${(bounds[0] / 1000).toFixed(3)}–${(bounds[bounds.length - 1] / 1000).toFixed(3)} s. Steps request 0.033 s, not an exact decoded frame. Observed seek time is the browser playback position, not a verified capture time. Each selection runs pose inference on that same local image. Missing poses prevent confirmation.</p>
+        <p id="event-frame-help" class="action-note">Complete the required video declarations, then choose a source time within ${(bounds[0] / 1000).toFixed(3)}–${(bounds[bounds.length - 1] / 1000).toFixed(3)} s. Steps request 0.033 s, not an exact decoded frame. Observed seek time is the browser playback position, not a verified capture time. Each selection runs pose inference on that same local image. Missing poses prevent confirmation.</p>
         <label for="event-time">Source time (seconds)</label>
         <input id="event-time" type="number" min="${bounds[0] / 1000}" max="${bounds[bounds.length - 1] / 1000}" step="0.001" value="${(output?.requestedTimestampMs ?? bounds[0]) / 1000}" data-focus-key="event-time" ${state.eventFrameBusy ? "readonly" : ""} />
         <div class="action-row">
