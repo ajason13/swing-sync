@@ -172,7 +172,7 @@ describe("app event binding", () => {
     expect(eventRenderCalls).toHaveLength(eventRenderOwners.length);
     eventRenderOwners.forEach(([owner, expected], index) => expect(eventRenderCalls[index], owner).toBe(expected));
     expect(eventIntentCalls).toHaveLength(3);
-    expect(lifecycle.match(/this\.options\.requestRender\(/g)).toHaveLength(1);
+    expect(lifecycle.match(/this\.options\.requestRender\(/g)).toHaveLength(3);
     expect(lifecycle.match(/this\.options\.applyAccessibilityIntent\(/g)).toHaveLength(2);
     expect(actions.match(/requestRender\(/g)).toHaveLength(6);
     expect(main.match(/^requestRender\(\);$/gm)).toHaveLength(1);

@@ -26,6 +26,9 @@ export interface AppState {
   totalFrameCount: number;
   latestLandmarkCount: number;
   phaseOutputs: readonly SampledFrameOutput[];
+  manualFrameIndices: (number | undefined)[];
+  eventFrameBusy: boolean;
+  eventFrameStatus: string;
   phaseDeclarations: PhaseDeclarations;
   phaseReviewState: PhaseReviewState | undefined;
   phaseDraft: PhaseAssignment[];
@@ -50,6 +53,9 @@ export function createInitialAppState(): AppState {
     totalFrameCount: 0,
     latestLandmarkCount: 0,
     phaseOutputs: [],
+    manualFrameIndices: [],
+    eventFrameBusy: false,
+    eventFrameStatus: "",
     phaseDeclarations: undeclaredPhaseDeclarations(),
     phaseReviewState: undefined,
     phaseDraft: [],
@@ -144,6 +150,9 @@ export function resetProcessingCounters(state: AppState): void {
 
 export function resetPhaseReview(state: AppState): void {
   state.phaseOutputs = [];
+  state.manualFrameIndices = [];
+  state.eventFrameBusy = false;
+  state.eventFrameStatus = "";
   state.phaseDeclarations = undeclaredPhaseDeclarations();
   state.phaseReviewState = undefined;
   state.phaseDraft = [];
@@ -154,9 +163,12 @@ export function resetPhaseReview(state: AppState): void {
 }
 
 export function rebuildPhaseReviewState(state: AppState): void {
-  const proposal = createPhaseProposal(state.phaseOutputs, state.phaseDeclarations);
+  cancelSwingCardExport(state);
+  const proposal = createPhaseProposal(state.phaseOutputs.slice(0, phaseDefinitions.length), state.phaseDeclarations);
   state.phaseReviewState = createPhaseReviewState(proposal);
-  state.phaseDraft = proposal.assignments.map((assignment) => ({ ...assignment }));
+  if (!state.phaseDraft.length && proposal.assignments.length) {
+    state.phaseDraft = proposal.assignments.map((assignment) => ({ ...assignment }));
+  }
   state.phaseConfirmation = false;
 }
 
@@ -169,6 +181,9 @@ export function setPhaseDeclaration<K extends keyof PhaseDeclarations>(
 }
 
 export function setPhaseDraftAssignment(state: AppState, phaseIndex: number, sampleIndex: number): void {
+  if (!phaseDefinitions[phaseIndex] || !state.phaseOutputs[sampleIndex] ||
+    (sampleIndex >= phaseDefinitions.length && sampleIndex !== state.manualFrameIndices[phaseIndex])) return;
+  invalidatePhaseConfirmation(state);
   state.phaseDraft[phaseIndex] = {
     phaseId: phaseDefinitions[phaseIndex].id,
     sampleIndex
@@ -177,17 +192,35 @@ export function setPhaseDraftAssignment(state: AppState, phaseIndex: number, sam
   selectKeyframe(state, phaseIndex);
 }
 
+export function invalidatePhaseConfirmation(state: AppState): void {
+  state.phaseConfirmation = false;
+  if (state.phaseReviewState) state.phaseReviewState = { ...state.phaseReviewState, correction: undefined, readyForFutureMetrics: false };
+  cancelSwingCardExport(state);
+}
+
+// Bitmap ownership stays with the lifecycle's bounded per-phase selection map.
+export function assignManualPhaseOutput(state: AppState, phaseIndex: number, output: SampledFrameOutput): void {
+  const index = state.manualFrameIndices[phaseIndex] ?? state.phaseOutputs.length;
+  const outputs = [...state.phaseOutputs];
+  outputs[index] = { ...output, index, runGeneration: outputs[0].runGeneration };
+  state.phaseOutputs = outputs;
+  state.manualFrameIndices[phaseIndex] = index;
+  setPhaseDraftAssignment(state, phaseIndex, index);
+}
+
 export function setPhaseConfirmation(state: AppState, confirmed: boolean): void {
-  state.phaseConfirmation = confirmed;
+  if (!confirmed) invalidatePhaseConfirmation(state);
+  else state.phaseConfirmation = true;
 }
 
 export function confirmPhaseReview(state: AppState): void {
-  if (!state.phaseReviewState) return;
+  if (!state.phaseReviewState || state.eventFrameBusy) return;
   state.phaseReviewState = applyPhaseCorrection(
     state.phaseReviewState,
     state.phaseDraft,
     state.phaseConfirmation,
-    state.phaseOutputs[0]?.runGeneration ?? -1
+    state.phaseOutputs[0]?.runGeneration ?? -1,
+    state.phaseOutputs
   );
 }
 
@@ -226,6 +259,7 @@ export function setSwingCardStatus(state: AppState, status: string): void {
 }
 
 export function getCompleteSwingCardAssignments(state: AppState): readonly PhaseAssignment[] | undefined {
-  const assignments = state.phaseReviewState?.correction?.assignments ?? state.phaseReviewState?.automaticProposal.assignments;
-  return assignments && isValidCorrection(assignments) ? assignments : undefined;
+  if (state.phaseReviewState?.automaticProposal.evidenceStatus !== "review-required") return undefined;
+  const assignments = state.phaseReviewState?.correction?.assignments ?? state.phaseDraft;
+  return assignments && isValidCorrection(assignments, state.phaseOutputs) && !state.eventFrameBusy ? assignments : undefined;
 }

@@ -1973,3 +1973,125 @@ test("waits for current frame data after a settled zero-time seek before reading
   expect(externalRequests(requestsFor(page))).toEqual([]);
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
 });
+
+test("selects new event times with paired local inference and consistent moving-frame review and exports", async ({ page }, testInfo) => {
+  if (testInfo.project.name === "mobile-chromium") await page.setViewportSize({ width: 320, height: 720 });
+  await page.evaluate(() => {
+    const times: number[] = [];
+    Object.assign(window, { __eventTimes: times });
+    const post = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function(message: { type?: string; timestampMs?: number }, ...rest: unknown[]) {
+      if (message.type === "frame") times.push(message.timestampMs!);
+      return Reflect.apply(post, this, [message, ...rest]);
+    };
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("[data-review-phases]")).toBeVisible({ timeout: 30_000 });
+  await completePhaseReview(page);
+  await page.locator("[data-keyframe-index='3']").click();
+  const canvas = page.locator("[data-keyframe-canvas]");
+  const original = await canvas.evaluate((c: HTMLCanvasElement) => c.toDataURL());
+  const time = page.getByLabel("Source time (seconds)", { exact: true });
+  await time.fill("0.730");
+  await page.getByRole("button", { name: "Use time for Top", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  await expect(time).toBeFocused();
+  await expect(canvas).toHaveAttribute("aria-label", "Annotated keyframe: Top, Selected event");
+  await expect(page.locator(".keyframe-review__heading")).toContainText("Requested 0.730 s; observed seek 0.730 s.");
+  await expect(page.getByLabel(/I reviewed these provisional labels/)).not.toBeChecked();
+  await expect(page.locator("#phase-review-heading")).toHaveText("Review required");
+  const selected = await canvas.evaluate((c: HTMLCanvasElement) => c.toDataURL());
+  expect(selected).not.toBe(original);
+  await page.getByRole("button", { name: "Earlier (0.033 s)", exact: true }).click();
+  await expect(time).toHaveValue("0.697", { timeout: 30_000 });
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned");
+  await expect(page.locator(".keyframe-review__heading")).toContainText("Requested 0.697 s");
+  // Repeated events have explicit semantics and both phase images agree.
+  await time.fill("0.73");
+  await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  await page.locator("[data-keyframe-index='2']").click();
+  await time.fill("0.73");
+  await page.getByRole("button", { name: "Use time for Mid-backswing", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  expect(await canvas.evaluate((c: HTMLCanvasElement) => c.toDataURL())).toBe(selected);
+  await expect(page.locator("#phase-order-status")).toContainText("Reusing a time is allowed");
+  await expect(page.locator("#phase-order-status")).toContainText("Impact remains unconfirmed");
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await expect(page.locator("#phase-review-heading")).toHaveText("Phase review confirmed");
+  // A confirmed review remains editable; decreasing times lock confirmation.
+  await time.fill("1.9");
+  await page.getByRole("button", { name: "Use time for Mid-backswing", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  await expect(page.locator("#phase-order-status")).toContainText("nondecreasing source times");
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeDisabled();
+  await time.fill("0.73");
+  await page.getByRole("button", { name: "Use time for Mid-backswing", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  await expectResponsiveGeometry(page, [".event-frame-controls", "#event-frame-help", "#event-frame-status", "#phase-order-status"]);
+  await page.getByLabel(/I reviewed these provisional labels/).check();
+  await page.getByRole("button", { name: "Confirm phase review" }).click();
+  await page.getByRole("button", { name: "Open Swing Card export" }).click();
+  await page.evaluate(() => {
+    window.print = () => Object.assign(window, { __eventPrint: [...document.querySelectorAll<HTMLCanvasElement>("[data-swing-card-print-host] canvas")].map(c => c.toDataURL()) });
+  });
+  await page.getByRole("button", { name: "Print / Save as PDF" }).click();
+  await expect(page.locator("[data-swing-card-status]")).toContainText("Browser print dialog opened");
+  const printed = await page.evaluate(() => (window as typeof window & { __eventPrint: string[] }).__eventPrint);
+  expect(printed).toHaveLength(8);
+  expect(printed[2]).toBe(printed[3]);
+  expect(printed[3]).not.toBe(printed[4]);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.png$/);
+  const times = await page.evaluate(() => (window as typeof window & { __eventTimes: number[] }).__eventTimes);
+  expect(times.slice(0, 8)).not.toContain(730);
+  expect(times.slice(8)).toEqual([730, 697, 730, 730, 1900, 730]);
+  await page.getByRole("button", { name: "Clear local app data" }).click();
+  await expect(page.locator("#event-time")).toHaveCount(0);
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+  await expectNoBrowserStorage(page);
+});
+
+test("stops a pending event selection and releases it on navigation without restoring stale confirmation", async ({ page }) => {
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("[data-review-phases]")).toBeVisible({ timeout: 30_000 });
+  await completePhaseReview(page);
+  await page.evaluate(() => {
+    const post = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function(message: { type?: string; timestampMs?: number; bitmap?: ImageBitmap }, ...rest: unknown[]) {
+      if (message.type === "frame" && message.timestampMs === 730) {
+        message.bitmap?.close();
+        Object.assign(window, { __eventHeld: true });
+        return;
+      }
+      return Reflect.apply(post, this, [message, ...rest]);
+    };
+  });
+  await page.locator("[data-keyframe-index='3']").click();
+  await page.getByLabel("Source time (seconds)", { exact: true }).fill("0.73");
+  await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __eventHeld?: boolean }).__eventHeld)).toBe(true);
+  await expect(page.locator("[data-open-export]")).toBeDisabled();
+  await page.getByRole("button", { name: "Stop frame selection", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("selection stopped");
+  await expect(page.locator("#event-time")).toBeFocused();
+  await expect(page.locator("#phase-review-heading")).toHaveText("Review required");
+  await expect(page.locator("[data-keyframe-canvas]")).toHaveAttribute("aria-label", "Annotated keyframe: Top, Sample 4");
+  await page.getByLabel("Source time (seconds)", { exact: true }).fill("0.73");
+  await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+  await page.locator("[data-step='capture']").click();
+  await expect(page.locator("#video-file")).toBeAttached();
+  await page.locator("[data-step='export']").click();
+  await expect(page.getByRole("heading", { name: "Swing Card unavailable" })).toBeVisible();
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+});

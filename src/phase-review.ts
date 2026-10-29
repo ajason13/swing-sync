@@ -84,13 +84,14 @@ export function applyPhaseCorrection(
   state: PhaseReviewState,
   assignments: readonly PhaseAssignment[],
   confirmed: boolean,
-  activeGeneration: number
+  activeGeneration: number,
+  outputs?: readonly SampledFrameOutput[]
 ): PhaseReviewState {
   if (
     state.runGeneration !== activeGeneration ||
     state.automaticProposal.evidenceStatus !== "review-required" ||
     !confirmed ||
-    !isValidCorrection(assignments)
+    !isValidCorrection(assignments, outputs)
   ) {
     return state;
   }
@@ -107,7 +108,7 @@ export function applyPhaseCorrection(
   };
 }
 
-export function isValidCorrection(assignments: readonly PhaseAssignment[]): boolean {
+export function isValidCorrection(assignments: readonly PhaseAssignment[], outputs?: readonly SampledFrameOutput[]): boolean {
   if (assignments.length !== phaseDefinitions.length) return false;
 
   for (let index = 0; index < phaseDefinitions.length; index += 1) {
@@ -117,8 +118,11 @@ export function isValidCorrection(assignments: readonly PhaseAssignment[]): bool
       assignment?.phaseId !== phaseDefinitions[index].id ||
       !Number.isInteger(assignment.sampleIndex) ||
       assignment.sampleIndex < 0 ||
-      assignment.sampleIndex >= phaseDefinitions.length ||
-      (index > 0 && (!previous || previous.sampleIndex > assignment.sampleIndex))
+      assignment.sampleIndex >= (outputs?.length ?? phaseDefinitions.length) ||
+      (outputs && (!isUsablePhaseOutput(outputs[assignment.sampleIndex]) || outputs[assignment.sampleIndex].runGeneration !== outputs[0]?.runGeneration)) ||
+      (index > 0 && (!previous || (outputs
+        ? outputs[previous.sampleIndex]?.requestedTimestampMs > outputs[assignment.sampleIndex]?.requestedTimestampMs
+        : previous.sampleIndex > assignment.sampleIndex)))
     ) {
       return false;
     }
@@ -144,23 +148,25 @@ function isSupportedInput(
   return phaseDefinitions.every((_, index) => {
     const output = outputs[index];
     if (!output) return false;
-    const normalized = output.pose.landmarks;
-    const world = output.pose.worldLandmarks;
     return (
       output.runGeneration === generation &&
       output.index === index &&
-      Number.isFinite(output.requestedTimestampMs) &&
-      output.requestedTimestampMs >= 0 &&
       (index === 0 || outputs[index - 1].requestedTimestampMs < output.requestedTimestampMs) &&
-      output.pose.timestampMs === output.requestedTimestampMs &&
-      normalized.length === 1 &&
-      world.length === 1 &&
-      normalized[0].length === 33 &&
-      world[0].length === 33 &&
-      normalized[0].every(isFiniteLandmark) &&
-      world[0].every(isFiniteLandmark)
+      isUsablePhaseOutput(output)
     );
   });
+}
+
+export function isUsablePhaseOutput(output: SampledFrameOutput | undefined): boolean {
+  if (!output) return false;
+  const normalized = output.pose.landmarks;
+  const world = output.pose.worldLandmarks;
+  return Number.isFinite(output.requestedTimestampMs) && output.requestedTimestampMs >= 0 &&
+    Number.isFinite(output.observedSeekTimestampMs) && output.observedSeekTimestampMs >= 0 &&
+    output.pose.timestampMs === output.requestedTimestampMs &&
+    normalized.length === 1 && world.length === 1 &&
+    normalized[0].length === 33 && world[0].length === 33 &&
+    normalized[0].every(isFiniteLandmark) && world[0].every(isFiniteLandmark);
 }
 
 function isFiniteLandmark(landmark: { x: number; y: number; z: number; visibility: number }): boolean {

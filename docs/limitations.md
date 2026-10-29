@@ -17,8 +17,13 @@ interval. The interval defaults to the full clip. Interval preview can briefly
 overshoot its end due to browser event delivery; it is not frame-accurate trimming.
 Phase labels are provisional, assigned by sample order for user review;
 they are not motion-based event detection. Samples may miss exact events,
-including impact; body landmarks alone cannot confirm ball contact. Reassigning
-labels only selects among these samples and does not locate arbitrary frames.
+including impact; body landmarks alone cannot confirm ball contact. Users can also select a local source time for each phase within the interval,
+using numeric time entry or 0.033-second seek steps. These steps are time requests,
+not guaranteed single decoded frames. Requested time and observed browser seek
+position remain paired with the image and its pose; observed position is not a
+verified capture timestamp. Repeated times are allowed but do not establish
+distinct events. A missing pose or decreasing source-time assignment prevents
+confirmation. Manual selections do not confirm Impact or ball contact.
 
 No geometry or tempo metric values are currently generated. Review confirmation
 does not calculate metrics; Swing Card metric entries remain unavailable.

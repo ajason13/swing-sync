@@ -134,10 +134,10 @@ describe("swing card actions", () => {
     draw.mockClear();
     keyframeRenderer.renderSelectedKeyframeCanvas(root, state, false, draw);
     expect(draw).toHaveBeenCalledWith(expect.anything(), {
-      preview: state.phaseOutputs[3].preview,
-      landmarks: state.phaseOutputs[3].pose.landmarks[0]
+      preview: state.phaseOutputs[2].preview,
+      landmarks: state.phaseOutputs[2].pose.landmarks[0]
     });
-    expect(renderPhaseReview(state)).toContain('aria-label="Annotated keyframe: Top, Sample 4"');
+    expect(renderPhaseReview(state)).toContain('aria-label="Annotated keyframe: Top, Sample 3"');
   });
 
   it.each(actionCases)("recovers %s from partial preparation failure with sanitized status", async (_name, action, failure) => {
