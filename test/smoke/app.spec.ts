@@ -880,10 +880,10 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
   await expect(page.locator("[data-workflow-status]")).toHaveText("Review confirmed");
   await expect(page.locator("#phase-review-status p")).toHaveText(
-    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and no metrics are calculated."
+    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and metric values are not displayed or exported."
   );
   await expect(page.locator(".phase-review > .action-row .action-note")).toHaveText(
-    "Save a PNG, print a card, or copy its prompt from export. No metrics are calculated."
+    "Save a PNG, print a card, or copy its prompt from export. Metric values are not displayed or exported."
   );
 
   await page.getByRole("button", { name: /Export/ }).click();

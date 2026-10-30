@@ -25,8 +25,10 @@ verified capture timestamp. Repeated times are allowed but do not establish
 distinct events. A missing pose or decreasing source-time assignment prevents
 confirmation. Manual selections do not confirm Impact or ball contact.
 
-No geometry or tempo metric values are currently generated. Review confirmation
-does not calculate metrics; Swing Card metric entries remain unavailable.
+Confirmed review can calculate experimental, unvalidated 2D Address stance-width
+ratio and Top shoulder-line angle internally. Metric values are not displayed or
+exported; Swing Card metric entries remain unavailable. Other metrics and tempo
+are not calculated.
 Pose overlays and reviewed labels are not proof of biomechanical correctness,
 performance improvement, or injury risk.
 

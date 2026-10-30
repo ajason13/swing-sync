@@ -10,8 +10,9 @@ import {
 import type { AnalysisInterval } from "../../src/analysis-interval";
 import { poseThresholds, type PoseFrameResult } from "../../src/pose-contract";
 
-function bitmap() {
-  return { close: vi.fn() } as unknown as ImageBitmap;
+function bitmap(width = 801, height = 603) {
+  const value = { width, height, close: vi.fn(() => { value.width = 0; value.height = 0; }) };
+  return value as unknown as ImageBitmap;
 }
 
 function pose(timestampMs: number): PoseFrameResult {
@@ -192,6 +193,11 @@ describe("frame processing controller", () => {
       expect(output.pose.timestampMs).toBe(source.sought[index]);
       expect(output.observedSeekTimestampMs).toBe(source.sought[index] + 0.25);
       expect(output.preview).toBe(source.previews[index]);
+      // Exact inference dimensions differ from metadata and rounded previews,
+      // and must survive the processor closing/transferring its bitmap.
+      expect(output.inferenceImage).toEqual({ width: 801, height: 603, pose: output.pose });
+      expect(output.inferenceImage?.pose).toBe(output.pose);
+      expect(source.inferences[index].width).toBe(0);
     });
     await controller.close();
     expect(source.disposed).toBe(true);

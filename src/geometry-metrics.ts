@@ -11,7 +11,9 @@ export type GeometryWarningCode =
   | "UNDECLARED_HANDEDNESS"
   | "UNDECLARED_MIRRORING"
   | "MISSING_BASELINE"
-  | "INSUFFICIENT_BASELINE";
+  | "INSUFFICIENT_BASELINE"
+  | "INVALID_IMAGE_DIMENSIONS"
+  | "OUT_OF_BOUNDS_LANDMARK";
 
 export type GeometryMetricStatus = "measured" | "unavailable";
 export type GeometryHandedness = "undeclared" | "right" | "left";
@@ -30,6 +32,11 @@ export interface GeometryMetricResult {
   value: number | null;
   /** Any warning forces an unavailable result; measured results have no warnings. */
   warnings: readonly GeometryWarningCode[];
+}
+
+export interface ImageGeometryMetricInput extends GeometryMetricInput {
+  imageWidth: number;
+  imageHeight: number;
 }
 
 interface Point2 {
@@ -67,8 +74,59 @@ const warningOrder: readonly GeometryWarningCode[] = [
   "NON_FINITE_COORDINATE",
   "LOW_VISIBILITY",
   "ZERO_LENGTH_VECTOR",
-  "INSUFFICIENT_BASELINE"
+  "INSUFFICIENT_BASELINE",
+  "INVALID_IMAGE_DIMENSIONS",
+  "OUT_OF_BOUNDS_LANDMARK"
 ];
+
+/** Experimental same-image ankle separation / shoulder separation; no ideal range. */
+export function calculateStanceWidthRatio(input: ImageGeometryMetricInput): GeometryMetricResult {
+  const collector = new WarningCollector();
+  validateHandedness(input, collector);
+  validateMirroring(input, collector);
+  const [leftShoulder, rightShoulder, leftAnkle, rightAnkle] = imagePoints(input, [11, 12, 27, 28], collector);
+  let value: number | null = null;
+  if (leftShoulder && rightShoulder && leftAnkle && rightAnkle) {
+    const shoulders = distance2(leftShoulder, rightShoulder);
+    const ankles = distance2(leftAnkle, rightAnkle);
+    if (shoulders <= GEOMETRY_EPSILON || ankles <= GEOMETRY_EPSILON) collector.add("ZERO_LENGTH_VECTOR");
+    else value = ankles / shoulders;
+  }
+  return finalize(value, collector);
+}
+
+/** Aspect-corrected undirected image line in [-90, 90); legacy directed utility stays compatible. */
+export function calculateShoulderLineAngle(input: ImageGeometryMetricInput): GeometryMetricResult {
+  const collector = new WarningCollector();
+  validateHandedness(input, collector);
+  validateMirroring(input, collector);
+  const [left, right] = imagePoints(input, [11, 12], collector);
+  let value: number | null = null;
+  if (left && right) {
+    const [lead, trail] = input.handedness === "left" ? [right, left] : [left, right];
+    const directed = angleOf(projectedVector(input, trail, lead), collector);
+    if (directed !== null) value = (((directed + 90) % 180 + 180) % 180) - 90;
+  }
+  return finalize(value, collector);
+}
+
+function imagePoints(input: ImageGeometryMetricInput, indices: readonly number[], collector: WarningCollector): (Point2 | undefined)[] {
+  const { imageWidth: width, imageHeight: height } = input;
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) {
+    collector.add("INVALID_IMAGE_DIMENSIONS");
+    return [];
+  }
+  const scale = Math.max(width, height);
+  return indices.map((index) => {
+    const point = getLandmark(input.landmarks, index, collector);
+    if (!point) return undefined;
+    if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1 || point.visibility < 0 || point.visibility > 1) {
+      collector.add("OUT_OF_BOUNDS_LANDMARK");
+      return undefined;
+    }
+    return { x: point.x * (width / scale), y: point.y * (height / scale) };
+  });
+}
 
 export function calculateShoulderAngle(input: GeometryMetricInput): GeometryMetricResult {
   const collector = new WarningCollector();
