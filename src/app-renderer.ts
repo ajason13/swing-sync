@@ -134,7 +134,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
     if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
     return `
       <div class="review-placeholder" role="group" aria-label="No frames to review">
-        <p>Complete local analysis to review sampled frames and provisional phase labels. No metrics are calculated.</p>
+        <p>Complete local analysis to review sampled frames and provisional phase labels. Metric values are not displayed or exported.</p>
       </div>
       <button class="secondary-action" type="button" data-return-capture data-focus-key="return-capture">Choose a video to analyze</button>
     `;

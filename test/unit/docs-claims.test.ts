@@ -87,7 +87,7 @@ describe("docs claim verification", () => {
       for (const [text, key] of [
         ["eight uniformly spaced samples", "sampling"],
         ["Phase labels", "sampleReview"],
-        ["No geometry or tempo metric values", "metricsUnavailable"],
+        ["Confirmed review can calculate experimental", "metricsUnavailable"],
         ["No hosted coaching responses", "coachingUnavailable"]
       ]) {
         expect(errorsFor({ [path]: currentDocs[path].replace(text, "Omitted") }))

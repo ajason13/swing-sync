@@ -21,6 +21,8 @@ export interface SampledFrameOutput {
   /** The current owner must close this bitmap when releasing the output. */
   preview: ImageBitmap;
   pose: PoseFrameResult;
+  /** Exact oriented inference size, paired by pose identity; volatile, never exported. */
+  inferenceImage?: Readonly<{ width: number; height: number; pose: PoseFrameResult }>;
 }
 
 export interface FrameSource {
@@ -241,6 +243,8 @@ export class FrameProcessingController {
       throw new Error("STALE_RUN");
     }
 
+    // Transfer/closure can zero a bitmap's dimensions. Capture before handing it off.
+    const { width, height } = inference;
     const pose = await processor.process(inference, requestedTimestampMs);
     this.assertActive(generation);
     if (pose.timestampMs !== requestedTimestampMs) throw new Error("RESULT_TIMESTAMP_MISMATCH");
@@ -251,7 +255,8 @@ export class FrameProcessingController {
       requestedTimestampMs,
       observedSeekTimestampMs,
       preview,
-      pose
+      pose,
+      inferenceImage: Object.freeze({ width, height, pose })
     };
     this.outputs.push(output);
     this.currentPreview = undefined;

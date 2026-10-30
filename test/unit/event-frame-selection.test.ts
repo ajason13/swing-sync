@@ -109,7 +109,7 @@ describe("explicit source-time processing", () => {
       expect(() => validateRequestedTimestamps(2, { startSeconds: .5, endSeconds: 1.5 }, requests)).toThrow("INVALID_EVENT_TIME");
     }
     const seek = vi.fn(async (t: number) => t + .25);
-    const inference = { close: vi.fn() } as unknown as ImageBitmap;
+    const inference = { width: 801, height: 603, close: vi.fn() } as unknown as ImageBitmap;
     const frame = output(650);
     const process = vi.fn(async (bitmap: ImageBitmap, time: number) => { bitmap.close(); return { ...frame.pose, timestampMs: time }; });
     const dispose = vi.fn(), close = vi.fn(async () => undefined);
@@ -124,6 +124,8 @@ describe("explicit source-time processing", () => {
     expect(seek).toHaveBeenCalledWith(650);
     expect(process).toHaveBeenCalledWith(inference, 650);
     expect(retained[0]).toMatchObject({ requestedTimestampMs: 650, observedSeekTimestampMs: 650.25, preview: frame.preview, pose: frame.pose });
+    expect(retained[0].inferenceImage).toEqual({ width: 801, height: 603, pose: retained[0].pose });
+    expect(retained[0].inferenceImage?.pose).toBe(retained[0].pose);
     await controller.close();
     expect(dispose).toHaveBeenCalledOnce(); expect(close).toHaveBeenCalledOnce();
     expect(frame.preview.close).not.toHaveBeenCalled();
@@ -141,7 +143,7 @@ describe("manual selection lifecycle", () => {
       const selected = output(requests![0]); frames.push(selected);
       const source = { load: async () => ({ durationSeconds: 2, width: 320, height: 180 }),
         seek: async (time: number) => { await defer; if (fail) throw new Error(fail); return time + .25; },
-        createPreview: async () => selected.preview, createInference: async () => ({ close() {} }) as ImageBitmap,
+        createPreview: async () => selected.preview, createInference: async () => ({ width: 801, height: 603, close() {} }) as ImageBitmap,
         dispose: vi.fn() };
       sources.push(source);
       const controller = new FrameProcessingController({ createSource: () => source,
@@ -151,19 +153,27 @@ describe("manual selection lifecycle", () => {
     });
     const requestRender = vi.fn();
     const lifecycle = new AnalysisLifecycle({ state, root: {} as ParentNode, requestRender, applyAccessibilityIntent: vi.fn() });
+    setPhaseConfirmation(state, true); confirmPhaseReview(state);
+    expect(state.metricPayload).toBeDefined();
     return { state, lifecycle, requestRender, frames, sources };
   }
 
   it("supports backward requests in fresh sessions, closes replaced images and releases all selected images", async () => {
     const h = harness();
     await h.lifecycle.assignEventFrame(3, 650);
+    expect(h.state.metricPayload).toBeUndefined();
     expect(h.state.phaseDraft[3].sampleIndex).toBe(8);
+    expect(h.state.phaseOutputs[8].inferenceImage).toMatchObject({ width: 801, height: 603 });
+    expect(h.state.phaseOutputs[8].inferenceImage?.pose).toBe(h.state.phaseOutputs[8].pose);
+    setPhaseConfirmation(h.state, true); confirmPhaseReview(h.state);
+    expect(h.state.metricPayload).toBeDefined();
     await h.lifecycle.assignEventFrame(3, 620);
     expect(h.state.phaseOutputs).toHaveLength(9);
     expect(h.frames[0].preview.close).toHaveBeenCalledOnce();
     expect(h.frames[1].preview.close).not.toHaveBeenCalled();
     expect(h.sources.every(s => s.dispose.mock.calls.length === 1)).toBe(true);
     await h.lifecycle.closeActive();
+    expect(h.state.metricPayload).toBeUndefined();
     expect(h.frames[1].preview.close).toHaveBeenCalledOnce();
     expect(h.state.phaseOutputs).toEqual([]);
   });
@@ -186,6 +196,7 @@ describe("manual selection lifecycle", () => {
     const pendingSeek = gate();
     const h = harness(pendingSeek.promise);
     const pending = h.lifecycle.assignEventFrame(3, 650);
+    expect(h.state.metricPayload).toBeUndefined();
     await vi.waitFor(() => expect(h.state.eventFrameBusy).toBe(true));
     await h.lifecycle.assignEventFrame(4, 900);
     expect(h.frames).toHaveLength(1);
@@ -193,6 +204,7 @@ describe("manual selection lifecycle", () => {
     pendingSeek.resolve();
     await Promise.all([pending, cleanup]);
     expect(h.state.eventFrameBusy).toBe(false);
+    expect(h.state.metricPayload).toBeUndefined();
     expect(h.state.phaseOutputs.length).toBe(operation === "stop" ? 8 : 0);
     expect(h.state.phaseDraft[3]?.sampleIndex).toBe(operation === "stop" ? 3 : undefined);
     expect(h.sources[0].dispose).toHaveBeenCalledOnce();

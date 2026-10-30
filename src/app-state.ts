@@ -12,6 +12,8 @@ import {
 import type { PoseOverlayRenderResult } from "./pose-renderer";
 import type { WorkflowStepId } from "./workflow";
 import { isValidAnalysisInterval, type AnalysisInterval } from "./analysis-interval";
+import { produceMetricPayload } from "./metric-producer";
+import type { SwingMetricPayload } from "./metric-contract";
 
 export const initialSwingCardStatus = "Swing Card export is generated locally after review data exists.";
 
@@ -31,6 +33,7 @@ export interface AppState {
   eventFrameStatus: string;
   phaseDeclarations: PhaseDeclarations;
   phaseReviewState: PhaseReviewState | undefined;
+  metricPayload: SwingMetricPayload | undefined;
   phaseDraft: PhaseAssignment[];
   phaseConfirmation: boolean;
   selectedKeyframeIndex: number;
@@ -58,6 +61,7 @@ export function createInitialAppState(): AppState {
     eventFrameStatus: "",
     phaseDeclarations: undeclaredPhaseDeclarations(),
     phaseReviewState: undefined,
+    metricPayload: undefined,
     phaseDraft: [],
     phaseConfirmation: false,
     selectedKeyframeIndex: 0,
@@ -149,6 +153,7 @@ export function resetProcessingCounters(state: AppState): void {
 }
 
 export function resetPhaseReview(state: AppState): void {
+  state.metricPayload = undefined;
   state.phaseOutputs = [];
   state.manualFrameIndices = [];
   state.eventFrameBusy = false;
@@ -163,6 +168,7 @@ export function resetPhaseReview(state: AppState): void {
 }
 
 export function rebuildPhaseReviewState(state: AppState): void {
+  state.metricPayload = undefined;
   cancelSwingCardExport(state);
   const proposal = createPhaseProposal(state.phaseOutputs.slice(0, phaseDefinitions.length), state.phaseDeclarations);
   state.phaseReviewState = createPhaseReviewState(proposal);
@@ -177,6 +183,7 @@ export function setPhaseDeclaration<K extends keyof PhaseDeclarations>(
   key: K,
   value: PhaseDeclarations[K]
 ): void {
+  invalidatePhaseConfirmation(state);
   state.phaseDeclarations[key] = value;
 }
 
@@ -193,6 +200,7 @@ export function setPhaseDraftAssignment(state: AppState, phaseIndex: number, sam
 }
 
 export function invalidatePhaseConfirmation(state: AppState): void {
+  state.metricPayload = undefined;
   state.phaseConfirmation = false;
   if (state.phaseReviewState) state.phaseReviewState = { ...state.phaseReviewState, correction: undefined, readyForFutureMetrics: false };
   cancelSwingCardExport(state);
@@ -222,6 +230,12 @@ export function confirmPhaseReview(state: AppState): void {
     state.phaseOutputs[0]?.runGeneration ?? -1,
     state.phaseOutputs
   );
+  state.metricPayload = state.phaseReviewState.readyForFutureMetrics ? produceMetricPayload({
+    outputs: state.phaseOutputs,
+    declarations: state.phaseDeclarations,
+    review: state.phaseReviewState,
+    activeGeneration: state.phaseOutputs[0]?.runGeneration ?? -1
+  }) : undefined;
 }
 
 export function selectKeyframe(state: AppState, keyframeIndex: number): void {
