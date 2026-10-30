@@ -89,6 +89,12 @@ justify a deletion guarantee.
 | Four metric payload slots | Exploratory/not validation-ready: they are contract slots, not calculated validated outputs |
 | Biomechanical, medical, safety, coaching, improvement, or unsupported-view inference | Not ready |
 
+The [accepted MVP metric decision](./mvp-metric-decision.md) selects two future
+experimental image measurements and defines their methods and synthetic
+references. Method selection does not change these validation classifications
+or establish measured accuracy; calculation and real-world validation remain
+separate work.
+
 ## Outcomes and reporting language
 
 Pre-register endpoint-specific margins, tolerances, exclusions, and analysis
