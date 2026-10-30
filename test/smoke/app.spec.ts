@@ -880,10 +880,10 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
   await expect(page.locator("[data-workflow-status]")).toHaveText("Review confirmed");
   await expect(page.locator("#phase-review-status p")).toHaveText(
-    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported."
+    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below and included in Swing Card exports."
   );
   await expect(page.locator(".phase-review > .action-row .action-note")).toHaveText(
-    "Save a PNG, print a card, or copy its prompt from export. Metric values are shown only in review and are not exported."
+    "Save a PNG, print a card, or copy its prompt from export. Current reviewed measurements and limitations are included."
   );
 
   await page.getByRole("button", { name: /Export/ }).click();
@@ -1504,7 +1504,7 @@ test("exports uncropped portrait keyframes with aligned annotation markers in a 
     };
     return { width: canvas.width, height: canvas.height, dpr, frame: bounds(255, 0, 0), marker: bounds(0, 255, 255) };
   }, [...png]);
-  expect(geometry.height / geometry.dpr).toBe(1600);
+  expect(geometry.height / geometry.dpr).toBeGreaterThanOrEqual(1600);
   expect(Math.abs(geometry.frame.width - 132.75 * geometry.dpr)).toBeLessThanOrEqual(1);
   expect(Math.abs(geometry.frame.height - 236 * geometry.dpr)).toBeLessThanOrEqual(1);
   expect((geometry.frame.left + geometry.frame.right + 1) / (2 * geometry.dpr)).toBeCloseTo(250, 0);
@@ -2118,7 +2118,7 @@ test("stops a pending event selection and releases it on navigation without rest
 });
 
 for (const missing of [false, true]) {
-  test(`presents ${missing ? "unavailable" : "measured"} review measurements accessibly at 320px`, async ({ page }) => {
+  test(`presents ${missing ? "unavailable" : "measured"} review measurements and matching exports accessibly at 320px`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     if (missing) {
       // Keep real local inference; lower only ankle evidence in the returned synthetic pose.
@@ -2173,9 +2173,65 @@ for (const missing of [false, true]) {
         - paragraph: Measured from the reviewed image; evidence is not calibrated.
         - paragraph
     `);
+    const expectedValues = await region.locator("[data-review-metric]").allTextContents();
+    const expectedText = await region.locator("#metric-review-limits, .metric-review__item p").allTextContents();
+    await page.evaluate(() => {
+      const exportEvidence = { print: "", copy: "", canvas: { width: 0, height: 0, lines: [] as { text: string; x: number; y: number; width: number }[] } };
+      Object.assign(window, { __metricExports: exportEvidence });
+      window.print = () => { exportEvidence.print = document.querySelector('[data-swing-card-print-section="metrics"]')?.textContent ?? ""; };
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (text: string) => { exportEvidence.copy = text; } } });
+      const lines = new WeakMap<HTMLCanvasElement, typeof exportEvidence.canvas.lines>();
+      const fill = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function(text, x, y, ...rest) {
+        const entries = lines.get(this.canvas) ?? [];
+        entries.push({ text, x, y, width: this.measureText(text).width });
+        lines.set(this.canvas, entries);
+        return fill.call(this, text, x, y, ...rest);
+      };
+      const toBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function(...args) {
+        exportEvidence.canvas = { width: this.width, height: this.height, lines: lines.get(this) ?? [] };
+        return toBlob.apply(this, args);
+      };
+    });
+    await page.locator("[data-open-export]").click();
+    await page.getByRole("button", { name: "Print / Save as PDF" }).click();
+    await expect(page.locator("[data-swing-card-status]")).toContainText("Browser print dialog opened");
+    await page.getByRole("button", { name: "Copy prompt", exact: true }).click();
+    await expect(page.locator("[data-swing-card-status]")).toContainText("Prompt copied");
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PNG" }).click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+    expect([...Buffer.concat(chunks).subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    const exports = await page.evaluate(() => (window as typeof window & { __metricExports: {
+      print: string; copy: string; canvas: { width: number; height: number; lines: { text: string; x: number; y: number; width: number }[] }
+    } }).__metricExports);
+    const drawnText = exports.canvas.lines.map(line => line.text).join(" ");
+    for (const text of [exports.print, exports.copy, drawnText]) {
+      for (const expected of [...expectedValues, ...expectedText, "Experimental, unvalidated 2D image measurement", "Impact remains unconfirmed"]) expect(text).toContain(expected);
+      expect(text).not.toMatch(/requestedTimestampMs|observedSeekTimestampMs|landmarks|inferenceImage|runGeneration|numericValue|blob:|mannequin-golf/);
+    }
+    const dpr = exports.canvas.width / 960;
+    for (const line of exports.canvas.lines) {
+      expect(line.y).toBeLessThan(exports.canvas.height / dpr - 40);
+      expect(line.x + line.width).toBeLessThanOrEqual(920);
+    }
+    await expectNoBrowserStorage(page);
+    expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+    await page.locator('[data-step="review"]').click();
     await page.locator('[data-phase-index="3"]').selectOption("2");
     await expect(region.locator("[data-review-metric]")).toHaveText(["Unavailable", "Unavailable"]);
     await expect(region).toContainText("Confirm the current phase review");
+    await page.locator("[data-open-export]").click();
+    await page.getByRole("button", { name: "Copy prompt", exact: true }).click();
+    await expect(page.locator("[data-swing-card-status]")).toContainText("Prompt copied");
+    const invalidated = await page.evaluate(() => (window as typeof window & { __metricExports: { copy: string } }).__metricExports.copy);
+    expect(invalidated).toContain("Address stance-width ratio (2D): Unavailable");
+    expect(invalidated).toContain("Top shoulder-line angle (2D): Unavailable");
+    expect(invalidated).toContain("Confirm the current phase review");
     expect(externalRequests(requestsFor(page))).toEqual([]);
   });
 }
