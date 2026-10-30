@@ -880,10 +880,10 @@ test("requires accessible explicit review and accepts only valid nondecreasing p
   await expect(page.locator(".phase-warning")).toContainText("Phase review confirmed");
   await expect(page.locator("[data-workflow-status]")).toHaveText("Review confirmed");
   await expect(page.locator("#phase-review-status p")).toHaveText(
-    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and metric values are not displayed or exported."
+    "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported."
   );
   await expect(page.locator(".phase-review > .action-row .action-note")).toHaveText(
-    "Save a PNG, print a card, or copy its prompt from export. Metric values are not displayed or exported."
+    "Save a PNG, print a card, or copy its prompt from export. Metric values are shown only in review and are not exported."
   );
 
   await page.getByRole("button", { name: /Export/ }).click();
@@ -2116,3 +2116,66 @@ test("stops a pending event selection and releases it on navigation without rest
   expect(externalRequests(requestsFor(page))).toEqual([]);
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
 });
+
+for (const missing of [false, true]) {
+  test(`presents ${missing ? "unavailable" : "measured"} review measurements accessibly at 320px`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    if (missing) {
+      // Keep real local inference; lower only ankle evidence in the returned synthetic pose.
+      await page.evaluate(() => {
+        const OriginalWorker = window.Worker;
+        window.Worker = class extends OriginalWorker {
+          constructor(url: string | URL, options?: WorkerOptions) {
+            super(url, options);
+            this.addEventListener("message", (event: MessageEvent) => {
+              if (event.data.type === "result") event.data.landmarks[0][27].visibility = .49;
+            });
+          }
+        };
+      });
+    }
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    await page.getByRole("button", { name: "Begin analysis" }).click();
+    await page.getByRole("button", { name: "Review phase labels" }).click({ timeout: 30_000 });
+    const region = page.getByRole("region", { name: "Image measurements", exact: true });
+    await expect(region).toHaveAccessibleDescription(/Camera angle, roll, occlusion/);
+    await expect(region.locator("[data-review-metric]")).toHaveText(["Unavailable", "Unavailable"]);
+    await page.getByLabel("View", { exact: true }).selectOption("face-on");
+    await page.getByLabel("Handedness", { exact: true }).selectOption("right");
+    await page.getByLabel("Horizontally mirrored", { exact: true }).selectOption("no");
+    await page.getByLabel(/I confirm this is one trimmed/).focus();
+    await page.keyboard.press("Space");
+    await page.getByLabel(/I reviewed these provisional labels/).focus();
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Confirm phase review" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#phase-review-heading")).toBeFocused();
+    const ratio = region.locator('[data-review-metric="address-stance-ratio"]');
+    await expect(ratio).toHaveText(missing ? "Unavailable" : /^\d+\.\d{2} ratio$/);
+    if (missing) await expect(region).toContainText("lacks usable pose evidence");
+    await expect(region.locator('[data-review-metric="top-shoulder-line-angle"]')).toHaveText(/^-?\d+\.\d{2} degrees$/);
+    await expect(region).toContainText("Experimental, unvalidated 2D image measurement");
+    await expect(region).toContainText("Impact remains unconfirmed");
+    await expectResponsiveGeometry(page, [".metric-review", ".metric-review__item", ".metric-review dd", ".metric-review p"]);
+    await expect(region.locator(".metric-review__item").nth(0)).toMatchAriaSnapshot(`
+      - term: Address stance-width ratio (2D)
+      - definition:
+        - strong: ${missing ? "Unavailable" : "/[0-9]+[.][0-9]{2} ratio/"}
+        - paragraph
+        - paragraph: Projected ankle separation relative to shoulder separation in the reviewed Address image.
+    `);
+    await expect(region.locator(".metric-review__item").nth(1)).toMatchAriaSnapshot(`
+      - term: Top shoulder-line angle (2D)
+      - definition:
+        - strong: /-?[0-9]+[.][0-9]{2} degrees/
+        - paragraph: Measured from the reviewed image; evidence is not calibrated.
+        - paragraph
+    `);
+    await page.locator('[data-phase-index="3"]').selectOption("2");
+    await expect(region.locator("[data-review-metric]")).toHaveText(["Unavailable", "Unavailable"]);
+    await expect(region).toContainText("Confirm the current phase review");
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+  });
+}

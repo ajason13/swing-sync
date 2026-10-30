@@ -1021,3 +1021,21 @@ button:disabled {
   font: inherit;
 }
 .event-frame-controls legend { max-width: 100%; overflow-wrap: anywhere; }
+
+.metric-review {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #607367;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+.metric-review__values {
+  display: grid;
+  gap: 16px;
+}
+
+.metric-review__item { min-width: 0; }
+.metric-review dt { font-weight: 800; }
+.metric-review dd { margin: 6px 0 0; }
+.metric-review p { line-height: 1.5; }

@@ -1,3 +1,4 @@
+import { renderMetricReview } from "./metric-review-renderer";
 import { calculateSampleTimestamps } from "./frame-processing";
 import { getSelectedPhasePreview, type AppState } from "./app-state";
 import { overlayStatusText } from "./keyframe-overlay-renderer";
@@ -11,7 +12,7 @@ export function renderPhaseReview(state: AppState): string {
   const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
   const warning =
     ready
-      ? "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and metric values are not displayed or exported."
+      ? "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported."
       : proposal?.evidenceStatus === "unsupported-input"
       ? "Complete the video declarations below. Review requires eight supported pose samples; if samples are missing, choose a longer interval and analyze again."
       : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
@@ -23,6 +24,7 @@ export function renderPhaseReview(state: AppState): string {
         <h3 id="phase-review-heading" tabindex="-1" data-focus-key="phase-review-heading">${ready ? "Phase review confirmed" : reviewRequired ? "Review required" : "Unsupported input"}</h3>
         <p>${warning}</p>
       </div>
+      ${renderMetricReview(state)}
       <fieldset class="phase-declarations" ${busy ? "disabled" : ""}>
         <legend>Required video declarations</legend>
         ${renderDeclarationSelect("phase-view", "View", state.phaseDeclarations.view, "phase-declaration:view", [
@@ -77,7 +79,7 @@ export function renderPhaseReview(state: AppState): string {
           reviewRequired && state.phaseConfirmation && validOrder && !ready && !busy ? "" : "disabled"
         }>Confirm phase review</button>
         <button class="secondary-action" type="button" data-open-export data-focus-key="open-export" ${busy ? "disabled" : ""}>Open Swing Card export</button>
-        <p class="action-note">${ready ? "Save a PNG, print a card, or copy its prompt from export. Metric values are not displayed or exported." : "Complete the declarations, check assignments and time order, then acknowledge and confirm your review. You can export before confirmation with an unconfirmed-review warning."}</p>
+        <p class="action-note">${ready ? "Save a PNG, print a card, or copy its prompt from export. Metric values are shown only in review and are not exported." : "Complete the declarations, check assignments and time order, then acknowledge and confirm your review. You can export before confirmation with an unconfirmed-review warning."}</p>
       </div>
     </section>
   `;

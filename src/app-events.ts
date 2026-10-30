@@ -144,7 +144,7 @@ export function bindAppEvents(root: ParentNode, dependencies: AppEventsDependenc
 
   root.querySelector<HTMLButtonElement>("[data-review-phases]")?.addEventListener("click", () => {
     selectWorkflowStep(state, "review");
-    const message = "Complete the video declarations, inspect the provisional labels, and select event times where needed. Metric values are not displayed or exported.";
+    const message = "Complete the video declarations, inspect the provisional labels, and select event times where needed. Experimental image measurements require confirmed phase review and are not exported.";
     requestRender({ focusKey: "phase-review-heading", visibleStatusText: message, announcement: message });
   });
 

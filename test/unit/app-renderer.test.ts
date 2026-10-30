@@ -113,7 +113,7 @@ describe("app renderer contracts", () => {
     confirmPhaseReview(state);
     renderApp(root, state, true);
     expect(root.innerHTML).toContain('data-workflow-status>Review confirmed</span>');
-    expect(root.innerHTML).toContain("Impact remains unconfirmed, and metric values are not displayed or exported.");
+    expect(root.innerHTML).toContain("Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported.");
     selectWorkflowStep(state, "export");
     renderApp(root, state, true);
     expect(root.innerHTML).toContain('data-workflow-status>Ready to export</span>');
