@@ -25,8 +25,9 @@ Review and Swing Card exports use the same assigned images. At most eight
 original samples and one selected frame per phase are retained in memory.
 
 Confirmed review can calculate experimental, unvalidated 2D Address stance-width
-ratio and Top shoulder-line angle internally. Metric values are not displayed or
-exported; Swing Card metric entries remain unavailable. Other metrics and tempo
+ratio and Top shoulder-line angle and display eligible values in review, with units,
+evidence limitations and explicit unavailable reasons. Values are not exported;
+Swing Card metric entries remain unavailable. Other metrics and tempo
 are not calculated.
 No hosted coaching responses are currently generated. Copy prompt prepares text
 for a separate, manual interaction with another service.

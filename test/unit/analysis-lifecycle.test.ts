@@ -175,7 +175,7 @@ describe("analysis lifecycle ownership", () => {
 
     selectWorkflowStep(state, "review");
     root.reviewStatus.textContent =
-      "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed, and metric values are not displayed or exported.";
+      "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported.";
     const confirmedReviewStatus = root.reviewStatus.textContent;
     const querySelector = vi.spyOn(root, "querySelector");
     applyAccessibilityIntent.mockClear();
