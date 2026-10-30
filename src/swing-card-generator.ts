@@ -1,9 +1,5 @@
-import {
-  metricNames,
-  type MetricLimitationCode,
-  type SwingMetric,
-  type SwingMetricPayload
-} from "./metric-contract";
+import { isSwingMetricPayload, type SwingMetricPayload } from "./metric-contract";
+import { formatMetricSummary, isEligibleMvpMetric } from "./metric-presentation";
 import type {
   SwingCardContent,
   SwingCardContentWarningCode,
@@ -13,7 +9,7 @@ import type {
 } from "./swing-card-contract";
 
 const CARD_WIDTH = 960;
-const CARD_MAX_HEIGHT = 1600;
+const CARD_MIN_HEIGHT = 1600;
 const CARD_MAX_DPR = 2;
 const CARD_PADDING = 40;
 const KEYFRAME_WIDTH = 420;
@@ -39,6 +35,7 @@ export function deriveSwingCardContentWarnings(
   input: SwingCardWarningInput
 ): readonly SwingCardContentWarningCode[] {
   const warnings = new Set<SwingCardContentWarningCode>();
+  const payload = isSwingMetricPayload(input.metricPayload) ? input.metricPayload : undefined;
   if (input.keyframes.length === 0) warnings.add("NO_KEYFRAMES_SELECTED");
   if (
     input.keyframes.some(
@@ -49,16 +46,16 @@ export function deriveSwingCardContentWarnings(
     warnings.add("KEYFRAME_UNAVAILABLE");
   }
   if (
-    !input.metricPayload ||
-    input.metricPayload.metrics.length === 0 ||
-    input.metricPayload.metrics.every((metric) => metric.value.status !== "measured")
+    !payload ||
+    payload.metrics.length === 0 ||
+    payload.metrics.every((metric) => !isEligibleMvpMetric(metric))
   ) {
     warnings.add("METRICS_UNAVAILABLE");
   }
   if (!input.phaseReviewConfirmed) warnings.add("PHASE_REVIEW_REQUIRED");
   if (
     input.keyframes.some((keyframe) => keyframe.overlay?.status === "partial") ||
-    input.metricPayload?.metrics.some(
+    payload?.metrics.some(
       (metric) =>
         metric.confidence.kind === "low-evidence" ||
         metric.limitationNotes.some((note) => note !== "none")
@@ -70,7 +67,7 @@ export function deriveSwingCardContentWarnings(
 }
 
 export function buildSwingCardPrompt(content: SwingCardContent): string {
-  const metrics = formatMetricsForPrompt(content.metricPayload);
+  const metrics = formatMetricSummary(content.metricPayload, content.metricUnavailableReason).join("\n");
   const warnings = content.warnings.map(labelContentWarning).join(", ") || "No card warnings.";
   return [
     "Act as an educational golf movement assistant. I may manually upload a Swing Sync Card that contains selected annotated keyframe stills, bounded local metric summaries, and warnings or limitations from my swing review.",
@@ -126,7 +123,7 @@ export async function composeSwingCardPng(content: SwingCardContent): Promise<Sw
   if (!context) return pngError("CANVAS_UNAVAILABLE", content);
 
   const dpr = effectiveDevicePixelRatio();
-  const height = CARD_MAX_HEIGHT;
+  const height = measureCardHeight(context, content);
   canvas.width = CARD_WIDTH * dpr;
   canvas.height = height * dpr;
   canvas.style.width = `${CARD_WIDTH}px`;
@@ -181,11 +178,28 @@ export function renderSwingCardPrintSurface(content: SwingCardContent): HTMLElem
     textBlock("h2", "Swing Sync Card"),
     textBlock("p", "Browser print can be used to print or save as PDF where supported."),
     renderPrintKeyframes(content),
-    renderPrintMetrics(content.metricPayload),
+    renderPrintMetrics(content),
     renderPrintWarnings(content.warnings),
     renderPrintPrompt(content.analysisPrompt)
   );
   return root;
+}
+
+// Reserve space for every metric/limitation and warning before the optional prompt.
+// Canonical metric text and the eight-frame selection bound the canvas size.
+function measureCardHeight(context: CanvasRenderingContext2D, content: SwingCardContent): number {
+  const lineHeight = (lines: readonly string[], font: string, height: number) => {
+    context.font = font;
+    return lines.reduce((sum, line) => sum + wrapCanvasText(context, line, CARD_WIDTH - CARD_PADDING * 2)
+      .reduce((total, wrapped) => total + (wrapped === "" ? Math.round(height / 2) : height), 0), 0);
+  };
+  const header = CARD_PADDING + 30 + 4 + lineHeight([
+    "Generated in your browser for user-controlled download. Browser print can be used to print or save as PDF where supported."
+  ], "16px sans-serif", 19) + 18;
+  const frames = content.keyframes.length ? (Math.ceil(content.keyframes.length / 2) - 1) * (KEYFRAME_HEIGHT + 52) + KEYFRAME_HEIGHT + 42 : KEYFRAME_HEIGHT + 22;
+  const metrics = 36 + lineHeight(formatMetricSummary(content.metricPayload, content.metricUnavailableReason), "14px sans-serif", 19);
+  const warnings = 36 + lineHeight(content.warnings.length ? content.warnings.map(labelContentWarning) : ["None."], "14px sans-serif", 18);
+  return Math.max(CARD_MIN_HEIGHT, Math.ceil(header + frames + metrics + warnings + 36 + 180));
 }
 
 function drawSwingCard(
@@ -209,13 +223,14 @@ function drawSwingCard(
   y += 18;
   y = drawKeyframes(context, content.keyframes, y);
   y = drawSectionTitle(context, "Metrics", y + 12);
-  y = drawMetricLines(context, content.metricPayload, y);
+  y = drawMetricLines(context, content, y);
   y = drawSectionTitle(context, "Warnings and limitations", y + 12);
   y = drawLines(context, content.warnings.map(labelContentWarning), y, 18, "#405047", "14px sans-serif");
   y = drawSectionTitle(context, "Manual LLM upload prompt", y + 12);
+  context.font = "13px sans-serif";
   const promptLines = wrapCanvasText(context, content.analysisPrompt, CARD_WIDTH - CARD_PADDING * 2);
   for (const line of promptLines) {
-    if (y > CARD_MAX_HEIGHT - 70) {
+    if (y > maxHeight - 70) {
       drawWrappedBlock(context, OVERFLOW_NOTE, CARD_PADDING, y, 17, "#6a4a12", "700 13px sans-serif");
       return;
     }
@@ -270,10 +285,10 @@ function drawKeyframes(
 
 function drawMetricLines(
   context: CanvasRenderingContext2D,
-  metricPayload: SwingMetricPayload | undefined,
+  content: SwingCardContent,
   y: number
 ): number {
-  return drawLines(context, formatMetricLines(metricPayload), y, 19, "#405047", "14px sans-serif");
+  return drawLines(context, formatMetricSummary(content.metricPayload, content.metricUnavailableReason), y, 19, "#405047", "14px sans-serif");
 }
 
 function drawSectionTitle(
@@ -369,11 +384,11 @@ function renderPrintKeyframes(content: SwingCardContent): HTMLElement {
   return section;
 }
 
-function renderPrintMetrics(metricPayload: SwingMetricPayload | undefined): HTMLElement {
+function renderPrintMetrics(content: SwingCardContent): HTMLElement {
   const section = printSection("Metrics");
   section.dataset.swingCardPrintSection = "metrics";
   const list = document.createElement("ul");
-  for (const line of formatMetricLines(metricPayload)) {
+  for (const line of formatMetricSummary(content.metricPayload, content.metricUnavailableReason)) {
     const item = document.createElement("li");
     item.textContent = line;
     list.append(item);
@@ -419,30 +434,6 @@ function textBlock(tagName: string, text: string, className?: string): HTMLEleme
   if (className) element.className = className;
   element.textContent = text;
   return element;
-}
-
-function formatMetricLines(metricPayload: SwingMetricPayload | undefined): readonly string[] {
-  if (!metricPayload || metricPayload.metrics.length === 0) {
-    return metricNames.map((name) => `${name}: unavailable`);
-  }
-  return metricPayload.metrics.map(formatMetric);
-}
-
-function formatMetricsForPrompt(metricPayload: SwingMetricPayload | undefined): string {
-  return formatMetricLines(metricPayload).join("\n");
-}
-
-function formatMetric(metric: SwingMetric): string {
-  const value =
-    metric.value.status === "measured"
-      ? `${metric.value.numericValue} ${metric.units}`
-      : metric.value.status;
-  const notes = formatLimitationNotes(metric.limitationNotes);
-  return `${metric.metricName} (${metric.phaseId}, ${metric.handedness}): ${value}; confidence ${metric.confidence.kind}; limitations ${notes}`;
-}
-
-function formatLimitationNotes(notes: readonly MetricLimitationCode[]): string {
-  return notes.join(", ");
 }
 
 function labelContentWarning(warning: SwingCardContentWarningCode): string {

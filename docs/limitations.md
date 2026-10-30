@@ -26,10 +26,9 @@ distinct events. A missing pose or decreasing source-time assignment prevents
 confirmation. Manual selections do not confirm Impact or ball contact.
 
 Confirmed review can calculate experimental, unvalidated 2D Address stance-width
-ratio and Top shoulder-line angle and display eligible values in review, with units,
-evidence limitations and explicit unavailable reasons. Values are not exported;
-Swing Card metric entries remain unavailable. Other metrics and tempo
-are not calculated.
+ratio and Top shoulder-line angle and display eligible values in review and
+Swing Card PNG, print and copied prompts, with units, evidence limitations and
+explicit unavailable reasons. Other metrics and tempo are not calculated.
 Pose overlays and reviewed labels are not proof of biomechanical correctness,
 performance improvement, or injury risk.
 

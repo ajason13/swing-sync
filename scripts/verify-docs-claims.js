@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const requiredStrings = {
   sampling: "up to eight uniformly spaced samples across the selected interval.",
   sampleReview: "Phase labels are provisional, assigned by sample order for user review; they are not motion-based event detection.",
-  metricsUnavailable: "Confirmed review can calculate experimental, unvalidated 2D Address stance-width ratio and Top shoulder-line angle and display eligible values in review, with units, evidence limitations and explicit unavailable reasons. Values are not exported; Swing Card metric entries remain unavailable. Other metrics and tempo are not calculated.",
+  metricsUnavailable: "Confirmed review can calculate experimental, unvalidated 2D Address stance-width ratio and Top shoulder-line angle and display eligible values in review and Swing Card PNG, print and copied prompts, with units, evidence limitations and explicit unavailable reasons. Other metrics and tempo are not calculated.",
   coachingUnavailable: "No hosted coaching responses are currently generated. Copy prompt prepares text for a separate, manual interaction with another service.",
   metadataDescription: "Local-first educational golf swing review with sampled frames and pose overlays.",
   nonAffiliation:

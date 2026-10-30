@@ -6,7 +6,7 @@ import { phaseDefinitions } from "./phase-review";
 import { renderPhaseReview } from "./phase-review-renderer";
 import { renderRemoteModelReviewPanel } from "./remote-model-renderer";
 import { escapeHtml, formatSwingCardWarning } from "./render-utils";
-import type { SwingCardContentWarningCode } from "./swing-card-contract";
+import { deriveSwingCardContentWarnings } from "./swing-card-generator";
 import { getWorkflowStep, workflowSteps } from "./workflow";
 
 export function renderApp(root: HTMLElement, state: AppState, consentAccepted: boolean, statusMessage?: string): void {
@@ -134,7 +134,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
     if (state.phaseOutputs.length > 0) return renderPhaseReview(state);
     return `
       <div class="review-placeholder" role="group" aria-label="No frames to review">
-        <p>Complete local analysis to review sampled frames and provisional phase labels. Experimental image measurements require confirmed phase review and are not exported.</p>
+        <p>Complete local analysis to review sampled frames and provisional phase labels. Experimental image measurements require confirmed phase review and can be included in Swing Card exports.</p>
       </div>
       <button class="secondary-action" type="button" data-return-capture data-focus-key="return-capture">Choose a video to analyze</button>
     `;
@@ -228,8 +228,9 @@ function workflowStatusText(state: AppState, consentAccepted: boolean): string {
 
 function renderSwingCardExport(state: AppState): string {
   const phaseReady = state.phaseReviewState?.readyForFutureMetrics ?? false;
-  const warnings: SwingCardContentWarningCode[] = ["METRICS_UNAVAILABLE"];
-  if (!phaseReady) warnings.push("PHASE_REVIEW_REQUIRED");
+  const warnings = deriveSwingCardContentWarnings({
+    keyframes: [], metricPayload: phaseReady ? state.metricPayload : undefined, phaseReviewConfirmed: phaseReady
+  }).filter(warning => warning !== "NO_KEYFRAMES_SELECTED");
 
   return `
     <section class="swing-card-panel" aria-labelledby="swing-card-heading">
@@ -240,7 +241,7 @@ function renderSwingCardExport(state: AppState): string {
         </div>
         <span class="stage-status">Manual sharing</span>
       </div>
-      <p>This card can include annotated keyframes, unavailable metric states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included. Keyframes and their availability warnings are prepared when you download or print. Unavailable evidence remains marked in the card.</p>
+      <p>This card can include annotated keyframes, reviewed image measurements or explicit unavailable states, warnings, and prompt text for a manual LLM chat upload. Raw swing video is not included. Keyframes and their availability warnings are prepared when you download or print. Unavailable evidence remains marked in the card.</p>
       <div class="swing-card-summary" role="group" aria-label="Swing Card contents">
         <div><strong>${phaseDefinitions.length}</strong><span>phase labels</span></div>
         <div><strong>PNG</strong><span>download</span></div>

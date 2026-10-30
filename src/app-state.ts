@@ -223,6 +223,7 @@ export function setPhaseConfirmation(state: AppState, confirmed: boolean): void 
 
 export function confirmPhaseReview(state: AppState): void {
   if (!state.phaseReviewState || state.eventFrameBusy) return;
+  cancelSwingCardExport(state);
   state.phaseReviewState = applyPhaseCorrection(
     state.phaseReviewState,
     state.phaseDraft,
