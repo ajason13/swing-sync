@@ -119,7 +119,9 @@ export class VideoFrameSource implements FrameSource {
       return await (options ? createImageBitmap(this.video, options) : createImageBitmap(this.video));
     } catch (error) {
       // Keep only bounded operation/error classes; native messages may contain sensitive data.
-      const reason = error instanceof DOMException && error.name === "InvalidStateError" ? "INVALID_STATE" : "FAILED";
+      const reason = error instanceof DOMException && error.name === "InvalidStateError"
+        ? (error.message.endsWith("The ImageBitmap could not be allocated.") ? "ALLOCATION_FAILED" : "INVALID_STATE")
+        : "FAILED";
       throw new Error(`MEDIA_${operation}_BITMAP_${reason}`);
     }
   }

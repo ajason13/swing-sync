@@ -2080,6 +2080,49 @@ test("selects new event times with paired local inference and consistent moving-
   await expectNoBrowserStorage(page);
 });
 
+for (const [scenario, sourceTimes] of [
+  ["reused", [730, 730, 730, 730]],
+  ["decreasing", [1900, 1000, 730, 697]],
+  ["mixed", [730, 1900, 697, 730]]
+] as const) {
+  test(`keeps ${scenario} event selections paired with fresh local inference`, async ({ page }) => {
+    await page.evaluate(() => {
+      const requests: number[] = [];
+      Object.assign(window, { __selectedFrameRequests: requests });
+      const post = Worker.prototype.postMessage;
+      Worker.prototype.postMessage = function(message: { type?: string; timestampMs?: number }, ...rest: unknown[]) {
+        if (message.type === "frame") requests.push(message.timestampMs!);
+        return Reflect.apply(post, this, [message, ...rest]);
+      };
+    });
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    await page.getByRole("button", { name: "Begin analysis" }).click();
+    await expect(page.locator("[data-review-phases]")).toBeVisible({ timeout: 30_000 });
+    await completePhaseReview(page);
+    await page.locator("[data-keyframe-index='3']").click();
+    const images = new Map<number, string>();
+    for (const sourceTime of sourceTimes) {
+      await page.getByLabel("Source time (seconds)", { exact: true }).fill((sourceTime / 1000).toFixed(3));
+      await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+      await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned");
+      await expect(page.locator(".keyframe-review__heading")).toContainText(`Requested ${(sourceTime / 1000).toFixed(3)} s`);
+      const image = await page.locator("[data-keyframe-canvas]").evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+      if (images.has(sourceTime)) expect(image).toBe(images.get(sourceTime));
+      else images.set(sourceTime, image);
+      await expect(page.getByLabel(/I reviewed these provisional labels/)).not.toBeChecked();
+    }
+    if (scenario !== "reused") expect(new Set(images.values()).size).toBeGreaterThan(1);
+    const requests = await page.evaluate(() => (window as typeof window & { __selectedFrameRequests: number[] }).__selectedFrameRequests);
+    expect(requests.slice(8)).toEqual([...sourceTimes]);
+    await page.getByRole("button", { name: "Clear local app data" }).click();
+    await expect(page.locator("#event-time")).toHaveCount(0);
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+    expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+    await expectNoBrowserStorage(page);
+  });
+}
+
 test("stops a pending event selection and releases it on navigation without restoring stale confirmation", async ({ page }) => {
   await page.getByRole("checkbox").check();
   await page.locator("#video-file").setInputFiles(poseFixture);

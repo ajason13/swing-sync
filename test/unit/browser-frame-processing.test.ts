@@ -24,6 +24,7 @@ describe("browser frame source", () => {
     const source = new VideoFrameSource(new FakeVideo() as unknown as HTMLVideoElement, "blob:test");
     for (const [error, reason] of [
       [new DOMException("private filename and timestamp", "InvalidStateError"), "INVALID_STATE"],
+      [new DOMException("The ImageBitmap could not be allocated.", "InvalidStateError"), "ALLOCATION_FAILED"],
       [new Error("private landmarks and video"), "FAILED"]
     ] as const) {
       vi.stubGlobal("createImageBitmap", vi.fn().mockRejectedValue(error));
