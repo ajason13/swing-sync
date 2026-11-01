@@ -106,11 +106,22 @@ export class VideoFrameSource implements FrameSource {
   }
 
   createPreview(width: number, height: number): Promise<ImageBitmap> {
-    return createImageBitmap(this.video, { resizeWidth: width, resizeHeight: height });
+    return this.captureBitmap("PREVIEW", { resizeWidth: width, resizeHeight: height });
   }
 
   createInference(): Promise<ImageBitmap> {
-    return createImageBitmap(this.video);
+    return this.captureBitmap("INFERENCE");
+  }
+
+  private async captureBitmap(operation: "PREVIEW" | "INFERENCE", options?: ImageBitmapOptions): Promise<ImageBitmap> {
+    if (this.disposed) throw new Error("MEDIA_SOURCE_DISPOSED");
+    try {
+      return await (options ? createImageBitmap(this.video, options) : createImageBitmap(this.video));
+    } catch (error) {
+      // Keep only bounded operation/error classes; native messages may contain sensitive data.
+      const reason = error instanceof DOMException && error.name === "InvalidStateError" ? "INVALID_STATE" : "FAILED";
+      throw new Error(`MEDIA_${operation}_BITMAP_${reason}`);
+    }
   }
 
   dispose(): void {

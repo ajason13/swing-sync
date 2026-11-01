@@ -20,6 +20,19 @@ class FakeVideo extends EventTarget {
 }
 
 describe("browser frame source", () => {
+  it.each(["PREVIEW", "INFERENCE"] as const)("sanitizes native %s capture failures without exposing exception messages", async (operation) => {
+    const source = new VideoFrameSource(new FakeVideo() as unknown as HTMLVideoElement, "blob:test");
+    for (const [error, reason] of [
+      [new DOMException("private filename and timestamp", "InvalidStateError"), "INVALID_STATE"],
+      [new Error("private landmarks and video"), "FAILED"]
+    ] as const) {
+      vi.stubGlobal("createImageBitmap", vi.fn().mockRejectedValue(error));
+      const capture = operation === "PREVIEW" ? source.createPreview(640, 360) : source.createInference();
+      await expect(capture).rejects.toThrow(`MEDIA_${operation}_BITMAP_${reason}`);
+    }
+    vi.unstubAllGlobals();
+  });
+
   it("fails immediately on a network abort before metadata settles and ignores later source events", async () => {
     const video = new FakeVideo();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
