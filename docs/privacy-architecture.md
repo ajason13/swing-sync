@@ -152,6 +152,24 @@ Evidence: interval/state/preview tests in `test/unit/frame-processing.test.ts`,
 `test/unit/app-state.test.ts`, `test/unit/local-video-preview.test.ts`, and
 synthetic interval playback-to-analysis coverage in `test/smoke/app.spec.ts`.
 
+### Native frame availability during selected-event capture
+
+A completed seek with current-data readiness can precede a usable native frame
+in Chromium. Where `VideoFrame` is available, processing waits for and pins one
+volatile native snapshot after the seek, then derives both preview and inference
+bitmaps from that snapshot. Native availability checks share the existing
+30-second seek deadline and are cancelled on source disposal; this does not
+extend the deadline or retry inference. The snapshot is closed on the next seek
+or disposal. Browsers without `VideoFrame` retain the existing seek/current-data
+path; that compatibility path has no new native-snapshot guarantee.
+
+Bitmap failures expose only bounded preview/inference and error-class codes,
+including `MEDIA_PREVIEW_BITMAP_INVALID_STATE` and the corresponding inference
+code. Allocation-rejection and other capture failures have separate codes;
+no native exception messages, timestamps, dimensions, pixels or landmarks are
+logged, persisted or transmitted. The hosted synthetic reproduction and limits
+are recorded in issue #100. These checks are not real-swing accuracy evidence.
+
 ### Future storage requirements
 
 Future video lifecycle behavior should be documented and implemented before any

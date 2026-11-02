@@ -20,6 +20,104 @@ class FakeVideo extends EventTarget {
 }
 
 describe("browser frame source", () => {
+  it.each(["PREVIEW", "INFERENCE"] as const)("sanitizes native %s capture failures without exposing exception messages", async (operation) => {
+    const source = new VideoFrameSource(new FakeVideo() as unknown as HTMLVideoElement, "blob:test");
+    for (const [error, reason] of [
+      [new DOMException("private filename and timestamp", "InvalidStateError"), "INVALID_STATE"],
+      [new DOMException("The ImageBitmap could not be allocated.", "InvalidStateError"), "ALLOCATION_FAILED"],
+      [new Error("private landmarks and video"), "FAILED"]
+    ] as const) {
+      vi.stubGlobal("createImageBitmap", vi.fn().mockRejectedValue(error));
+      const capture = operation === "PREVIEW" ? source.createPreview(640, 360) : source.createInference();
+      await expect(capture).rejects.toThrow(`MEDIA_${operation}_BITMAP_${reason}`);
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("waits for a native frame after seeked/current-data, then pins one snapshot for both captures", async () => {
+    vi.useFakeTimers();
+    const video = new FakeVideo();
+    const frames: { close: ReturnType<typeof vi.fn> }[] = [];
+    let available = false;
+    const construct = vi.fn(function() {
+      if (!available) throw new DOMException("The image source is not usable.", "InvalidStateError");
+      const frame = { close: vi.fn() }; frames.push(frame); return frame;
+    });
+    vi.stubGlobal("VideoFrame", construct);
+    const createBitmap = vi.fn().mockResolvedValue({ close: vi.fn() });
+    vi.stubGlobal("createImageBitmap", createBitmap);
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
+    try {
+      const seek = source.seek(730);
+      let settled = false; void seek.then(() => { settled = true; });
+      video.dispatchEvent(new Event("seeked"));
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(32);
+      expect(createBitmap).not.toHaveBeenCalled();
+      available = true;
+      await vi.advanceTimersByTimeAsync(16);
+      await expect(seek).resolves.toBe(730);
+      expect(vi.getTimerCount()).toBe(0);
+      await source.createPreview(640, 360);
+      // A later native-video change must not make inference read another frame.
+      video.currentTime = 1.9;
+      await source.createInference();
+      expect(createBitmap.mock.calls).toEqual([[frames[0], { resizeWidth: 640, resizeHeight: 360 }], [frames[0]]]);
+      expect(frames).toHaveLength(1);
+      const next = source.seek(697);
+      expect(frames[0].close).toHaveBeenCalledOnce();
+      video.dispatchEvent(new Event("seeked")); await next;
+      expect(frames).toHaveLength(2);
+      source.dispose(); source.dispose();
+      expect(frames[1].close).toHaveBeenCalledOnce();
+    } finally {
+      source.dispose(); revoke.mockRestore(); vi.unstubAllGlobals(); vi.useRealTimers();
+    }
+  });
+
+  it.each(["timeout", "dispose"])("bounds unavailable native frames by the original seek deadline and cleans up on %s", async (operation) => {
+    vi.useFakeTimers();
+    const video = new FakeVideo();
+    const construct = vi.fn(function() { throw new DOMException("not usable", "InvalidStateError"); });
+    vi.stubGlobal("VideoFrame", construct);
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
+    try {
+      const seek = source.seek(730);
+      const rejected = expect(seek).rejects.toThrow(operation === "timeout" ? "MEDIA_SEEK_TIMEOUT" : "MEDIA_SOURCE_DISPOSED");
+      // Late seek completion must not restart the deadline for native readiness.
+      await vi.advanceTimersByTimeAsync(MEDIA_WAIT_TIMEOUT_MS - 8);
+      video.dispatchEvent(new Event("seeked"));
+      if (operation === "timeout") await vi.advanceTimersByTimeAsync(8);
+      else source.dispose();
+      await rejected;
+      expect(vi.getTimerCount()).toBe(0);
+      const attempts = construct.mock.calls.length;
+      video.dispatchEvent(new Event("loadeddata"));
+      await vi.advanceTimersByTimeAsync(100);
+      expect(construct).toHaveBeenCalledTimes(attempts);
+    } finally {
+      source.dispose(); revoke.mockRestore(); vi.unstubAllGlobals(); vi.useRealTimers();
+    }
+  });
+
+  it("fails closed and removes readiness work for a non-transient native snapshot error", async () => {
+    vi.useFakeTimers();
+    const video = new FakeVideo();
+    vi.stubGlobal("VideoFrame", vi.fn(function() { throw new DOMException("private media information", "SecurityError"); }));
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const source = new VideoFrameSource(video as unknown as HTMLVideoElement, "blob:test");
+    try {
+      const rejected = expect(source.seek(730)).rejects.toThrow("MEDIA_SEEK_FAILED");
+      video.dispatchEvent(new Event("seeked"));
+      await rejected;
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      source.dispose(); revoke.mockRestore(); vi.unstubAllGlobals(); vi.useRealTimers();
+    }
+  });
+
   it("fails immediately on a network abort before metadata settles and ignores later source events", async () => {
     const video = new FakeVideo();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
@@ -94,6 +192,8 @@ describe("browser frame source", () => {
     const createBitmap = vi.fn()
       .mockImplementationOnce(() => new Promise<ImageBitmap>((resolve) => { releasePreview = resolve; }))
       .mockResolvedValueOnce(inference);
+    const snapshot = { close: vi.fn() };
+    vi.stubGlobal("VideoFrame", vi.fn(function() { return snapshot; }));
     vi.stubGlobal("Worker", FakeWorker);
     vi.stubGlobal("createImageBitmap", createBitmap);
     const states: string[] = [];
@@ -118,6 +218,7 @@ describe("browser frame source", () => {
       expect(messages).toEqual(["init"]);
       expect(terminate).toHaveBeenCalledOnce();
       expect(preview.close).toHaveBeenCalledOnce();
+      expect(snapshot.close).toHaveBeenCalledOnce();
       expect(createBitmap).toHaveBeenCalledOnce();
       expect(inference.close).not.toHaveBeenCalled();
       expect(controller.getOutputs()).toEqual([]);

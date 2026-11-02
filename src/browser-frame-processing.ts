@@ -14,6 +14,7 @@ export const MEDIA_WAIT_TIMEOUT_MS = 30_000;
 
 export class VideoFrameSource implements FrameSource {
   private disposed = false;
+  private snapshot?: VideoFrame;
   private pendingRejects = new Set<(error: Error) => void>();
 
   constructor(
@@ -41,6 +42,8 @@ export class VideoFrameSource implements FrameSource {
 
   seek(timestampMs: number): Promise<number> {
     if (this.disposed) return Promise.reject(new Error("MEDIA_SOURCE_DISPOSED"));
+    this.snapshot?.close();
+    this.snapshot = undefined;
     const timestampSeconds = timestampMs / 1000;
     // Even t=0 needs an explicit seek: an offscreen video may report loaded
     // data at its initial position before a frame is usable for bitmap reads.
@@ -50,7 +53,19 @@ export class VideoFrameSource implements FrameSource {
       () => { this.video.currentTime = timestampSeconds; },
       "MEDIA_SEEK_FAILED",
       "MEDIA_SEEK_TIMEOUT",
-      () => !this.video.seeking && this.video.readyState >= 2 // HAVE_CURRENT_DATA
+      () => {
+        if (this.video.seeking || this.video.readyState < 2) return false;
+        // readyState/seeked can precede a usable native frame. Pin it once for
+        // both bitmaps; detached paused videos need not present another frame.
+        if (typeof VideoFrame === "undefined") return true;
+        try {
+          this.snapshot = new VideoFrame(this.video);
+          return true;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "InvalidStateError") return false;
+          throw error;
+        }
+      }
     );
   }
 
@@ -65,10 +80,12 @@ export class VideoFrameSource implements FrameSource {
     return new Promise((resolve, reject) => {
       let settled = false;
       let operationCompleted = false;
+      let readinessTimer: ReturnType<typeof setTimeout> | undefined;
       const events = event === "seeked" ? [event, "loadeddata", "canplay"] : [event];
       const cleanup = () => {
         settled = true;
         clearTimeout(timer);
+        clearTimeout(readinessTimer);
         for (const type of events) this.video.removeEventListener(type, onComplete);
         this.video.removeEventListener("error", onError);
         this.pendingRejects.delete(onRejected);
@@ -79,19 +96,27 @@ export class VideoFrameSource implements FrameSource {
         reject(error);
       };
       const onError = () => onRejected(new Error(failureCode));
-      const onComplete = (completedEvent: Event) => {
-        if (settled) return;
-        if (completedEvent.type === event) operationCompleted = true;
-        // A seek event can precede current-frame data. Keep both in one bounded,
-        // cancelable operation; data events before seek completion cannot finish it.
-        if (!operationCompleted || !isReady()) return;
+      const tryComplete = () => {
+        if (settled || !operationCompleted) return;
         try {
+          if (!isReady()) {
+            // Poll native availability only after seek/data readiness. This is
+            // part of the existing deadline, not a retry of bitmap creation.
+            if (event === "seeked" && !this.video.seeking && this.video.readyState >= 2 && readinessTimer === undefined) {
+              readinessTimer = setTimeout(() => { readinessTimer = undefined; tryComplete(); }, 16);
+            }
+            return;
+          }
           const value = result();
           cleanup();
           resolve(value);
         } catch {
           onError();
         }
+      };
+      const onComplete = (completedEvent: Event) => {
+        if (completedEvent.type === event) operationCompleted = true;
+        tryComplete();
       };
       const timer = setTimeout(() => onRejected(new Error(timeoutCode)), MEDIA_WAIT_TIMEOUT_MS);
       this.pendingRejects.add(onRejected);
@@ -106,16 +131,32 @@ export class VideoFrameSource implements FrameSource {
   }
 
   createPreview(width: number, height: number): Promise<ImageBitmap> {
-    return createImageBitmap(this.video, { resizeWidth: width, resizeHeight: height });
+    return this.captureBitmap("PREVIEW", { resizeWidth: width, resizeHeight: height });
   }
 
   createInference(): Promise<ImageBitmap> {
-    return createImageBitmap(this.video);
+    return this.captureBitmap("INFERENCE");
+  }
+
+  private async captureBitmap(operation: "PREVIEW" | "INFERENCE", options?: ImageBitmapOptions): Promise<ImageBitmap> {
+    if (this.disposed) throw new Error("MEDIA_SOURCE_DISPOSED");
+    try {
+      const source = this.snapshot ?? this.video;
+      return await (options ? createImageBitmap(source, options) : createImageBitmap(source));
+    } catch (error) {
+      // Keep only bounded operation/error classes; native messages may contain sensitive data.
+      const reason = error instanceof DOMException && error.name === "InvalidStateError"
+        ? (error.message.endsWith("The ImageBitmap could not be allocated.") ? "ALLOCATION_FAILED" : "INVALID_STATE")
+        : "FAILED";
+      throw new Error(`MEDIA_${operation}_BITMAP_${reason}`);
+    }
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.snapshot?.close();
+    this.snapshot = undefined;
     const error = new Error("MEDIA_SOURCE_DISPOSED");
     for (const reject of [...this.pendingRejects]) reject(error);
     this.pendingRejects.clear();
