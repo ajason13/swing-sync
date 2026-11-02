@@ -2154,6 +2154,9 @@ for (const [scenario, sourceTimes] of [
     });
     await page.getByRole("checkbox").check();
     await page.locator("#video-file").setInputFiles(poseFixture);
+    // These cases isolate repeated capture after preview metadata is available.
+    // Starting analysis before metadata can independently omit event controls (#109).
+    await expect(page.getByLabel("Start (seconds)", { exact: true })).toBeEnabled();
     await page.getByRole("button", { name: "Begin analysis" }).click();
     await expect(page.locator("[data-review-phases]")).toBeVisible({ timeout: 30_000 });
     await completePhaseReview(page);
