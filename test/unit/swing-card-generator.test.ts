@@ -267,7 +267,7 @@ describe("swing card warning derivation", () => {
         metricPayload: metricFixture("low-confidence-payload.json"),
         phaseReviewConfirmed: true
       })
-    ).toEqual(["PROMPT_LIMITED_EVIDENCE"]);
+    ).toEqual(["METRICS_UNAVAILABLE", "PROMPT_LIMITED_EVIDENCE"]);
 
     expect(
       deriveSwingCardContentWarnings({
@@ -298,7 +298,7 @@ describe("swing card warning derivation", () => {
         }),
         phaseReviewConfirmed: true
       })
-    ).toEqual(["NO_KEYFRAMES_SELECTED", "PROMPT_LIMITED_EVIDENCE"]);
+    ).toEqual(["NO_KEYFRAMES_SELECTED", "METRICS_UNAVAILABLE", "PROMPT_LIMITED_EVIDENCE"]);
   });
 
   it("marks metrics unavailable only when there are no measured metrics", () => {
@@ -333,6 +333,30 @@ describe("swing card text and filenames", () => {
     expect(sanitizeSwingCardFilename(new Date(2026, 5, 26))).toBe(
       "swing-sync-card-20260626-1234abcd.png"
     );
+  });
+
+  it("uses identical safe metric summaries in PNG, print and prompts and fails closed on invalid payloads", async () => {
+    installCanvasFactory();
+    for (const payload of [metricPayload(), undefined,
+      { ...metricPayload(), filename: "secret-file" } as SwingMetricPayload,
+      metricPayload({ confidence: { kind: "low-evidence" }, limitationNotes: ["pose-evidence-low"] }),
+      metricPayload({ value: { status: "measured", numericValue: Infinity } }),
+      { ...metricPayload(), metrics: [...metricPayload().metrics, ...metricPayload().metrics] }
+    ]) {
+      const card = content({ metricPayload: payload });
+      const prompt = buildSwingCardPrompt(card);
+      const printText = (renderSwingCardPrintSurface(card) as unknown as FakeElement).getText();
+      await composeSwingCardPng(card);
+      const canvasText = createdCanvases.at(-1)!.context!.fillText.mock.calls.map(([text]) => text).join(" ");
+      expect(printText).not.toContain("secret-file");
+      expect(prompt).not.toMatch(/secret-file|Infinity|numericValue/);
+      for (const text of ["Experimental, unvalidated 2D image measurement", "Impact remains unconfirmed", "not shoulder turn or anatomical tilt"]) {
+        expect(prompt).toContain(text); expect(printText).toContain(text); expect(canvasText).toContain(text);
+      }
+      const measured = payload && payload.metrics.length === 1 && payload.metrics[0].confidence.kind === "not-calibrated" &&
+        Number.isFinite(payload.metrics[0].value.numericValue) && !("filename" in payload);
+      for (const text of [prompt, printText, canvasText]) expect(text).toContain(measured ? "1.20 ratio" : "Address stance-width ratio (2D): Unavailable");
+    }
   });
 
   it("builds bounded prompt copy without forbidden claims", () => {
@@ -373,7 +397,7 @@ describe("swing card PNG composition", () => {
     expect(y).toBeCloseTo(tileTop + (236 - height) / 2);
   });
 
-  it("keeps eight portrait frames, labels, and all warnings inside the card", async () => {
+  it.each([false, true])("keeps eight portrait frames, metrics, limitations and all warnings inside the card (missing=%s)", async (missing) => {
     installCanvasFactory();
     const keyframes = Array.from({ length: 8 }, (_, index) => keyframe({
       phaseLabel: `Phase ${index + 1}`,
@@ -381,7 +405,8 @@ describe("swing card PNG composition", () => {
     }));
     await composeSwingCardPng(content({
       keyframes,
-      metricPayload: undefined,
+      metricPayload: missing ? undefined : metricPayload(),
+      analysisPrompt: "Long prompt details. ".repeat(500),
       warnings: ["NO_KEYFRAMES_SELECTED", "KEYFRAME_UNAVAILABLE", "METRICS_UNAVAILABLE", "PHASE_REVIEW_REQUIRED", "PROMPT_LIMITED_EVIDENCE"]
     }));
     const context = createdCanvases[0].context!;
@@ -397,9 +422,14 @@ describe("swing card PNG composition", () => {
       expect(imageX + width).toBeLessThanOrEqual(x + 420);
       expect(imageY + height).toBeLessThan(y - 10);
     }
-    for (const [text, x, y] of [...labels, ...warnings]) {
+    const textCalls = context.fillText.mock.calls;
+    expect(textCalls.map(([text]) => text).join(" ")).toContain("Experimental, unvalidated 2D image measurement");
+    expect(textCalls.map(([text]) => text).join(" ")).toContain("Camera angle, roll, occlusion");
+    expect(textCalls.map(([text]) => text).join(" ")).toContain("Additional prompt details are available in the copy prompt.");
+    expect(createdCanvases[0].height).toBeGreaterThan(1600);
+    for (const [text, x, y] of textCalls) {
       expect(y).toBeGreaterThan(0);
-      expect(y).toBeLessThan(1600 - 40);
+      expect(y).toBeLessThan(createdCanvases[0].height - 40);
       expect(x + context.measureText(text).width).toBeLessThanOrEqual(960 - 40);
     }
   });

@@ -12,7 +12,7 @@ export function renderPhaseReview(state: AppState): string {
   const ready = state.phaseReviewState?.readyForFutureMetrics ?? false;
   const warning =
     ready
-      ? "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below; metric values are not exported."
+      ? "Phase review is confirmed. Open Swing Card export to save the reviewed keyframes. Labels remain provisional, Impact remains unconfirmed. Experimental image measurements are shown below and included in Swing Card exports."
       : proposal?.evidenceStatus === "unsupported-input"
       ? "Complete the video declarations below. Review requires eight supported pose samples; if samples are missing, choose a longer interval and analyze again."
       : "Swing phase suggestions need review. Eight sampled frames may not contain each exact swing event. Impact cannot be confirmed from body landmarks alone.";
@@ -79,7 +79,7 @@ export function renderPhaseReview(state: AppState): string {
           reviewRequired && state.phaseConfirmation && validOrder && !ready && !busy ? "" : "disabled"
         }>Confirm phase review</button>
         <button class="secondary-action" type="button" data-open-export data-focus-key="open-export" ${busy ? "disabled" : ""}>Open Swing Card export</button>
-        <p class="action-note">${ready ? "Save a PNG, print a card, or copy its prompt from export. Metric values are shown only in review and are not exported." : "Complete the declarations, check assignments and time order, then acknowledge and confirm your review. You can export before confirmation with an unconfirmed-review warning."}</p>
+        <p class="action-note">${ready ? "Save a PNG, print a card, or copy its prompt from export. Current reviewed measurements and limitations are included." : "Complete the declarations, check assignments and time order, then acknowledge and confirm your review. You can export before confirmation with an unconfirmed-review warning."}</p>
       </div>
     </section>
   `;

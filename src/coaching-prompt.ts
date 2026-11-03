@@ -1,3 +1,4 @@
+import { formatMetricSummary } from "./metric-presentation";
 import { phaseDefinitions } from "./phase-review";
 import type { SwingCardContent } from "./swing-card-contract";
 import {
@@ -33,15 +34,7 @@ export function buildCoachingPrompt(content: SwingCardContent): string {
 }
 
 function formatMetricEvidence(content: SwingCardContent): string {
-  const metrics = content.metricPayload?.metrics ?? [];
-  if (metrics.length === 0) return "No approved metric payload is available.";
-  return metrics
-    .map((metric) => {
-      const value =
-        metric.value.status === "measured" ? `${metric.value.numericValue} ${metric.units}` : metric.value.status;
-      return `${metric.phaseId}: ${metric.metricName}; value ${value}; confidence ${metric.confidence.kind}; limitations ${metric.limitationNotes.join(", ")}.`;
-    })
-    .join("\n");
+  return formatMetricSummary(content.metricPayload, content.metricUnavailableReason).join("\n");
 }
 
 function formatKeyframeEvidence(content: SwingCardContent): string {

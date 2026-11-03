@@ -1,3 +1,5 @@
+import { metricUnavailableReason } from "./metric-presentation";
+import { isSwingMetricPayload } from "./metric-contract";
 import type { AppState } from "./app-state";
 import type { RenderRequest } from "./app-accessibility";
 import {
@@ -144,11 +146,16 @@ export async function prepareSwingCardContent(
   const assignments = getCompleteSwingCardAssignments(state);
   const outputs = state.phaseOutputs;
   const phaseReviewConfirmed = (state.phaseReviewState?.readyForFutureMetrics ?? false) && hasCompleteAssignments(assignments);
+  // Snapshot only a validated current payload; never retain a live mutable export input.
+  const metricPayload = phaseReviewConfirmed && isSwingMetricPayload(state.metricPayload)
+    ? structuredClone(state.metricPayload) : undefined;
+  const token = state.swingCardToken;
+  const sourcePayload = state.metricPayload;
   const release = () => {
     for (const bitmap of createdBitmaps.splice(0)) bitmap.close();
   };
   const checkCurrent = () => {
-    if (!isCurrent()) throw new Error("LOCAL_EXPORT_CANCELLED");
+    if (!isCurrent() || state.swingCardToken !== token || state.metricPayload !== sourcePayload) throw new Error("LOCAL_EXPORT_CANCELLED");
   };
 
   try {
@@ -169,12 +176,13 @@ export async function prepareSwingCardContent(
 
     const warnings = deriveSwingCardContentWarnings({
       keyframes,
-      metricPayload: undefined,
+      metricPayload,
       phaseReviewConfirmed
     });
     const base: SwingCardContent = {
       keyframes,
-      metricPayload: undefined,
+      metricPayload,
+      metricUnavailableReason: metricUnavailableReason(state.phaseDeclarations),
       warnings,
       analysisPrompt: ""
     };

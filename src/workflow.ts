@@ -15,7 +15,7 @@ export const workflowSteps = [
     id: "review",
     shortLabel: "Review",
     label: "Review",
-    description: "Declare the video setup, inspect the provisional phase labels, and select event times where needed. Confirm your review when the assignments are ready. Experimental image measurements require confirmed phase review and are not exported."
+    description: "Declare the video setup, inspect the provisional phase labels, and select event times where needed. Confirm your review when the assignments are ready. Experimental image measurements require confirmed phase review and can be included in Swing Card exports."
   },
   {
     id: "export",

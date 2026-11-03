@@ -1,3 +1,4 @@
+import type { MetricUnavailableReason } from "./metric-presentation";
 import type { SwingMetric, SwingMetricPayload } from "./metric-contract";
 import type { PoseOverlayRenderResult } from "./pose-renderer";
 
@@ -26,6 +27,7 @@ export interface SwingCardKeyframe {
 export interface SwingCardContent {
   keyframes: readonly SwingCardKeyframe[];
   metricPayload: SwingMetricPayload | undefined;
+  metricUnavailableReason?: MetricUnavailableReason;
   warnings: readonly SwingCardContentWarningCode[];
   analysisPrompt: string;
 }

@@ -4,6 +4,7 @@ import {
   completeProcessingWithOutputs,
   resetAppState,
   resetPhaseReview,
+  setAnalysisInterval,
   selectWorkflowStep,
   createInitialAppState,
   rebuildPhaseReviewState,
@@ -72,6 +73,19 @@ function populatedState() {
   return state;
 }
 
+function measuredState() {
+  const state = populatedState();
+  for (const output of state.phaseOutputs) {
+    const points = output.pose.landmarks[0];
+    points[11].x = .375; points[12].x = .625;
+    points[27].x = .3125; points[28].x = .6875;
+    output.inferenceImage = { width: 800, height: 600, pose: output.pose };
+  }
+  setPhaseConfirmation(state, true);
+  confirmPhaseReview(state);
+  return state;
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: Error) => void;
@@ -96,6 +110,50 @@ describe("swing card actions", () => {
     generatorMocks.renderSwingCardPrintSurface.mockReset();
     generatorMocks.triggerSwingCardDownload.mockReset();
     vi.unstubAllGlobals();
+  });
+
+  it("snapshots the current validated metrics without internal evidence and keeps partial values", async () => {
+    const state = measuredState();
+    vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockResolvedValue({ preview: undefined, overlay: unavailableOverlay });
+    const prepared = await prepareSwingCardContent(state);
+    expect(prepared.content.metricPayload).toEqual(state.metricPayload);
+    expect(prepared.content.metricPayload).not.toBe(state.metricPayload);
+    expect(prepared.content.analysisPrompt).toContain("1.50 ratio");
+    expect(prepared.content.analysisPrompt).toContain("0.00 degrees");
+    expect(prepared.content.warnings).not.toContain("METRICS_UNAVAILABLE");
+    expect(JSON.stringify(prepared.content.metricPayload)).not.toMatch(/timestamp|landmarks|inferenceImage|runGeneration|sampleIndex|12345/i);
+    prepared.release();
+    state.phaseOutputs[0].pose.landmarks[0][27].visibility = .49;
+    confirmPhaseReview(state);
+    const partial = await prepareSwingCardContent(state);
+    expect(partial.content.analysisPrompt).toContain("Address stance-width ratio (2D): Unavailable");
+    expect(partial.content.analysisPrompt).toContain("lacks usable pose evidence");
+    expect(partial.content.analysisPrompt).toContain("0.00 degrees");
+    expect(partial.content.analysisPrompt).not.toContain("1.50 ratio");
+    partial.release();
+  });
+
+  it("explains missing declarations consistently with review in unconfirmed exports", async () => {
+    const state = createInitialAppState();
+    const prepared = await prepareSwingCardContent(state);
+    expect(prepared.content.analysisPrompt).toContain("Complete the face-on view, handedness, mirroring and setup declarations.");
+    expect(prepared.content.analysisPrompt).not.toContain("0.00");
+    prepared.release();
+  });
+
+  it("rejects prohibited fields and unconfirmed payloads before preparing exports", async () => {
+    vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockResolvedValue({ preview: undefined, overlay: unavailableOverlay });
+    for (const change of [
+      (state: ReturnType<typeof measuredState>) => Object.assign(state.metricPayload!, { filename: "secret-file" }),
+      (state: ReturnType<typeof measuredState>) => { state.phaseReviewState!.readyForFutureMetrics = false; }
+    ]) {
+      const state = measuredState(); change(state);
+      const prepared = await prepareSwingCardContent(state);
+      expect(prepared.content.metricPayload).toBeUndefined();
+      expect(prepared.content.analysisPrompt).not.toMatch(/secret-file|1.50 ratio/);
+      expect(prepared.content.warnings).toContain("METRICS_UNAVAILABLE");
+      prepared.release();
+    }
   });
 
   it("uses the corrected sample for the phase label, canvas, and exported image", async () => {
@@ -162,7 +220,11 @@ describe("swing card actions", () => {
   for (const [cancelName, cancel] of [
     ["navigation", (state) => { selectWorkflowStep(state, "review"); selectWorkflowStep(state, "export"); }],
     ["clear-local-data", resetAppState],
-    ["analysis reset", resetPhaseReview]
+    ["analysis reset", resetPhaseReview],
+    ["declaration change", (state) => setPhaseDeclaration(state, "mirrored", "yes")],
+    ["assignment change", (state) => setPhaseDraftAssignment(state, 3, 2)],
+    ["interval change", (state) => setAnalysisInterval(state, { startSeconds: 0, endSeconds: 1 })],
+    ["reconfirmation", confirmPhaseReview]
   ] as const satisfies readonly (readonly [string, (state: ReturnType<typeof createInitialAppState>) => void])[]) {
     it.each(actionCases)(`discards pending %s preparation after ${cancelName}`, async (_name, action) => {
       const state = populatedState();
@@ -216,6 +278,25 @@ describe("swing card actions", () => {
     expect(state.swingCardBusy).toBe(false);
     expect(state.swingCardStatus).toBe(status);
     expect(render).toHaveBeenCalledOnce();
+  });
+
+  it("discards PNG serialization after metrics are recalculated on reconfirmation", async () => {
+    const state = measuredState();
+    const bitmaps = phaseDefinitions.map(() => ({ close: vi.fn() } as unknown as ImageBitmap));
+    let index = 0;
+    vi.spyOn(keyframeRenderer, "renderAnnotatedKeyframe").mockImplementation(async () => ({ preview: bitmaps[index++], overlay: unavailableOverlay }));
+    const gate = deferred<unknown>();
+    const started = deferred<void>();
+    generatorMocks.composeSwingCardPng.mockImplementation(() => { started.resolve(); return gate.promise; });
+    const pending = downloadSwingCard(state, vi.fn());
+    await started.promise;
+    state.phaseOutputs[0].pose.landmarks[0][27].visibility = .49;
+    confirmPhaseReview(state);
+    expect(state.metricPayload!.metrics[0].value.numericValue).toBeNull();
+    gate.resolve({ status: "ok", blob: new Blob(["png"]), filename: "stale-card.png" });
+    await pending;
+    expect(generatorMocks.triggerSwingCardDownload).not.toHaveBeenCalled();
+    for (const bitmap of bitmaps) expect(bitmap.close).toHaveBeenCalledOnce();
   });
 
   it.each(["resolve", "reject"] as const)("ignores clipboard %s after reset once a write has already been requested", async (completion) => {
