@@ -83,6 +83,30 @@ function expectNoSensitiveOutput(output: string): void {
   expect(output).not.toMatch(sensitiveOutputPattern);
 }
 
+type FrameProbeWindow = typeof window & {
+  __videoForBitmap(source: ImageBitmapSource): ImageBitmapSource | undefined;
+};
+
+// Keep existing source-time/readiness probes attached to the video when capture
+// now passes its pinned VideoFrame to createImageBitmap.
+async function observeNativeFrameSources(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const frames = new WeakMap<VideoFrame, HTMLVideoElement>();
+    const NativeFrame = window.VideoFrame;
+    (window as FrameProbeWindow).__videoForBitmap = source =>
+      typeof NativeFrame === "function" && source instanceof NativeFrame ? frames.get(source) : source;
+    if (typeof NativeFrame === "function") {
+      window.VideoFrame = new Proxy(NativeFrame, {
+        construct(target, args, newTarget) {
+          const frame = Reflect.construct(target, args, newTarget) as VideoFrame;
+          if (args[0] instanceof HTMLVideoElement) frames.set(frame, args[0]);
+          return frame;
+        }
+      });
+    }
+  });
+}
+
 async function expectNoBrowserStorage(page: Page): Promise<void> {
   const storage = await page.evaluate(async () => ({
     indexedDb: "databases" in indexedDB ? await indexedDB.databases() : [],
@@ -1808,12 +1832,13 @@ test("shows accessible local preview decode guidance and recovers by replacing a
 
 test("analyzes the initial frame after preview when the processing video starts below the viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 600 });
+  await observeNativeFrameSources(page);
   await page.evaluate(() => {
     const create = window.createImageBitmap.bind(window);
     const observations: { offscreen: boolean; atStart: boolean }[] = [];
     Object.assign(window, { __initialFrameObservations: observations });
     window.createImageBitmap = ((...args: Parameters<typeof createImageBitmap>) => {
-      const source = args[0];
+      const source = (window as FrameProbeWindow).__videoForBitmap(args[0]);
       if (source instanceof HTMLVideoElement && source.id === "analysis-video" && observations.length === 0) {
         observations.push({ offscreen: source.getBoundingClientRect().top >= innerHeight, atStart: source.currentTime === 0 });
       }
@@ -1865,6 +1890,7 @@ test("bounds preview loading and releases media across page exit and restore", a
 
 test("previews a selected interval and analyzes only its source times with invalidation at narrow width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
+  await observeNativeFrameSources(page);
   await page.evaluate(() => {
     const requests: number[] = [];
     const seeks: number[] = [];
@@ -1880,7 +1906,7 @@ test("previews a selected interval and analyzes only its source times with inval
     };
     const create = window.createImageBitmap.bind(window);
     window.createImageBitmap = ((...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
-      const source = args[0];
+      const source = (window as FrameProbeWindow).__videoForBitmap(args[0]);
       if (source instanceof HTMLVideoElement && source.id === "analysis-video" && args.length === 2) {
         seeks.push(source.currentTime * 1000);
       }
@@ -1951,6 +1977,7 @@ test("previews a selected interval and analyzes only its source times with inval
 
 test("waits for current frame data after a settled zero-time seek before reading local bitmaps", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 600 });
+  await observeNativeFrameSources(page);
   await page.evaluate(() => {
     const evidence = { held: false, released: false, reads: [] as number[] };
     Object.assign(window, { __currentDataEvidence: evidence });
@@ -1977,7 +2004,8 @@ test("waits for current frame data after a settled zero-time seek before reading
     };
     const create = window.createImageBitmap.bind(window);
     window.createImageBitmap = ((...args: [ImageBitmapSource, ImageBitmapOptions?] | [ImageBitmapSource, number, number, number, number, ImageBitmapOptions?]) => {
-      if (args[0] instanceof HTMLVideoElement && args[0].id === "analysis-video") evidence.reads.push(args[0].readyState);
+      const source = (window as FrameProbeWindow).__videoForBitmap(args[0]);
+      if (source instanceof HTMLVideoElement && source.id === "analysis-video") evidence.reads.push(source.readyState);
       return Reflect.apply(create, window, args);
     }) as typeof createImageBitmap;
   });
@@ -2079,6 +2107,84 @@ test("selects new event times with paired local inference and consistent moving-
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
   await expectNoBrowserStorage(page);
 });
+
+for (const [scenario, sourceTimes] of [
+  ["reused", [730, 730, 730, 730]],
+  ["decreasing", [1900, 1000, 730, 697]],
+  ["mixed", [730, 1900, 697, 730]]
+] as const) {
+  test(`keeps ${scenario} event selections paired with fresh local inference`, async ({ page }) => {
+    if (scenario === "reused") {
+      // Reproduce the observed native-video rejection without changing pixels or inference.
+      // Native frame availability also lags the seek/data events for two polling turns.
+      await page.evaluate(() => {
+        const NativeFrame = window.VideoFrame;
+        const attempts = new WeakMap<HTMLVideoElement, number>();
+        Object.assign(window, { __lateFrameChecks: 0 });
+        window.VideoFrame = class extends NativeFrame {
+          constructor(source: CanvasImageSource, init?: VideoFrameInit) {
+            if (source instanceof HTMLVideoElement && !source.isConnected) {
+              const count = attempts.get(source) ?? 0;
+              attempts.set(source, count + 1);
+              if (count < 2) {
+                (window as typeof window & { __lateFrameChecks: number }).__lateFrameChecks++;
+                throw new DOMException("Synthetic frame is not available yet.", "InvalidStateError");
+              }
+            }
+            super(source, init);
+          }
+        } as typeof NativeFrame;
+        const create = window.createImageBitmap.bind(window);
+        window.createImageBitmap = ((source: ImageBitmapSource, ...rest: unknown[]) => {
+          if (source instanceof HTMLVideoElement && !source.isConnected) {
+            return Promise.reject(new DOMException("The image source is not usable.", "InvalidStateError"));
+          }
+          return Reflect.apply(create, window, [source, ...rest]);
+        }) as typeof createImageBitmap;
+      });
+    }
+    await page.evaluate(() => {
+      const requests: number[] = [];
+      Object.assign(window, { __selectedFrameRequests: requests });
+      const post = Worker.prototype.postMessage;
+      Worker.prototype.postMessage = function(message: { type?: string; timestampMs?: number }, ...rest: unknown[]) {
+        if (message.type === "frame") requests.push(message.timestampMs!);
+        return Reflect.apply(post, this, [message, ...rest]);
+      };
+    });
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    // These cases isolate repeated capture after preview metadata is available.
+    // Starting analysis before metadata can independently omit event controls (#109).
+    await expect(page.getByLabel("Start (seconds)", { exact: true })).toBeEnabled();
+    await page.getByRole("button", { name: "Begin analysis" }).click();
+    await expect(page.locator("[data-review-phases]")).toBeVisible({ timeout: 30_000 });
+    await completePhaseReview(page);
+    await page.locator("[data-keyframe-index='3']").click();
+    const images = new Map<number, string>();
+    for (const sourceTime of sourceTimes) {
+      await page.getByLabel("Source time (seconds)", { exact: true }).fill((sourceTime / 1000).toFixed(3));
+      await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+      await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned");
+      await expect(page.locator(".keyframe-review__heading")).toContainText(`Requested ${(sourceTime / 1000).toFixed(3)} s`);
+      const image = await page.locator("[data-keyframe-canvas]").evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+      if (images.has(sourceTime)) expect(image).toBe(images.get(sourceTime));
+      else images.set(sourceTime, image);
+      await expect(page.getByLabel(/I reviewed these provisional labels/)).not.toBeChecked();
+    }
+    if (scenario !== "reused") expect(new Set(images.values()).size).toBeGreaterThan(1);
+    if (scenario === "reused") {
+      expect(await page.evaluate(() => (window as typeof window & { __lateFrameChecks: number }).__lateFrameChecks)).toBe(8);
+    }
+    const requests = await page.evaluate(() => (window as typeof window & { __selectedFrameRequests: number[] }).__selectedFrameRequests);
+    expect(requests.slice(8)).toEqual([...sourceTimes]);
+    await page.getByRole("button", { name: "Clear local app data" }).click();
+    await expect(page.locator("#event-time")).toHaveCount(0);
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+    expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+    await expectNoBrowserStorage(page);
+  });
+}
 
 test("stops a pending event selection and releases it on navigation without restoring stale confirmation", async ({ page }) => {
   await page.getByRole("checkbox").check();
