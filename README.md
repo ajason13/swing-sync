@@ -54,8 +54,12 @@ safety, deletion, anonymity, or regulatory compliance.
 
 ## Setup
 
-Use Node 22 from `.nvmrc`, matching CI. These commands are for local
-development, not production hosting configuration:
+Use Node 22 from `.nvmrc`, matching CI. For native Windows 11 prerequisites,
+PowerShell commands and troubleshooting, follow [Windows setup](./docs/windows-setup.md).
+Windows 10 validation is tracked separately in [#119](https://github.com/ajason13/swing-sync/issues/119).
+These instructions are for local development, not production hosting.
+
+On macOS/Linux with nvm-sh installed, open a terminal in the cloned repository:
 
 ```bash
 nvm use
@@ -64,6 +68,7 @@ npm run dev
 ```
 
 Vite prints the local URL when it starts (normally `http://localhost:5173`).
+Press `Ctrl+C` in that terminal to stop it.
 
 ## Using Swing Sync
 
@@ -71,8 +76,10 @@ Vite prints the local URL when it starts (normally `http://localhost:5173`).
 2. Read the safety acknowledgement and select its checkbox. Analysis remains
    unavailable until it is acknowledged.
 3. Under **Capture or choose your swing**, select **Choose a video** and pick a
-   local swing video file, already trimmed to one complete swing. Camera
-   capture, playback preview, and in-app trimming are not currently available.
+   local swing video file. Preview it with the local playback controls and set
+   the analysis start/end times to one complete swing if needed. This selects
+   the interval to sample; it does not create a trimmed video. Camera capture
+   is not currently available.
 4. Select **Begin analysis**. The app loads the local pose model and processes
    sampled video frames in the browser. You can stop the local analysis, or
    retry it if processing fails.
@@ -81,8 +88,9 @@ Vite prints the local URL when it starts (normally `http://localhost:5173`).
    declarations**: **View** (currently **Face-on side view**), **Handedness**,
    **Horizontally mirrored**, and the trimmed-swing/setup checkbox. Unsupported
    inputs remain unavailable for confirmation. Adjust each label's sample
-   selector if needed, keeping assignments in chronological order; this selects
-   among the existing samples, not arbitrary event frames. Check the provisional
+   selector, or select a phase and use its source-time controls to assign a new
+   event frame, keeping assignments in chronological order. Time seeks do not
+   guarantee individual decoded frames. Check the provisional
    label acknowledgement, then select **Confirm phase review**. Confirmation
    records your review; it does not establish exact event timing or accuracy.
 6. Select **Open Swing Card export** when useful. Export can show unavailable
