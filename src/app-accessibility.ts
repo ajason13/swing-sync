@@ -8,6 +8,7 @@ const staticFocusKeys = [
   "event-stop",
   "safety-consent",
   "video-picker",
+  "video-preview",
   "preview-toggle",
   "interval-start",
   "interval-end",
