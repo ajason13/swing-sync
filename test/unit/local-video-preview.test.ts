@@ -45,6 +45,9 @@ describe("local preview lifecycle", () => {
     ui.video.dispatchEvent(new Event("loadeddata"));
     expect(onDuration).toHaveBeenCalledExactlyOnceWith(2);
     expect(ui.intervalButton.disabled).toBe(false);
+    // Readiness updates remount the existing surface without detaching focus.
+    preview.mount(ui.root, file, { startSeconds: 0.5, endSeconds: 1.5 });
+    expect(ui.video.replaceWith).not.toHaveBeenCalled();
     ui.intervalButton.dispatchEvent(new Event("click"));
     await Promise.resolve();
     expect(ui.video.currentTime).toBe(0.5);
