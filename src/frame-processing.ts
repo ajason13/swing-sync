@@ -40,6 +40,8 @@ export interface FrameProcessor {
 }
 
 export interface FrameProcessingEvents {
+  /** Validated source duration for the active run, independent of capture preview readiness. */
+  onMetadata?(durationSeconds: number): void;
   onState(state: FrameProcessingState, code?: string): void;
   onProgress(completed: number, total: number): void;
   onOutput(output: SampledFrameOutput): void;
@@ -198,6 +200,8 @@ export class FrameProcessingController {
         ? validateRequestedTimestamps(metadata.durationSeconds, this.interval, this.requestedTimestamps)
         : calculateSampleTimestamps(metadata.durationSeconds, this.interval);
       const previewDimensions = calculatePreviewDimensions(metadata.width, metadata.height);
+      this.events.onMetadata?.(metadata.durationSeconds);
+      this.assertActive(generation);
       this.totalSamples = timestamps.length;
       this.events.onProgress(0, timestamps.length);
 

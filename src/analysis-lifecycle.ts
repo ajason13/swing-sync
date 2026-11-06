@@ -14,6 +14,7 @@ import {
 } from "./app-state";
 import { phaseDefinitions } from "./phase-review";
 import { validateRequestedTimestamps } from "./frame-processing";
+import { isValidAnalysisInterval } from "./analysis-interval";
 import { createBrowserFrameController } from "./browser-frame-processing";
 import type {
   FrameProcessingController,
@@ -124,6 +125,7 @@ export class AnalysisLifecycle {
     const token = Symbol("analysis-controller");
     this.activeCallbackToken = token;
     const browserController = createBrowserFrameController(video, selectedVideo, {
+      onMetadata: (duration) => this.handleProcessingMetadata(token, selectedVideo, duration),
       onState: (state, code) => this.handleProcessingState(token, state, code),
       onProgress: (completed, total) => this.handleProcessingProgress(token, completed, total),
       onOutput: (output) => this.handleProcessingOutput(token, output)
@@ -192,6 +194,17 @@ export class AnalysisLifecycle {
     ) {
       this.options.applyAccessibilityIntent({ focusKey: "stage-heading" });
     }
+  }
+
+  private handleProcessingMetadata(token: symbol, file: File, duration: number): void {
+    const { state } = this.options;
+    if (token !== this.activeCallbackToken || file !== state.selectedVideo ||
+      state.activeStep !== "processing" || state.processingState !== "loading") return;
+    const interval = state.analysisInterval ?? { startSeconds: 0, endSeconds: duration };
+    if (!isValidAnalysisInterval(duration, interval)) return;
+    // Retain decoded bounds without invoking the capture setter's review/counter reset.
+    state.videoDuration = duration;
+    state.analysisInterval = { ...interval };
   }
 
   private handleProcessingProgress(token: symbol, completed: number, total: number): void {

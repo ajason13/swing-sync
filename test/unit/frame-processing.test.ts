@@ -152,6 +152,62 @@ describe("preview dimensions", () => {
 });
 
 describe("frame processing controller", () => {
+  it("publishes decoded duration only after active metadata and interval validation", async () => {
+    const onMetadata = vi.fn();
+    const source = new FakeSource({ durationSeconds: 2, width: 1920, height: 1080 });
+    const controller = new FrameProcessingController({
+      createSource: () => source, createProcessor: () => new FakeProcessor()
+    }, { onMetadata, onState: () => undefined, onProgress: () => undefined, onOutput: () => undefined },
+    { startSeconds: 0.5, endSeconds: 1.5 });
+    await controller.start();
+    expect(onMetadata).toHaveBeenCalledExactlyOnceWith(2);
+    expect(source.sought[0]).toBe(500);
+    expect(source.sought.at(-1)).toBe(1499);
+    await controller.close();
+  });
+
+  it.each([
+    { durationSeconds: NaN, width: 20, height: 10 },
+    { durationSeconds: Infinity, width: 20, height: 10 },
+    { durationSeconds: -1, width: 20, height: 10 },
+    { durationSeconds: 0.25, width: 20, height: 10 },
+    { durationSeconds: 2, width: 0, height: 10 }
+  ])("never publishes invalid decoded metadata: %j", async (metadata) => {
+    const onMetadata = vi.fn();
+    const source = new FakeSource(metadata);
+    const processor = new FakeProcessor();
+    const controller = new FrameProcessingController({
+      createSource: () => source, createProcessor: () => processor
+    }, { onMetadata, onState: () => undefined, onProgress: () => undefined, onOutput: () => undefined },
+    { startSeconds: 0.5, endSeconds: 1.5 });
+    await controller.start();
+    expect(onMetadata).not.toHaveBeenCalled();
+    expect(processor.initialized).toBe(false);
+    expect(source.disposed).toBe(true);
+    expect(processor.closed).toBe(true);
+  });
+
+  it("ignores cancelled metadata and publishes only fresh retry metadata", async () => {
+    let release!: (metadata: { durationSeconds: number; width: number; height: number }) => void;
+    const old = new FakeSource();
+    old.load = () => new Promise((resolve) => { release = resolve; });
+    const fresh = new FakeSource({ durationSeconds: 3, width: 20, height: 10 });
+    const sources = [old, fresh];
+    const onMetadata = vi.fn();
+    const controller = new FrameProcessingController({
+      createSource: () => sources.shift()!, createProcessor: () => new FakeProcessor()
+    }, { onMetadata, onState: () => undefined, onProgress: () => undefined, onOutput: () => undefined });
+    const pending = controller.start();
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    await controller.cancel();
+    await controller.retry();
+    release({ durationSeconds: 99, width: 20, height: 10 });
+    await pending;
+    expect(onMetadata).toHaveBeenCalledExactlyOnceWith(3);
+    expect(old.disposed).toBe(true);
+    await controller.close();
+  });
+
   it("cancels an interval seek, ignores late output, and retries the same bounds with fresh resources", async () => {
     let release!: () => void;
     const gate = new Promise<void>((done) => { release = done; });

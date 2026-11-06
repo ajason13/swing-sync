@@ -2023,6 +2023,56 @@ test("waits for current frame data after a settled zero-time seek before reading
   expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
 });
 
+test("retains event controls when analysis starts before preview metadata", async ({ page }) => {
+  await page.evaluate(() => {
+    const evidence = { withheld: 0, decodedDuration: 0, analysisDuration: 0 };
+    Object.assign(window, { __earlyAnalysis: evidence });
+    document.addEventListener("loadeddata", (event) => {
+      const video = event.target;
+      if (!(video instanceof HTMLVideoElement) || video.id !== "local-video-preview") return;
+      evidence.withheld++;
+      evidence.decodedDuration = video.duration;
+      event.stopImmediatePropagation();
+      // Deliver a retired preview event after processing has begun.
+      const started = new MutationObserver(() => {
+        if (!document.querySelector("#analysis-video")) return;
+        started.disconnect();
+        video.dispatchEvent(new Event("loadeddata"));
+      });
+      started.observe(document.querySelector("#app")!, { childList: true, subtree: true });
+    }, true);
+    document.addEventListener("loadedmetadata", (event) => {
+      const video = event.target;
+      if (video instanceof HTMLVideoElement && video.id === "analysis-video") evidence.analysisDuration = video.duration;
+    }, true);
+  });
+  await page.getByRole("checkbox").check();
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect.poll(() => page.evaluate(() => (window as typeof window & {
+    __earlyAnalysis: { withheld: number };
+  }).__earlyAnalysis.withheld)).toBeGreaterThan(0);
+  await expect(page.locator("#interval-start")).toBeDisabled();
+  await page.getByRole("button", { name: "Begin analysis" }).click();
+  await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+  await completePhaseReview(page);
+  const time = page.getByLabel("Source time (seconds)", { exact: true });
+  await expect(time).toBeVisible();
+  const duration = await page.evaluate(() => (window as typeof window & {
+    __earlyAnalysis: { decodedDuration: number; analysisDuration: number };
+  }).__earlyAnalysis);
+  expect(duration.analysisDuration).toBe(duration.decodedDuration);
+  await expect(time).toHaveAttribute("min", "0");
+  await expect(time).toHaveAttribute("max", String((Math.floor(duration.analysisDuration * 1000) - 1) / 1000));
+  await page.locator("[data-keyframe-index='3']").click();
+  await time.fill("0.73");
+  await page.getByRole("button", { name: "Use time for Top", exact: true }).click();
+  await expect(page.locator("#event-frame-status")).toContainText("Selected event frame assigned", { timeout: 30_000 });
+  await expect(page.locator(".keyframe-review__heading")).toContainText("Requested 0.730 s; observed seek 0.730 s.");
+  await expect(page.getByLabel(/I reviewed these provisional labels/)).not.toBeChecked();
+  expect(externalRequests(requestsFor(page))).toEqual([]);
+  expectNoSensitiveOutput(consoleMessagesFor(page).join("\n"));
+});
+
 test("selects new event times with paired local inference and consistent moving-frame review and exports", async ({ page }, testInfo) => {
   if (testInfo.project.name === "mobile-chromium") await page.setViewportSize({ width: 320, height: 720 });
   await page.evaluate(() => {
