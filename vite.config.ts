@@ -31,6 +31,23 @@ export function developmentCspPlugin(): Plugin {
   };
 }
 
+export function developmentWasmLoaderPlugin(): Plugin {
+  return {
+    name: "swing-sync-development-wasm-loader",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        // Vite annotates the SDK's computed import with ?import, which skips
+        // public-file serving. This pinned ES module must be served as-is.
+        if (request.url === "/mediapipe/wasm/vision_wasm_module_internal.js?import") {
+          request.url = "/mediapipe/wasm/vision_wasm_module_internal.js";
+        }
+        next();
+      });
+    }
+  };
+}
+
 export function createViteConfig({ command }: Pick<ConfigEnv, "command">): UserConfig {
   return {
   // Keep the production CSS generator within the permitted-license toolchain.
@@ -38,7 +55,7 @@ export function createViteConfig({ command }: Pick<ConfigEnv, "command">): UserC
   worker: {
     format: "es"
   },
-  plugins: command === "serve" ? [developmentCspPlugin()] : [],
+  plugins: command === "serve" ? [developmentCspPlugin(), developmentWasmLoaderPlugin()] : [],
   build: {
     cssMinify: "esbuild",
     rollupOptions: {

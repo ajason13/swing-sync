@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,7 +29,7 @@ describe("Vite development CSP", () => {
   });
 
   it("registers the CSP transform for serve only", () => {
-    expect(createViteConfig({ command: "serve" }).plugins).toHaveLength(1);
+    expect(createViteConfig({ command: "serve" }).plugins).toHaveLength(2);
     expect(createViteConfig({ command: "build" }).plugins).toEqual([]);
     const productionHtml = readFileSync("index.html", "utf8");
     expect(productionHtml).toContain("style-src 'self';");
@@ -60,4 +61,34 @@ describe("Vite development CSP", () => {
       }
     }
   );
+});
+
+describe("Vite development WASM loader", () => {
+  it("serves the pinned module bytes for the SDK import without opening other public imports", async () => {
+    const server = await createServer({ ...createViteConfig({ command: "serve" }), configFile: false, logLevel: "silent", server: { host: "127.0.0.1", port: 0 } });
+    try {
+      await server.listen();
+      const address = server.httpServer?.address();
+      if (!address || typeof address === "string") throw new Error("Vite dev server did not expose a TCP address.");
+      const base = `http://127.0.0.1:${address.port}`;
+      const path = "/mediapipe/wasm/vision_wasm_module_internal.js";
+      const expectedHash = createHash("sha256").update(readFileSync(`public${path}`)).digest("hex");
+      for (const suffix of ["", "?import"]) {
+        const response = await fetch(`${base}${path}${suffix}`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toMatch(/javascript/);
+        expect(createHash("sha256").update(Buffer.from(await response.arrayBuffer())).digest("hex")).toBe(expectedHash);
+      }
+      for (const rejected of [
+        "/mediapipe/wasm/vision_wasm_internal.js?import",
+        `${path}?import&other=1`
+      ]) {
+        const response = await fetch(`${base}${rejected}`);
+        expect(response.status).toBe(500);
+        expect(await response.text()).toContain("should not be imported from source code");
+      }
+    } finally {
+      await server.close();
+    }
+  });
 });
