@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./test/smoke",
-  testIgnore: ["dev-styles.spec.ts", "production-csp.spec.ts"],
+  testIgnore: ["dev-styles.spec.ts", "dev-inference.spec.ts", "production-csp.spec.ts"],
   outputDir: "test-results",
   reporter: "list",
   use: {
