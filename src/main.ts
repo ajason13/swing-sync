@@ -19,11 +19,16 @@ const announcer = document.querySelector<HTMLDivElement>("#app-announcer");
 const state = createInitialAppState();
 const consent = createSafetyConsentStore();
 const preview = new LocalVideoPreview((duration) => {
+  const previousDuration = state.videoDuration;
   setVideoDuration(state, duration);
   // Readiness can arrive between pointerdown and click. Keep Capture controls
   // connected so an in-flight user activation reaches its original handler.
   if (app && state.activeStep === "capture") {
-    updateCaptureIntervalUi(app, state, consent.hasSafetyConsent());
+    // Returning to Capture may already have editable bounds. Repeated metadata
+    // must not replace an input draft before its change event commits the edit.
+    if (state.videoDuration !== previousDuration) {
+      updateCaptureIntervalUi(app, state, consent.hasSafetyConsent());
+    }
     preview.mount(app, state.selectedVideo, state.analysisInterval);
   }
 });

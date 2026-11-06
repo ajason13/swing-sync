@@ -2058,10 +2058,25 @@ test("previews a selected interval and analyzes only its source times with inval
   evidence.seeks.forEach((time, index) => expect(time).toBeCloseTo(evidence.requests[index], 2));
   await page.getByRole("button", { name: "Review phase labels", exact: true }).click();
   await expect(page.locator("[data-phase-index]")).toHaveCount(8);
+  // Returning preview readiness must not overwrite an uncommitted interval edit.
+  await page.evaluate(() => {
+    document.addEventListener("loadeddata", function holdReturningPreview(event) {
+      const video = event.target;
+      if (!(video instanceof HTMLVideoElement) || video.id !== "local-video-preview") return;
+      event.stopImmediatePropagation();
+      document.removeEventListener("loadeddata", holdReturningPreview, true);
+      Object.assign(window, { __releaseIntervalPreview: () => video.dispatchEvent(new Event("loadeddata")) });
+    }, true);
+  });
   await page.locator("[data-step='capture']").click();
   await expect(start).toHaveValue("0.2");
   await expect(end).toHaveValue("0.6");
+  await expect.poll(() => page.evaluate(() => typeof (window as typeof window & {
+    __releaseIntervalPreview?: () => void;
+  }).__releaseIntervalPreview)).toBe("function");
   await start.fill("0.3");
+  await page.evaluate(() => (window as typeof window & { __releaseIntervalPreview(): void }).__releaseIntervalPreview());
+  await expect(start).toHaveValue("0.3");
   await start.press("Tab");
   await page.locator("[data-step='export']").click();
   await expect(page.getByRole("heading", { name: "Swing Card unavailable" })).toBeVisible();
