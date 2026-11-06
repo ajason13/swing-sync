@@ -101,6 +101,28 @@ Verified on 2026-10-24 against the
 the installed Vite 8.3.5 CSS minifier implementation, and
 [esbuild 0.28.2 package metadata](https://registry.npmjs.org/esbuild/0.28.2).
 
+## License-tool dependency remediation
+
+For [issue #92](https://github.com/ajason13/swing-sync/issues/92), the scanner
+remains pinned to `@onebeyond/license-checker@2.2.0`, with a version-scoped npm
+override selecting MIT `lodash@4.18.1` instead of its exact vulnerable
+`4.17.21` dependency. Reassess and remove the override when upgrading or
+replacing that scanner. The lockfile also resolves the existing Rollup license
+plugin's compatible Lodash range to `4.18.1`, and the SBOM tool's indirect
+`ip-address` range to MIT `10.7.6`. No license-policy exception is introduced.
+
+The [Lodash template advisory](https://github.com/advisories/GHSA-r5fr-rjxr-66jc)
+and [prototype-path advisory](https://github.com/advisories/GHSA-f23m-r3pf-42rh)
+identify fixes included in `4.18.1`; the
+[IPv6 parsing advisory](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5)
+identifies a fix in `10.7.4`. This is bounded dependency remediation, not a
+claim of complete tooling security. Dated audit results, inspected input paths,
+remaining advisories, and compatibility verification are recorded in #92.
+The 2026-11-06 audit still reports Glob/Minimatch development-tool paths;
+[issue #115](https://github.com/ajason13/swing-sync/issues/115) tracks their
+separate remediation. A clean production-only audit does not establish that
+development tooling is free of vulnerabilities.
+
 ## Reference Repository Reuse
 
 Clean-room reimplementation is the default for reference repositories.
