@@ -38,7 +38,7 @@ export class LocalVideoPreview {
     this.toggle?.addEventListener("click", this.togglePlayback);
     this.intervalToggle?.addEventListener("click", this.playInterval);
     if (this.video) {
-      placeholder.replaceWith(this.video);
+      if (placeholder !== this.video) placeholder.replaceWith(this.video);
       this.updateUi();
       return;
     }
