@@ -119,8 +119,11 @@ identifies a fix in `10.7.4`. This is bounded dependency remediation, not a
 claim of complete tooling security. Dated audit results, inspected input paths,
 remaining advisories, and compatibility verification are recorded in #92.
 The 2026-11-06 audit still reports Glob/Minimatch development-tool paths;
-[issue #115](https://github.com/ajason13/swing-sync/issues/115) tracks their
-separate remediation. A clean production-only audit does not establish that
+[issue #115](https://github.com/ajason13/swing-sync/issues/115) records their
+[bounded triage and unresolved compatibility](./sbom-tool-advisory-triage.md).
+[Follow-up #117](https://github.com/ajason13/swing-sync/issues/117) tracks
+remediation when a supported dependency path or an approved replacement plan
+is available. A clean production-only audit does not establish that
 development tooling is free of vulnerabilities.
 
 ## Reference Repository Reuse
