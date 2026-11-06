@@ -389,7 +389,7 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   await page.getByRole("checkbox").check();
   await page.locator("#video-file").setInputFiles(poseFixture);
   const primary = page.locator("#analysis-button");
-  // Media metadata renders interval controls; finish that render before testing tab order.
+  // Wait for interval controls to become enabled before testing tab order.
   await expect(page.locator("#interval-start")).toBeEnabled();
   await expect(page.locator("[data-video-picker]")).toBeFocused();
   await page.keyboard.press("Tab");
@@ -416,8 +416,8 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   const secondary = page.getByRole("button", { name: "Choose a video to analyze" });
   await expect(secondary).toHaveCSS("border-color", "rgb(96, 115, 103)");
   await page.getByRole("button", { name: /Capture/ }).click();
-  // Returning to Capture loads a new preview; metadata replaces the controls.
-  // Measure focus styling only after that render, never on a detached handle.
+  // Returning to Capture loads a new preview; wait for interval readiness.
+  // Measure focus styling after readiness updates have completed.
   await expect(page.locator("[data-preview-toggle]")).toBeEnabled();
   await page.emulateMedia({ forcedColors: "active" });
   await picker.focus();
@@ -1666,6 +1666,59 @@ test("cancels pending Swing Card actions on navigation and clear-local-data", as
   }
 });
 
+async function holdPreviewUntilAnalysisActivation(page: Page, activation: "pointer" | "keyboard" = "pointer"): Promise<void> {
+  await page.evaluate((activation) => {
+    let held: HTMLVideoElement | undefined;
+    let released = false;
+    const evidence = { down: 0, click: 0, connected: false };
+    Object.assign(window, { __analysisClick: evidence });
+    document.addEventListener("loadeddata", (event) => {
+      if (!released && event.target instanceof HTMLVideoElement && event.target.id === "local-video-preview") {
+        held = event.target;
+        event.stopImmediatePropagation();
+      }
+    }, true);
+    document.addEventListener(activation === "pointer" ? "pointerdown" : "keydown", (event) => {
+      if (event instanceof KeyboardEvent && event.code !== "Space") return;
+      const button = event.target;
+      if (!(button instanceof HTMLButtonElement) || button.id !== "analysis-button" || !held) return;
+      evidence.down++;
+      released = true;
+      held.dispatchEvent(new Event("loadeddata"));
+      evidence.connected = button.isConnected;
+    });
+    document.addEventListener("click", (event) => {
+      if (event.target instanceof HTMLButtonElement && event.target.id === "analysis-button") evidence.click++;
+    }, true);
+    Object.assign(window, { __previewHeld: () => !!held });
+  }, activation);
+}
+
+async function expectOneAnalysisClick(page: Page): Promise<void> {
+  expect(await page.evaluate(() => (window as typeof window & {
+    __analysisClick: { down: number; click: number; connected: boolean };
+  }).__analysisClick)).toEqual({ down: 1, click: 1, connected: true });
+}
+
+for (const activation of ["pointer", "keyboard"] as const) {
+  test(`starts analysis when preview readiness arrives during ${activation} activation`, async ({ page }) => {
+    await holdPreviewUntilAnalysisActivation(page, activation);
+    await page.getByRole("checkbox").check();
+    await page.locator("#video-file").setInputFiles(poseFixture);
+    await expect.poll(() => page.evaluate(() => (window as typeof window & { __previewHeld(): boolean }).__previewHeld())).toBe(true);
+    await expect(page.locator("#interval-start")).toBeDisabled();
+    const begin = page.getByRole("button", { name: "Begin analysis" });
+    if (activation === "pointer") await begin.click();
+    else {
+      await begin.focus();
+      await page.keyboard.press("Space");
+    }
+    await expectOneAnalysisClick(page);
+    await expect(page.locator("[data-pose-summary]")).toContainText("8 of 8 video frames processed", { timeout: 30_000 });
+    expect(externalRequests(requestsFor(page))).toEqual([]);
+  });
+}
+
 for (const operation of ["load", "seek"] as const) {
   test(`recovers from a stalled media ${operation} with a fresh local retry`, async ({ page }) => {
     await page.clock.install();
@@ -1688,9 +1741,14 @@ for (const operation of ["load", "seek"] as const) {
         originalAdd.call(this, type, listener, options);
       };
     }, operation);
+    if (operation === "seek") await holdPreviewUntilAnalysisActivation(page);
     await page.getByRole("checkbox").check();
     await page.locator("#video-file").setInputFiles(poseFixture);
+    if (operation === "seek") {
+      await expect.poll(() => page.evaluate(() => (window as typeof window & { __previewHeld(): boolean }).__previewHeld())).toBe(true);
+    }
     await page.getByRole("button", { name: "Begin analysis" }).click();
+    if (operation === "seek") await expectOneAnalysisClick(page);
     await expect(page.locator("#analysis-video")).toHaveAttribute("data-media-wait-stalled", "true", {
       timeout: 20_000
     });

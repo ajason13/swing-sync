@@ -179,6 +179,29 @@ function renderAnalysisInterval(state: AppState): string {
   </fieldset>`;
 }
 
+export function updateCaptureIntervalUi(root: ParentNode, state: AppState, consentAccepted: boolean): void {
+  const fieldset = root.querySelector<HTMLFieldSetElement>(".analysis-interval");
+  if (!fieldset) return;
+  // Share interval presentation with full renders, but patch only its attributes
+  // and text; replacing the surrounding Capture panel would cancel activation.
+  const template = document.createElement("template");
+  template.innerHTML = renderAnalysisInterval(state);
+  const next = template.content.querySelector<HTMLFieldSetElement>("fieldset")!;
+  fieldset.disabled = next.disabled;
+  for (const edge of ["start", "end"] as const) {
+    const input = fieldset.querySelector<HTMLInputElement>(`#interval-${edge}`)!;
+    const replacement = next.querySelector<HTMLInputElement>(`#interval-${edge}`)!;
+    input.max = replacement.max;
+    input.value = replacement.value;
+    input.setAttribute("aria-invalid", replacement.getAttribute("aria-invalid")!);
+  }
+  fieldset.querySelector("#interval-status")!.textContent = next.querySelector("#interval-status")!.textContent;
+  const begin = root.querySelector<HTMLButtonElement>("#analysis-button");
+  if (begin) begin.disabled = !selectCanBeginAnalysis(state, consentAccepted);
+  const badge = root.querySelector<HTMLElement>("[data-workflow-status]");
+  if (badge) badge.textContent = workflowStatusText(state, consentAccepted);
+}
+
 export function updateProcessingProgressUi(root: ParentNode, state: AppState): void {
   const status = root.querySelector<HTMLElement>("#processing-status");
   const summary = root.querySelector<HTMLElement>("[data-pose-summary]");

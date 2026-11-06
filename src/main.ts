@@ -8,7 +8,7 @@ import {
 } from "./app-accessibility";
 import { AnalysisLifecycle } from "./analysis-lifecycle";
 import { bindAppEvents } from "./app-events";
-import { renderApp } from "./app-renderer";
+import { renderApp, updateCaptureIntervalUi } from "./app-renderer";
 import { createInitialAppState, setVideoDuration } from "./app-state";
 import { createSafetyConsentStore } from "./consent-state";
 import { LocalVideoPreview } from "./local-video-preview";
@@ -20,9 +20,12 @@ const state = createInitialAppState();
 const consent = createSafetyConsentStore();
 const preview = new LocalVideoPreview((duration) => {
   setVideoDuration(state, duration);
-  // Metadata readiness must not replace a user action's visible status.
-  const visibleStatusText = app?.querySelector<HTMLElement>("#app-visible-status")?.textContent ?? undefined;
-  requestRender({ visibleStatusText });
+  // Readiness can arrive between pointerdown and click. Keep Capture controls
+  // connected so an in-flight user activation reaches its original handler.
+  if (app && state.activeStep === "capture") {
+    updateCaptureIntervalUi(app, state, consent.hasSafetyConsent());
+    preview.mount(app, state.selectedVideo, state.analysisInterval);
+  }
 });
 
 function requestRender(request: RenderRequest = {}): void {
