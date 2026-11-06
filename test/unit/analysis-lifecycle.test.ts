@@ -28,6 +28,62 @@ class ProcessingRoot {
 }
 
 describe("analysis lifecycle ownership", () => {
+  it("retains active analysis duration without resetting outputs or selected bounds", () => {
+    const state = createInitialAppState();
+    const file = new File(["synthetic"], "clip.webm");
+    state.selectedVideo = file;
+    state.activeStep = "processing";
+    state.processingState = "loading";
+    const lifecycle = new AnalysisLifecycle({ root: {} as ParentNode, state,
+      requestRender: vi.fn(), applyAccessibilityIntent: vi.fn() });
+    const token = Symbol("active");
+    Object.assign(lifecycle, { activeCallbackToken: token });
+    const callbacks = lifecycle as unknown as {
+      handleProcessingMetadata(token: symbol, file: File, duration: number): void;
+    };
+    callbacks.handleProcessingMetadata(token, file, 2);
+    expect(state.videoDuration).toBe(2);
+    expect(state.analysisInterval).toEqual({ startSeconds: 0, endSeconds: 2 });
+    state.analysisInterval = { startSeconds: 0.5, endSeconds: 1.5 };
+    const outputs = state.phaseOutputs;
+    state.extractedFrameCount = 4;
+    callbacks.handleProcessingMetadata(token, file, 2);
+    expect(state.analysisInterval).toEqual({ startSeconds: 0.5, endSeconds: 1.5 });
+    expect(state.phaseOutputs).toBe(outputs);
+    expect(state.extractedFrameCount).toBe(4);
+
+    callbacks.handleProcessingMetadata(Symbol("stale"), file, 99);
+    callbacks.handleProcessingMetadata(token, new File([], "other.webm"), 99);
+    callbacks.handleProcessingMetadata(token, file, NaN);
+    expect(state.videoDuration).toBe(2);
+    state.processingState = "completed";
+    state.phaseConfirmation = true;
+    callbacks.handleProcessingMetadata(token, file, 99);
+    expect(state.videoDuration).toBe(2);
+    expect(state.phaseConfirmation).toBe(true);
+  });
+
+  it.each(["stop", "close", "clear", "replacement"])("ignores metadata retired by %s", async (operation) => {
+    const state = createInitialAppState();
+    const file = new File([], "old.webm");
+    state.selectedVideo = file;
+    state.activeStep = "processing";
+    state.processingState = "loading";
+    const lifecycle = new AnalysisLifecycle({ root: {} as ParentNode, state,
+      requestRender: vi.fn(), applyAccessibilityIntent: vi.fn() });
+    const token = Symbol("active");
+    Object.assign(lifecycle, { activeCallbackToken: token });
+    if (operation === "stop") await lifecycle.stopActive();
+    else await lifecycle.closeActive();
+    if (operation === "clear") state.selectedVideo = undefined;
+    if (operation === "replacement") state.selectedVideo = new File([], "new.webm");
+    (lifecycle as unknown as {
+      handleProcessingMetadata(token: symbol, file: File, duration: number): void;
+    }).handleProcessingMetadata(token, file, 99);
+    expect(state.videoDuration).toBeUndefined();
+    expect(state.analysisInterval).toBeUndefined();
+  });
+
   it("keeps network-blocked abort scoped to active local processing", () => {
     const state = createInitialAppState();
     const lifecycle = new AnalysisLifecycle({

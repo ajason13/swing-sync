@@ -116,7 +116,9 @@ describe("local preview lifecycle", () => {
   });
 
   it("releases replaced, cleared and departed media exactly once and ignores stale events", () => {
-    const { preview, file, revoke } = setup();
+    const { file, revoke } = setup();
+    const onDuration = vi.fn();
+    const preview = new LocalVideoPreview(onDuration);
     const old = surface();
     preview.mount(old.root, file);
     const next = surface();
@@ -127,8 +129,13 @@ describe("local preview lifecycle", () => {
     old.video.dispatchEvent(new Event("loadeddata"));
     old.video.dispatchEvent(new Event("error"));
     expect(next.status.textContent).toContain("Loading");
+    expect(onDuration).not.toHaveBeenCalled();
+    next.video.dispatchEvent(new Event("loadeddata"));
+    expect(onDuration).toHaveBeenCalledExactlyOnceWith(2);
     preview.mount({ querySelector: () => null } as unknown as ParentNode);
     preview.close();
+    next.video.dispatchEvent(new Event("loadeddata"));
+    expect(onDuration).toHaveBeenCalledExactlyOnceWith(2);
     expect(next.video.src).toBe("");
     expect(revoke.mock.calls).toEqual([["blob:first"], ["blob:second"]]);
     expect(vi.getTimerCount()).toBe(0);
