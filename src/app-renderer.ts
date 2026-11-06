@@ -91,7 +91,7 @@ export function renderWorkflowPanel(state: AppState, consentAccepted: boolean): 
       ${state.selectedVideo ? `
       <section class="local-preview" aria-labelledby="local-preview-heading">
         <h3 id="local-preview-heading">Preview your local video</h3>
-        <video id="local-video-preview" class="analysis-video" controls muted playsinline preload="auto" tabindex="0"
+        <video id="local-video-preview" data-focus-key="video-preview" class="analysis-video" controls muted playsinline preload="auto" tabindex="0"
           aria-label="Local video preview" aria-describedby="local-preview-status"></video>
         <p id="local-preview-status" class="action-note" role="status" aria-live="polite">Loading local video preview…</p>
         <button class="secondary-action" type="button" data-preview-toggle data-focus-key="preview-toggle" disabled>Play preview</button>

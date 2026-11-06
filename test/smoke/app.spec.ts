@@ -323,6 +323,49 @@ test("returns picker focus for success cancel and defensive hidden-input focus",
   await expect(page.locator("#video-file")).not.toHaveAttribute("aria-hidden", "true");
 });
 
+test("preserves keyboard focus across delayed preview readiness on capture return", async ({ page }, testInfo) => {
+  // Hold only the returning preview's readiness event; the approved clip still
+  // loads natively. Release at the exact keyboard/style-read boundary from #102.
+  await page.evaluate(() => {
+    let previews = 0;
+    document.addEventListener("loadeddata", (event) => {
+      const video = event.target;
+      if (!(video instanceof HTMLVideoElement) || video.id !== "local-video-preview" || !event.isTrusted) return;
+      if (++previews !== 2) return;
+      event.stopImmediatePropagation();
+      Object.assign(window, { __releaseFocusPreview: () => video.dispatchEvent(new Event("loadeddata")) });
+    }, true);
+  });
+  await page.locator("#video-file").setInputFiles(poseFixture);
+  await expect(page.locator("[data-preview-toggle]")).toBeEnabled();
+  await page.getByRole("button", { name: /Review/ }).click();
+  await page.getByRole("button", { name: /Capture/ }).click();
+  await expect.poll(() => page.evaluate(() => typeof (window as typeof window & { __releaseFocusPreview?: () => void }).__releaseFocusPreview)).toBe("function");
+  await page.emulateMedia({ forcedColors: "active" });
+  const picker = page.locator("[data-video-picker]");
+  await picker.focus();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#local-video-preview")).toBeFocused();
+  const state = await page.evaluate(() => {
+    const previousPicker = document.querySelector<HTMLElement>("[data-video-picker]")!;
+    const before = document.activeElement?.id;
+    (window as typeof window & { __releaseFocusPreview: () => void }).__releaseFocusPreview();
+    return {
+      before,
+      after: document.activeElement?.id,
+      previousPickerConnected: previousPicker.isConnected,
+      previousPickerOutline: getComputedStyle(previousPicker).outlineWidth,
+      currentPickerOutline: getComputedStyle(document.querySelector("[data-video-picker]")!).outlineWidth
+    };
+  });
+  await testInfo.attach("synthetic-focus-render-state", { body: JSON.stringify(state), contentType: "application/json" });
+  await expect(page.locator("#local-video-preview")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(picker).toBeFocused();
+  await expect(picker).toHaveCSS("outline-width", "2px");
+  await expect(picker).toHaveCSS("box-shadow", "none");
+});
+
 test("applies approved focus geometry tokens and forced-colors focus", async ({ page }) => {
   const picker = page.locator("[data-video-picker]");
   await picker.focus();
@@ -373,11 +416,15 @@ test("applies approved focus geometry tokens and forced-colors focus", async ({ 
   const secondary = page.getByRole("button", { name: "Choose a video to analyze" });
   await expect(secondary).toHaveCSS("border-color", "rgb(96, 115, 103)");
   await page.getByRole("button", { name: /Capture/ }).click();
+  // Returning to Capture loads a new preview; metadata replaces the controls.
+  // Measure focus styling only after that render, never on a detached handle.
+  await expect(page.locator("[data-preview-toggle]")).toBeEnabled();
   await page.emulateMedia({ forcedColors: "active" });
   await picker.focus();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Shift+Tab");
   await expect(picker).toBeFocused();
+  await expect(picker).toHaveCSS("outline-width", "2px");
   const forced = await picker.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
