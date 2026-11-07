@@ -5,7 +5,10 @@ every change by reading `AGENTS.md` and the task-relevant policy documents.
 
 ## Environment
 
-Use Node 22 from `.nvmrc`, matching CI:
+Use Node 22 from `.nvmrc`, matching CI. Native Windows 11 users should follow
+[Windows setup](docs/windows-setup.md) for prerequisites, clone/install/start
+commands, `.cmd` usage in PowerShell, and browser-test commands. No WSL or
+nvm-sh is required for that path. On macOS/Linux with nvm-sh installed:
 
 ```bash
 nvm use
@@ -49,9 +52,12 @@ The selected Windows Server host is within
 [Playwright's documented Windows requirements](https://playwright.dev/docs/intro#system-requirements);
 the actual hosted image and tool versions are recorded per run. This automated
 server coverage does not establish Windows 10/11 laptop, ARM64, or physical
-mobile-device compatibility. Native Windows setup and laptop validation remain
-tracked in [#96](https://github.com/ajason13/swing-sync/issues/96), and the broader
-browser/device study remains in [#73](https://github.com/ajason13/swing-sync/issues/73).
+mobile-device compatibility. Separate [Windows 11 setup evidence](docs/windows11-setup-validation.md)
+records the local x64 environment and bounded synthetic checks for
+[#96](https://github.com/ajason13/swing-sync/issues/96). Windows 10 setup remains
+unverified in [#119](https://github.com/ajason13/swing-sync/issues/119); broader
+browser/device and manual native-dialog validation remains in
+[#73](https://github.com/ajason13/swing-sync/issues/73).
 
 ## Task Workflow
 
